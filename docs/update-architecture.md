@@ -1,0 +1,234 @@
+# Bough – Update Architecture
+
+**Version:** 1.0
+**Date:** March 2026
+**Status:** Concept
+
+---
+
+## 1. Goals
+
+- Users always receive update notifications without manual version checking
+- Updates install with as little friction as possible (ideally one click)
+- The update mechanism feels native on every platform (no cross-platform lowest common denominator)
+- Code signing is enforced on every platform so OS security checks pass silently
+- The entire release process can be automated and run by a single developer
+- Delta updates reduce download size where supported
+
+---
+
+## 2. Guiding Principle: One Appcast, Three Delivery Mechanisms
+
+All three platforms share a single **Appcast XML feed** hosted alongside the release artifacts. This is the Sparkle-compatible format already used by hundreds of popular Mac apps (Tower, Fork, Sketch, Kaleidoscope). The same feed drives the macOS updater, the Windows updater, and the Linux update check.
+
+GitHub Releases serves as the primary artifact store. A lightweight static file (the appcast) is generated and published as part of every release via GitHub Actions.
+
+---
+
+## 3. Platform Strategy
+
+### 3.1 macOS – Sparkle 2
+
+**Sparkle** is the de-facto standard for macOS auto-updates. It is used by virtually every professional Mac app distributed outside the App Store, including the Git clients Bough is inspired by (Tower, Fork). Sparkle 2 supports EdDSA-signed delta updates, background downloads, and native UI sheets.
+
+**Integration in Go/Wails:**
+Sparkle is an Objective-C framework. It is embedded in the app bundle and called via CGo using the thin Go wrapper **go-sparkle**. This requires that the macOS build includes CGo, which is standard for Wails macOS builds.
+
+```
+App Bundle
+└── Bough.app
+    └── Frameworks
+        └── Sparkle.framework   ← embedded, no user install required
+```
+
+**Flow:**
+1. On first launch (and every 24 h thereafter), Sparkle fetches the appcast URL in the background.
+2. If a newer version is found, a native macOS sheet presents the changelog and an **Install Update** button.
+3. The update downloads in the background, is verified against the EdDSA signature, applied as a delta patch if available, and the app restarts.
+
+**Code signing:** The app and Sparkle framework must both be signed with a **Developer ID Application** certificate and the final DMG notarized with `notarytool`. This is mandatory since macOS 10.15 (Catalina) for Gatekeeper to accept downloads.
+
+---
+
+### 3.2 Windows – WinSparkle
+
+**WinSparkle** is the Windows equivalent of Sparkle, uses the identical appcast XML format, and supports background downloads, changelog display, silent installs, and EdDSA signature verification.
+
+**Integration in Go/Wails:**
+WinSparkle is a native DLL. It is called from Go via CGo using the **go-winsparkle** binding. The DLL ships inside the installer, no separate user install is required.
+
+**Distribution format:** The Windows build is packaged as an **.msi** installer (built via `wix` or `go-msi`). WinSparkle downloads the new `.msi` and triggers a silent reinstall, which handles path registration and Start Menu entries correctly.
+
+**Code signing:** The `.exe`, `.dll`, and `.msi` must be signed with an **Authenticode** (EV Code Signing) certificate. Without signing, Windows SmartScreen blocks the installer. The signing step is automated in CI using a cloud-based signing service (e.g., SignPath, SSL.com).
+
+---
+
+### 3.3 Linux – AppImage + AppImageUpdate
+
+Linux has no universal package manager, so the best balance between reach and updateability is the **AppImage** format.
+
+**AppImageUpdate** enables delta updates by embedding an update URL in the AppImage at build time. The running app can invoke AppImageUpdate (bundled inside the AppImage) to fetch only the changed blocks of the new version — substantially reducing download size for incremental releases.
+
+**Flow:**
+1. Bough checks the GitHub Releases API on startup for a newer version.
+2. If found, the user sees an in-app notification (since WinSparkle/Sparkle are not available on Linux).
+3. Clicking **Download Update** invokes the bundled AppImageUpdate binary.
+4. AppImageUpdate downloads delta blocks, validates the result, replaces the AppImage file, and prompts the user to restart.
+
+**Additional Linux channels (optional, post-v1):**
+- **Flatpak** via Flathub — updates handled transparently by the system; excellent for desktop integration but requires maintaining a Flatpak manifest
+- **Snap** via Snap Store — similar; auto-updates are fully managed but the Snap confinement model can conflict with git's need for broad filesystem access
+
+The AppImage remains the primary supported format for v1 because it imposes no sandboxing and works on any modern distribution without root.
+
+---
+
+## 4. Appcast Feed
+
+All three updaters consume the same XML appcast hosted at a stable URL:
+
+```
+https://boughapp.com/updates/appcast.xml
+```
+
+The file is generated by a script that runs in the GitHub Actions release workflow. Example structure:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Bough</title>
+    <link>https://boughapp.com</link>
+    <language>en</language>
+    <item>
+      <title>Version 1.2.0</title>
+      <pubDate>Mon, 10 Mar 2026 09:00:00 +0000</pubDate>
+      <sparkle:releaseNotesLink>
+        https://boughapp.com/releases/1.2.0
+      </sparkle:releaseNotesLink>
+      <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
+
+      <!-- macOS -->
+      <enclosure url="https://github.com/…/releases/download/v1.2.0/Bough-1.2.0-mac.dmg"
+                 sparkle:version="1.2.0"
+                 sparkle:os="macos"
+                 length="28000000"
+                 type="application/octet-stream"
+                 sparkle:edSignature="…" />
+
+      <!-- Windows -->
+      <enclosure url="https://github.com/…/releases/download/v1.2.0/Bough-1.2.0-win.msi"
+                 sparkle:version="1.2.0"
+                 sparkle:os="windows"
+                 length="26000000"
+                 type="application/octet-stream"
+                 sparkle:edSignature="…" />
+
+    </item>
+  </channel>
+</rss>
+```
+
+The Linux update URL is embedded directly in the AppImage at build time and points to the GitHub Release asset.
+
+---
+
+## 5. Version Embedding
+
+The version string is injected at compile time via Go linker flags so no config file is needed at runtime:
+
+```bash
+go build -ldflags="-X main.version=1.2.0 -X main.buildDate=2026-03-10" ./...
+```
+
+The running app compares `main.version` against the latest version in the appcast to decide whether to show an update notification.
+
+Semantic versioning (`MAJOR.MINOR.PATCH`) is used throughout:
+- **PATCH** — bug fixes, no new features
+- **MINOR** — new features, backward compatible
+- **MAJOR** — breaking changes or major redesigns
+
+---
+
+## 6. Release Channels
+
+Two channels are supported from the start:
+
+| Channel  | Audience       | Frequency     | Stability |
+|----------|----------------|---------------|-----------|
+| `stable` | All users      | Every 4–8 weeks | Production-ready |
+| `beta`   | Opt-in users   | Every 1–2 weeks | Feature previews, may contain bugs |
+
+The channel is stored in the user's preferences. The appcast URL encodes the channel:
+- `https://boughapp.com/updates/appcast.xml` (stable)
+- `https://boughapp.com/updates/appcast-beta.xml` (beta)
+
+---
+
+## 7. Release Automation (GitHub Actions)
+
+The entire release pipeline runs as a single GitHub Actions workflow triggered by pushing a version tag (`v*.*.*`):
+
+```
+Tag push v1.2.0
+    │
+    ├── Build macOS (arm64 + amd64 universal)
+    │       Sign with Developer ID → Notarize → Package DMG
+    │
+    ├── Build Windows (amd64)
+    │       Sign with Authenticode → Package MSI
+    │
+    ├── Build Linux (amd64 + arm64)
+    │       Embed update URL → Package AppImage
+    │
+    ├── Generate appcast.xml with EdDSA signatures
+    │
+    └── GitHub Release
+            Upload all artifacts
+            Publish appcast.xml to boughapp.com/updates/
+```
+
+The EdDSA private key for signing appcast entries is stored as a GitHub Actions secret and never leaves the CI environment.
+
+---
+
+## 8. In-App Update UX
+
+The update notification follows the Bough design language: non-intrusive, respectful of the user's workflow.
+
+**Notification placement:** A subtle banner at the top of the main window (not a modal dialog) with the new version number and a **View Changelog / Install** action. The banner can be dismissed and will reappear after 48 hours if the update has not been installed.
+
+**macOS and Windows** (Sparkle/WinSparkle): The native updater sheet takes over after the user clicks Install — it shows the changelog, download progress, and handles the restart.
+
+**Linux:** The in-app notification triggers the bundled AppImageUpdate binary. A progress indicator in the banner shows download progress. On completion, the user is prompted to restart.
+
+**Silent updates (opt-in):** Users can enable fully automatic background updates in Preferences. In this mode, updates download and install without prompting; the user only sees a "Bough was updated to 1.2.0" notification on next launch.
+
+---
+
+## 9. Rollback
+
+Each installer keeps a copy of the previous version in a platform-appropriate location:
+
+| Platform | Backup location |
+|----------|-----------------|
+| macOS    | `~/Library/Application Support/Bough/Backups/` |
+| Windows  | `%APPDATA%\Bough\Backups\` |
+| Linux    | `~/.local/share/Bough/Backups/` |
+
+If the new version fails to start (crash on launch detected), Bough's bootstrap launcher automatically falls back to the backup and reports the failed update.
+
+---
+
+## 10. Summary
+
+| Concern | macOS | Windows | Linux |
+|---|---|---|---|
+| Update framework | Sparkle 2 | WinSparkle | AppImageUpdate |
+| Go integration | go-sparkle (CGo) | go-winsparkle (CGo) | exec subprocess |
+| Distribution format | DMG | MSI | AppImage |
+| Code signing | Developer ID + Notarization | Authenticode EV | GPG signature (optional) |
+| Update feed | Shared appcast XML | Shared appcast XML | Embedded URL in AppImage |
+| Delta updates | ✅ (Sparkle) | ✅ (WinSparkle) | ✅ (AppImageUpdate) |
+| Release automation | GitHub Actions | GitHub Actions | GitHub Actions |
+| Post-v1 alternatives | — | — | Flatpak, Snap |

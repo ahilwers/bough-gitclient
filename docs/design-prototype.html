@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<title>Bough – Design Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══ CSS Variables ════════════════════════════════════════════════════════ */
+:root {
+  --bg-window:      #ECECEC;
+  --bg-titlebar:    #E2E2E2;
+  --bg-toolbar:     #F0F0F0;
+  --bg-sidebar:     #E8E8E8;
+  --bg-content:     #FFFFFF;
+  --bg-panel:       #FAFAFA;
+  --bg-panel2:      #F4F4F4;
+  --bg-hover:       rgba(0,0,0,0.05);
+  --bg-sel:         rgba(0,102,204,0.09);
+  --bg-sel-row:     rgba(0,102,204,0.07);
+  --bg-input:       #FFFFFF;
+  --bg-add:         #E8F8EE;
+  --bg-del:         #FDEDF0;
+  --bg-add-str:     #C4EFCE;
+  --bg-del-str:     #F9C0CA;
+  --bg-hunk:        rgba(0,102,204,0.06);
+  --bg-badge:       #E0E0E0;
+  --bg-staged-sec:  #F0F7FF;
+  --bg-unstaged-sec:#FFF9F0;
+
+  --text-pri:       #1D1D1F;
+  --text-sec:       #6E6E73;
+  --text-ter:       #AEAEB2;
+  --text-acc:       #0066CC;
+  --text-add:       #1A7F37;
+  --text-del:       #CF222E;
+
+  --border-sub:     rgba(0,0,0,0.07);
+  --border:         rgba(0,0,0,0.13);
+  --border-str:     rgba(0,0,0,0.20);
+
+  --acc:            #0066CC;
+  --acc-hov:        #0055B0;
+  --acc-soft:       rgba(0,102,204,0.10);
+  --acc-border:     rgba(0,102,204,0.25);
+  --danger:         #D92D20;
+  --danger-soft:    rgba(217,45,32,0.10);
+  --danger-border:  rgba(217,45,32,0.25);
+  --warn:           #C4680A;
+  --success:        #00875A;
+  --success-soft:   rgba(0,135,90,0.10);
+  --success-border: rgba(0,135,90,0.25);
+
+  --shadow:         0 2px 10px rgba(0,0,0,0.12);
+  --shadow-lg:      0 8px 30px rgba(0,0,0,0.18);
+
+  --btn-bg:         rgba(0,0,0,0.06);
+  --btn-bdr:        rgba(0,0,0,0.13);
+  --btn-hov:        rgba(0,0,0,0.10);
+
+  --line-main:      #0066CC;
+  --line-feat:      #00875A;
+  --line-hot:       #D92D20;
+  --line-rel:       #7C3AED;
+
+  --r-sm: 4px;  --r-md: 6px;  --r-lg: 10px;
+  --font-ui:   'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+[data-theme="dark"] {
+  --bg-window:      #1C1C1E;
+  --bg-titlebar:    #2C2C2E;
+  --bg-toolbar:     #252527;
+  --bg-sidebar:     #202022;
+  --bg-content:     #1C1C1E;
+  --bg-panel:       #252527;
+  --bg-panel2:      #2A2A2C;
+  --bg-hover:       rgba(255,255,255,0.05);
+  --bg-sel:         rgba(10,132,255,0.16);
+  --bg-sel-row:     rgba(10,132,255,0.09);
+  --bg-input:       #3A3A3C;
+  --bg-add:         #0D2818;
+  --bg-del:         #2D0E0E;
+  --bg-add-str:     #1A4A28;
+  --bg-del-str:     #4A1A1A;
+  --bg-hunk:        rgba(10,132,255,0.08);
+  --bg-badge:       #3A3A3C;
+  --bg-staged-sec:  rgba(10,132,255,0.05);
+  --bg-unstaged-sec:rgba(255,214,10,0.04);
+
+  --text-pri:       #F5F5F7;
+  --text-sec:       #8E8E93;
+  --text-ter:       #48484A;
+  --text-acc:       #0A84FF;
+  --text-add:       #3FB950;
+  --text-del:       #F85149;
+
+  --border-sub:     rgba(255,255,255,0.06);
+  --border:         rgba(255,255,255,0.10);
+  --border-str:     rgba(255,255,255,0.18);
+
+  --acc:            #0A84FF;
+  --acc-hov:        #409CFF;
+  --acc-soft:       rgba(10,132,255,0.14);
+  --acc-border:     rgba(10,132,255,0.30);
+  --danger:         #FF453A;
+  --danger-soft:    rgba(255,69,58,0.13);
+  --danger-border:  rgba(255,69,58,0.30);
+  --warn:           #FFD60A;
+  --success:        #30D158;
+  --success-soft:   rgba(48,209,88,0.12);
+  --success-border: rgba(48,209,88,0.28);
+
+  --shadow:         0 2px 10px rgba(0,0,0,0.45);
+  --shadow-lg:      0 8px 30px rgba(0,0,0,0.60);
+
+  --btn-bg:         rgba(255,255,255,0.08);
+  --btn-bdr:        rgba(255,255,255,0.12);
+  --btn-hov:        rgba(255,255,255,0.13);
+
+  --line-main:      #0A84FF;
+  --line-feat:      #30D158;
+  --line-hot:       #FF453A;
+  --line-rel:       #BF5AF2;
+}
+
+/* ═══ Base ══════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: var(--font-ui); font-size: 12px;
+  background: #888; color: var(--text-pri); -webkit-font-smoothing: antialiased;
+  user-select: none; overflow: hidden; }
+
+/* ═══ App Shell ═════════════════════════════════════════════════════════════ */
+.app { display:flex; flex-direction:column; height:100vh; background:var(--bg-window);
+  border-radius:12px; overflow:hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+
+/* ═══ Titlebar ══════════════════════════════════════════════════════════════ */
+.titlebar { height:40px; background:var(--bg-titlebar); display:flex; align-items:center;
+  padding:0 14px; gap:10px; flex-shrink:0; border-bottom:1px solid var(--border-sub); }
+.wcs { display:flex; gap:7px; }
+.wc { width:12px; height:12px; border-radius:50%; cursor:pointer; transition:filter .15s; }
+.wc:hover { filter:brightness(.82); }
+.wc-c { background:#FF5F57; border:.5px solid rgba(0,0,0,.12); }
+.wc-m { background:#FEBC2E; border:.5px solid rgba(0,0,0,.12); }
+.wc-x { background:#28C840; border:.5px solid rgba(0,0,0,.12); }
+.tb-center { flex:1; display:flex; justify-content:center; align-items:center; }
+.app-name { font-size:13px; font-weight:600; color:var(--text-sec); letter-spacing:-.01em; }
+.theme-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px;
+  border-radius:var(--r-sm); background:var(--btn-bg); border:1px solid var(--btn-bdr);
+  cursor:pointer; color:var(--text-sec); font-size:14px; transition:background .15s; }
+.theme-btn:hover { background:var(--btn-hov); }
+
+/* ═══ Toolbar ═══════════════════════════════════════════════════════════════ */
+.toolbar { height:44px; background:var(--bg-toolbar); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 12px; gap:2px; flex-shrink:0; }
+.tb-btn { display:flex; align-items:center; gap:5px; padding:5px 9px; border-radius:var(--r-sm);
+  background:transparent; border:none; cursor:pointer; color:var(--text-pri); font-family:var(--font-ui);
+  font-size:12px; font-weight:400; transition:background .12s; white-space:nowrap; }
+.tb-btn:hover { background:var(--bg-hover); }
+.tb-btn svg, .tb-btn .ico { color:var(--text-sec); flex-shrink:0; }
+.tb-sep { width:1px; height:20px; background:var(--border); margin:0 5px; flex-shrink:0; }
+.tb-spacer { flex:1; }
+
+/* Repo button */
+.repo-btn { display:flex; align-items:center; gap:6px; padding:5px 10px;
+  border-radius:var(--r-md); background:var(--btn-bg); border:1px solid var(--btn-bdr);
+  cursor:pointer; color:var(--text-pri); font-family:var(--font-ui); font-size:12px;
+  font-weight:500; transition:background .12s; position:relative; }
+.repo-btn:hover { background:var(--btn-hov); }
+.repo-btn .chev { font-size:9px; color:var(--text-ter); margin-left:1px; }
+
+/* Repo dropdown */
+.repo-dropdown { position:absolute; top:calc(100% + 6px); left:0; min-width:200px;
+  background:var(--bg-panel); border:1px solid var(--border-str); border-radius:var(--r-lg);
+  box-shadow:var(--shadow-lg); padding:6px; z-index:100; display:none; }
+.repo-dropdown.open { display:block; }
+.repo-dd-item { display:flex; align-items:center; gap:8px; padding:6px 8px;
+  border-radius:var(--r-sm); cursor:pointer; transition:background .1s; }
+.repo-dd-item:hover { background:var(--bg-hover); }
+.repo-dd-item.active { background:var(--bg-sel); }
+.repo-dd-name { font-size:12.5px; font-weight:500; color:var(--text-pri); }
+.repo-dd-path { font-size:11px; color:var(--text-ter); font-family:var(--font-mono); }
+.repo-dd-sep { height:1px; background:var(--border-sub); margin:4px 0; }
+.repo-dd-add { color:var(--acc); font-size:12px; font-weight:500; }
+
+/* View tabs */
+.view-tabs { display:flex; gap:1px; padding:0 4px; margin-left:6px; }
+.view-tab { display:flex; align-items:center; gap:5px; padding:5px 12px; border-radius:var(--r-sm);
+  cursor:pointer; font-size:12px; font-weight:400; color:var(--text-sec);
+  transition:background .12s, color .12s; position:relative; }
+.view-tab:hover { background:var(--bg-hover); color:var(--text-pri); }
+.view-tab.active { background:var(--bg-sel); color:var(--acc); font-weight:500; }
+.view-tab-badge { display:inline-flex; align-items:center; justify-content:center;
+  min-width:17px; height:16px; padding:0 4px; border-radius:8px;
+  background:var(--warn); color:white; font-size:10px; font-weight:700; line-height:1; }
+.view-tab.active .view-tab-badge { background:var(--acc); }
+
+/* ═══ Main Layout ═══════════════════════════════════════════════════════════ */
+.main-layout { display:flex; flex:1; overflow:hidden; }
+
+/* ═══ Sidebar ════════════════════════════════════════════════════════════════ */
+.sidebar { width:200px; background:var(--bg-sidebar); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; overflow-y:auto; flex-shrink:0; }
+.sidebar::-webkit-scrollbar { width:4px; }
+.sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.sb-sec { padding:14px 0 6px; }
+.sb-sec + .sb-sec { border-top:1px solid var(--border-sub); }
+.sb-hdr { display:flex; align-items:center; justify-content:space-between;
+  padding:0 11px 4px; font-size:10px; font-weight:600; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--text-ter); }
+.sb-hdr-btn { width:15px; height:15px; display:flex; align-items:center; justify-content:center;
+  border-radius:3px; cursor:pointer; color:var(--text-ter); font-size:13px; line-height:1;
+  transition:background .1s, color .1s; }
+.sb-hdr-btn:hover { background:var(--bg-hover); color:var(--text-sec); }
+.sb-item { display:flex; align-items:center; gap:7px; padding:3px 11px;
+  cursor:pointer; transition:background .1s; color:var(--text-pri); font-size:12.5px; min-height:24px; }
+.sb-item:hover { background:var(--bg-hover); }
+.sb-item.active { background:var(--bg-sel); color:var(--acc); font-weight:500; }
+.sb-item.active .dot { background:var(--acc) !important; }
+.sb-lbl { flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.sb-badge { font-size:10px; font-weight:600; min-width:17px; height:15px; display:flex;
+  align-items:center; justify-content:center; padding:0 4px; border-radius:8px;
+  background:var(--bg-badge); color:var(--text-sec); }
+.sb-item.active .sb-badge { background:var(--acc); color:white; }
+.dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* ═══ HISTORY VIEW ══════════════════════════════════════════════════════════ */
+#historyView { display:flex; flex:1; overflow:hidden; }
+#changesView  { display:none; flex:1; overflow:hidden; }
+
+/* Graph panel */
+.graph-panel { flex:1; display:flex; flex-direction:column; overflow:hidden;
+  border-right:1px solid var(--border); background:var(--bg-content); }
+.graph-hdr { height:34px; padding:0 12px; display:flex; align-items:center; gap:8px;
+  border-bottom:1px solid var(--border-sub); flex-shrink:0; background:var(--bg-panel); }
+.search-wrap { flex:1; position:relative; }
+.search-ico { position:absolute; left:7px; top:50%; transform:translateY(-50%);
+  color:var(--text-ter); pointer-events:none; font-size:11px; }
+.search-box { width:100%; height:24px; background:var(--bg-input); border:1px solid var(--border);
+  border-radius:5px; padding:0 8px 0 24px; font-family:var(--font-ui); font-size:11.5px;
+  color:var(--text-pri); outline:none; transition:border-color .15s, box-shadow .15s; }
+.search-box::placeholder { color:var(--text-ter); }
+.search-box:focus { border-color:var(--acc); box-shadow:0 0 0 2px var(--acc-soft); }
+.commit-list { flex:1; overflow-y:auto; }
+.commit-list::-webkit-scrollbar { width:6px; }
+.commit-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+.commit-row { display:flex; align-items:center; height:34px; padding-right:12px;
+  cursor:pointer; border-bottom:1px solid var(--border-sub); transition:background .1s; position:relative; }
+.commit-row:hover { background:var(--bg-hover); }
+.commit-row.selected { background:var(--bg-sel-row); }
+.commit-row.selected::before { content:''; position:absolute; left:0; top:0; bottom:0;
+  width:2px; background:var(--acc); }
+.c-info { flex:1; display:flex; flex-direction:column; gap:2px; overflow:hidden; padding-left:8px; }
+.c-msg { font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.commit-row.selected .c-msg { color:var(--acc); font-weight:500; }
+.c-meta { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--text-sec); }
+.c-hash { font-family:var(--font-mono); font-size:10.5px; color:var(--text-ter); }
+.c-time { margin-left:auto; flex-shrink:0; color:var(--text-ter); }
+.b-chip { display:inline-flex; align-items:center; padding:1px 6px; border-radius:10px;
+  font-size:10px; font-weight:600; color:white; flex-shrink:0; line-height:1.7; }
+.t-chip { display:inline-flex; align-items:center; padding:1px 6px; border-radius:3px;
+  font-size:10px; font-weight:500; background:var(--bg-badge); color:var(--text-sec);
+  border:1px solid var(--border); flex-shrink:0; line-height:1.7; }
+
+/* Detail panel */
+.detail-panel { width:370px; flex-shrink:0; display:flex; flex-direction:column;
+  background:var(--bg-content); overflow:hidden; }
+.det-hdr { padding:14px 16px 12px; border-bottom:1px solid var(--border-sub);
+  flex-shrink:0; background:var(--bg-panel); }
+.det-hash { font-family:var(--font-mono); font-size:11px; color:var(--acc);
+  font-weight:500; margin-bottom:6px; }
+.det-msg { font-size:13px; font-weight:500; line-height:1.4; color:var(--text-pri); margin-bottom:10px; }
+.det-meta { display:grid; grid-template-columns:58px 1fr; gap:2px 8px; font-size:11.5px; }
+.det-key { color:var(--text-ter); font-weight:500; }
+.det-val { color:var(--text-sec); }
+.det-tabs { display:flex; padding:0 16px; border-bottom:1px solid var(--border);
+  flex-shrink:0; background:var(--bg-panel); }
+.det-tab { padding:7px 10px 6px; font-size:12px; color:var(--text-sec); cursor:pointer;
+  border-bottom:2px solid transparent; margin-bottom:-1px; transition:color .15s; }
+.det-tab:hover { color:var(--text-pri); }
+.det-tab.active { color:var(--acc); border-bottom-color:var(--acc); font-weight:500; }
+.file-list { flex:1; overflow-y:auto; }
+.file-list::-webkit-scrollbar { width:4px; }
+.file-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.f-item { display:flex; align-items:center; gap:8px; padding:6px 16px;
+  cursor:pointer; border-bottom:1px solid var(--border-sub); transition:background .1s; }
+.f-item:hover { background:var(--bg-hover); }
+.f-item.active { background:var(--bg-sel); }
+.f-st { width:16px; height:16px; border-radius:3px; display:flex; align-items:center;
+  justify-content:center; font-size:9px; font-weight:700; flex-shrink:0; }
+.f-st.M { background:#E8F4FF; color:#0066CC; }
+.f-st.A { background:#E6FFED; color:#00875A; }
+.f-st.D { background:#FFF0F0; color:#D92D20; }
+.f-st.R { background:#FFF8E6; color:#C4680A; }
+[data-theme="dark"] .f-st.M { background:rgba(10,132,255,.15); color:#0A84FF; }
+[data-theme="dark"] .f-st.A { background:rgba(48,209,88,.15);  color:#30D158; }
+[data-theme="dark"] .f-st.D { background:rgba(255,69,58,.15);  color:#FF453A; }
+[data-theme="dark"] .f-st.R { background:rgba(255,214,10,.15); color:#FFD60A; }
+.f-name { font-size:12px; color:var(--text-pri); font-family:var(--font-mono); }
+.f-dir  { font-size:10.5px; color:var(--text-ter); font-family:var(--font-mono); }
+.diff-pane { height:210px; border-top:1px solid var(--border); overflow-y:auto; flex-shrink:0; }
+.diff-pane::-webkit-scrollbar { width:4px; }
+.diff-pane::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.diff-bar { padding:5px 12px; background:var(--bg-panel); border-bottom:1px solid var(--border-sub);
+  font-family:var(--font-mono); font-size:11px; color:var(--text-sec);
+  display:flex; align-items:center; justify-content:space-between; }
+.diff-stats { color:var(--success); font-weight:500; }
+.diff-lines { font-family:var(--font-mono); font-size:11.5px; }
+.d-row { display:flex; min-height:18px; line-height:18px; }
+.d-ln { width:36px; text-align:right; padding-right:7px; color:var(--text-ter);
+  background:var(--bg-panel); border-right:1px solid var(--border-sub); flex-shrink:0;
+  font-size:10.5px; user-select:none; }
+.d-code { padding:0 10px; white-space:pre; flex:1; }
+.d-row.add  { background:var(--bg-add); }
+.d-row.del  { background:var(--bg-del); }
+.d-row.add .d-ln { background:var(--bg-add); }
+.d-row.del .d-ln { background:var(--bg-del); }
+.d-row.add .d-code { color:var(--text-add); }
+.d-row.del .d-code { color:var(--text-del); }
+.d-row.hunk { background:var(--bg-hunk); }
+.d-row.hunk .d-ln  { background:var(--bg-hunk); color:var(--acc); }
+.d-row.hunk .d-code { color:var(--acc); }
+.empty-det { flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; color:var(--text-ter); gap:8px; font-size:12.5px; }
+
+/* ═══ CHANGES VIEW ══════════════════════════════════════════════════════════ */
+.changes-layout { display:flex; flex:1; overflow:hidden; }
+
+/* File list pane */
+.ch-files { width:240px; flex-shrink:0; border-right:1px solid var(--border);
+  display:flex; flex-direction:column; overflow:hidden; background:var(--bg-content); }
+.ch-sec { display:flex; flex-direction:column; overflow:hidden; }
+.ch-sec:first-child { flex:1; overflow:hidden; display:flex; flex-direction:column; min-height:80px; }
+.ch-sec:last-child { flex-shrink:0; border-top:1px solid var(--border); }
+.ch-sec-hdr { display:flex; align-items:center; justify-content:space-between;
+  padding:7px 12px 6px; background:var(--bg-panel2); border-bottom:1px solid var(--border-sub);
+  flex-shrink:0; }
+.ch-sec-title { font-size:11px; font-weight:600; text-transform:uppercase;
+  letter-spacing:.05em; display:flex; align-items:center; gap:6px; }
+.ch-sec-title.unstaged { color:var(--warn); }
+.ch-sec-title.staged   { color:var(--success); }
+.ch-sec-act { font-size:11px; font-weight:500; cursor:pointer; color:var(--acc);
+  padding:2px 6px; border-radius:3px; transition:background .1s; }
+.ch-sec-act:hover { background:var(--acc-soft); }
+.ch-file-list { flex:1; overflow-y:auto; padding:3px 0; }
+.ch-file-list::-webkit-scrollbar { width:4px; }
+.ch-file-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.ch-file { display:flex; align-items:center; gap:7px; padding:4px 12px;
+  cursor:pointer; transition:background .1s; min-height:26px; }
+.ch-file:hover { background:var(--bg-hover); }
+.ch-file.active { background:var(--bg-sel); }
+.ch-file-name { flex:1; font-size:12px; font-family:var(--font-mono); color:var(--text-pri);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ch-file-dir  { font-size:10.5px; font-family:var(--font-mono); color:var(--text-ter); margin-top:1px; }
+.ch-file-stat { display:flex; align-items:center; gap:3px; font-size:10px; font-family:var(--font-mono);
+  color:var(--text-ter); flex-shrink:0; }
+.ch-file-stat .a { color:var(--success); font-weight:600; }
+.ch-file-stat .d { color:var(--danger); font-weight:600; }
+
+/* Stage/Unstage hover button on file row */
+.ch-file-action { opacity:0; font-size:10px; font-weight:600; padding:2px 6px;
+  border-radius:3px; border:none; cursor:pointer; font-family:var(--font-ui);
+  transition:opacity .15s, background .1s; flex-shrink:0; }
+.ch-file:hover .ch-file-action { opacity:1; }
+.ch-file-action.stage   { background:var(--success-soft); color:var(--success); border:1px solid var(--success-border); }
+.ch-file-action.unstage { background:var(--acc-soft);     color:var(--acc);     border:1px solid var(--acc-border); }
+.ch-file-action:hover.stage   { background:var(--success); color:white; }
+.ch-file-action:hover.unstage { background:var(--acc); color:white; }
+
+/* Commit box */
+.commit-box { padding:10px 12px; background:var(--bg-panel); display:flex;
+  flex-direction:column; gap:8px; }
+.commit-msg-input { width:100%; height:52px; background:var(--bg-input);
+  border:1px solid var(--border); border-radius:var(--r-sm); padding:7px 9px;
+  font-family:var(--font-ui); font-size:12px; color:var(--text-pri); resize:none; outline:none;
+  transition:border-color .15s, box-shadow .15s; }
+.commit-msg-input::placeholder { color:var(--text-ter); }
+.commit-msg-input:focus { border-color:var(--acc); box-shadow:0 0 0 2.5px var(--acc-soft); }
+.commit-row-btns { display:flex; gap:6px; }
+.btn-amend { flex:0; padding:6px 10px; border-radius:var(--r-sm); background:var(--btn-bg);
+  border:1px solid var(--btn-bdr); cursor:pointer; font-family:var(--font-ui);
+  font-size:11.5px; color:var(--text-sec); transition:background .15s; white-space:nowrap; }
+.btn-amend:hover { background:var(--btn-hov); }
+.btn-commit { flex:1; height:30px; background:var(--acc); border:none; border-radius:var(--r-sm);
+  color:white; font-family:var(--font-ui); font-size:12px; font-weight:600;
+  cursor:pointer; transition:background .15s; }
+.btn-commit:hover { background:var(--acc-hov); }
+.btn-commit:disabled { background:var(--bg-badge); color:var(--text-ter); cursor:not-allowed; }
+
+/* Chunk diff pane */
+.ch-diff-pane { flex:1; display:flex; flex-direction:column; overflow:hidden; background:var(--bg-content); }
+.ch-diff-hdr { height:36px; padding:0 14px; display:flex; align-items:center; gap:10px;
+  border-bottom:1px solid var(--border); flex-shrink:0; background:var(--bg-panel); }
+.ch-diff-file { font-family:var(--font-mono); font-size:12px; color:var(--text-pri); font-weight:500; }
+.ch-diff-stats { font-family:var(--font-mono); font-size:11.5px; }
+.ch-diff-stats .a { color:var(--success); font-weight:600; }
+.ch-diff-stats .d { color:var(--danger); font-weight:600; }
+.ch-diff-scroll { flex:1; overflow-y:auto; }
+.ch-diff-scroll::-webkit-scrollbar { width:6px; }
+.ch-diff-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+/* Hunk block */
+.hunk-block { margin:0; border-bottom:1px solid var(--border-sub); }
+.hunk-header { display:flex; align-items:center; justify-content:space-between;
+  padding:4px 10px 4px 0; background:var(--bg-hunk); border-bottom:1px solid var(--border-sub);
+  border-top:1px solid var(--border-sub); }
+.hunk-label { font-family:var(--font-mono); font-size:11px; color:var(--acc);
+  padding:0 10px; flex:1; }
+.hunk-actions { display:flex; gap:6px; }
+.hunk-btn { display:flex; align-items:center; gap:4px; padding:3px 9px; border-radius:var(--r-sm);
+  border:1px solid; cursor:pointer; font-family:var(--font-ui); font-size:11px;
+  font-weight:500; transition:all .12s; }
+.hunk-btn.stage   { background:var(--success-soft); border-color:var(--success-border); color:var(--success); }
+.hunk-btn.stage:hover   { background:var(--success); border-color:var(--success); color:white; }
+.hunk-btn.discard { background:var(--danger-soft);  border-color:var(--danger-border); color:var(--danger); }
+.hunk-btn.discard:hover { background:var(--danger);  border-color:var(--danger);  color:white; }
+.hunk-btn.unstage { background:var(--acc-soft); border-color:var(--acc-border); color:var(--acc); }
+.hunk-btn.unstage:hover { background:var(--acc); border-color:var(--acc); color:white; }
+
+/* Diff lines in chunk */
+.hunk-lines { font-family:var(--font-mono); font-size:11.5px; }
+.dl { display:flex; min-height:19px; line-height:19px; position:relative; }
+.dl:hover { filter:brightness(.97); }
+[data-theme="dark"] .dl:hover { filter:brightness(1.05); }
+.dl-ln { width:38px; text-align:right; padding-right:7px; color:var(--text-ter);
+  background:var(--bg-panel); border-right:1px solid var(--border-sub); flex-shrink:0;
+  font-size:10.5px; user-select:none; }
+.dl-code { padding:0 12px; white-space:pre; flex:1; overflow:hidden; }
+.dl.add  { background:var(--bg-add); }  .dl.add .dl-ln { background:var(--bg-add); }
+.dl.del  { background:var(--bg-del); }  .dl.del .dl-ln { background:var(--bg-del); }
+.dl.add .dl-code { color:var(--text-add); }
+.dl.del .dl-code { color:var(--text-del); }
+/* Inline stage button on individual lines */
+.dl-stage-line { position:absolute; right:8px; top:50%; transform:translateY(-50%);
+  opacity:0; font-size:10px; font-weight:600; padding:1px 6px; border-radius:3px;
+  border:1px solid; cursor:pointer; font-family:var(--font-ui); transition:opacity .12s; }
+.dl:hover .dl-stage-line { opacity:1; }
+.dl.add .dl-stage-line { background:var(--success-soft); border-color:var(--success-border); color:var(--success); }
+.dl.del .dl-stage-line { background:var(--danger-soft);  border-color:var(--danger-border); color:var(--danger); }
+
+/* Empty diff state */
+.diff-empty { flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; color:var(--text-ter); gap:8px; font-size:12.5px; }
+
+/* ═══ Scrollbar global ════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Titlebar ─────────────────────────────────────── -->
+  <div class="titlebar">
+    <div class="wcs">
+      <div class="wc wc-c"></div><div class="wc wc-m"></div><div class="wc wc-x"></div>
+    </div>
+    <div class="tb-center"><span class="app-name">Bough</span></div>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+  </div>
+
+  <!-- ── Toolbar ──────────────────────────────────────── -->
+  <div class="toolbar">
+
+    <!-- Repo selector -->
+    <div style="position:relative">
+      <div class="repo-btn" onclick="toggleRepoDD(event)" id="repoBtn">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text-sec)"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 1 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8Z"/></svg>
+        <span id="curRepo">my-saas-app</span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="repo-dropdown" id="repoDD">
+        <div class="repo-dd-item active" onclick="selectRepo('my-saas-app',this)">
+          <div><div class="repo-dd-name">my-saas-app</div><div class="repo-dd-path">~/code/my-saas-app</div></div>
+        </div>
+        <div class="repo-dd-item" onclick="selectRepo('api-gateway',this)">
+          <div><div class="repo-dd-name">api-gateway</div><div class="repo-dd-path">~/code/api-gateway</div></div>
+        </div>
+        <div class="repo-dd-item" onclick="selectRepo('design-system',this)">
+          <div><div class="repo-dd-name">design-system</div><div class="repo-dd-path">~/code/design-system</div></div>
+        </div>
+        <div class="repo-dd-sep"></div>
+        <div class="repo-dd-item"><span class="repo-dd-add">＋ Open repository…</span></div>
+      </div>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- View tabs -->
+    <div class="view-tabs">
+      <div class="view-tab active" id="tabHistory" onclick="switchView('history')">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M1.75 2.5a.75.75 0 0 0 0 1.5h12.5a.75.75 0 0 0 0-1.5H1.75zm0 4a.75.75 0 0 0 0 1.5h12.5a.75.75 0 0 0 0-1.5H1.75zm0 4a.75.75 0 0 0 0 1.5H8a.75.75 0 0 0 0-1.5H1.75z"/></svg>
+        History
+      </div>
+      <div class="view-tab" id="tabChanges" onclick="switchView('changes')">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M.75 3h14.5a.75.75 0 0 1 0 1.5H.75A.75.75 0 0 1 .75 3zm2 4h10.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1 0-1.5zm2 4h6.5a.75.75 0 0 1 0 1.5h-6.5a.75.75 0 0 1 0-1.5z"/></svg>
+        Changes
+        <span class="view-tab-badge">3</span>
+      </div>
+    </div>
+
+    <div class="tb-sep"></div>
+    <button class="tb-btn"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="color:var(--acc)"><path d="M1.75 2.5a.75.75 0 0 0 0 1.5h12.5a.75.75 0 0 0 0-1.5H1.75zm0 4a.75.75 0 0 0 0 1.5h12.5a.75.75 0 0 0 0-1.5H1.75zm0 4a.75.75 0 0 0 0 1.5H8a.75.75 0 0 0 0-1.5H1.75z"/></svg>Fetch</button>
+    <button class="tb-btn">↙ Pull</button>
+    <button class="tb-btn">↗ Push</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" style="color:var(--acc); font-weight:500">⎇ Branch</button>
+    <button class="tb-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-sec)"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r="1" fill="currentColor" stroke="none"/></svg>
+      Tag
+    </button>
+    <button class="tb-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-sec)"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+      Stash
+    </button>
+    <div class="tb-spacer"></div>
+    <button class="tb-btn">⌘K</button>
+  </div>
+
+  <!-- ── Main layout ──────────────────────────────────── -->
+  <div class="main-layout">
+
+    <!-- Sidebar (always visible) -->
+    <div class="sidebar">
+      <div class="sb-sec">
+        <div class="sb-hdr">Branches <span class="sb-hdr-btn">＋</span></div>
+        <div class="sb-item active"><span class="dot" style="background:var(--line-main)"></span><span class="sb-lbl">main</span></div>
+        <div class="sb-item"><span class="dot" style="background:var(--line-feat)"></span><span class="sb-lbl">feature/auth</span><span class="sb-badge">2</span></div>
+        <div class="sb-item"><span class="dot" style="background:var(--line-hot)"></span><span class="sb-lbl">hotfix/login</span></div>
+        <div class="sb-item"><span class="dot" style="background:var(--line-rel)"></span><span class="sb-lbl">release/v2.1</span></div>
+        <div class="sb-hdr" style="padding-top:8px;margin-top:4px;border-top:1px solid var(--border-sub)">Remote – origin</div>
+        <div class="sb-item"><span class="dot" style="background:var(--text-ter)"></span><span class="sb-lbl">origin/main</span></div>
+        <div class="sb-item"><span class="dot" style="background:var(--text-ter)"></span><span class="sb-lbl">origin/feature/auth</span></div>
+      </div>
+      <div class="sb-sec">
+        <div class="sb-hdr">Tags</div>
+        <div class="sb-item"><span style="font-size:11px;color:var(--text-ter)">🏷</span><span class="sb-lbl">v2.0.1</span></div>
+        <div class="sb-item"><span style="font-size:11px;color:var(--text-ter)">🏷</span><span class="sb-lbl">v2.0.0</span></div>
+      </div>
+      <div class="sb-sec">
+        <div class="sb-hdr">Stashes</div>
+        <div class="sb-item"><span style="font-size:11px;color:var(--text-ter)">📁</span><span class="sb-lbl" style="color:var(--text-sec)">WIP: draft changes</span></div>
+      </div>
+    </div>
+
+    <!-- ══ HISTORY VIEW ══════════════════════════════════ -->
+    <div id="historyView" style="display:flex;flex:1;overflow:hidden">
+
+      <!-- Commit graph -->
+      <div class="graph-panel">
+        <div class="graph-hdr">
+          <div class="search-wrap">
+            <span class="search-ico">🔍</span>
+            <input class="search-box" type="text" placeholder="Search commits…">
+          </div>
+          <button class="tb-btn" style="flex-shrink:0">≡ All Branches</button>
+        </div>
+        <div class="commit-list" id="commitList"></div>
+      </div>
+
+      <!-- Commit detail -->
+      <div class="detail-panel" id="detailPanel">
+        <div class="empty-det" id="emptyDet">
+          <span style="font-size:28px;opacity:.2">◎</span>
+          Select a commit
+        </div>
+        <div id="detContent" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+          <div class="det-hdr">
+            <div class="det-hash" id="dHash"></div>
+            <div class="det-msg"  id="dMsg"></div>
+            <div class="det-meta">
+              <span class="det-key">Author</span><span class="det-val" id="dAuthor"></span>
+              <span class="det-key">Date</span><span class="det-val" id="dDate"></span>
+              <span class="det-key">Parents</span><span class="det-val" id="dParents"></span>
+            </div>
+          </div>
+          <div class="det-tabs">
+            <div class="det-tab active" onclick="detTab(this,'fl')">Files</div>
+            <div class="det-tab" onclick="detTab(this,'df')">Diff</div>
+          </div>
+          <div class="file-list" id="detFileList"></div>
+          <div class="diff-pane" id="detDiff">
+            <div class="diff-bar">
+              <span id="detDiffFile" style="font-family:var(--font-mono)"></span>
+              <span class="diff-stats" id="detDiffStats"></span>
+            </div>
+            <div class="hunk-lines" id="detDiffLines"></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /historyView -->
+
+    <!-- ══ CHANGES VIEW ══════════════════════════════════ -->
+    <div id="changesView" style="display:none;flex:1;overflow:hidden">
+      <div class="changes-layout">
+
+        <!-- File list -->
+        <div class="ch-files">
+          <!-- Unstaged -->
+          <div class="ch-sec" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+            <div class="ch-sec-hdr">
+              <span class="ch-sec-title unstaged">⬡ Unstaged <span style="opacity:.6;font-weight:400;text-transform:none;letter-spacing:0">(2)</span></span>
+              <span class="ch-sec-act" onclick="stageAll()">Stage All ›</span>
+            </div>
+            <div class="ch-file-list" id="unstagedList"></div>
+          </div>
+          <!-- Staged -->
+          <div class="ch-sec" style="border-top:1px solid var(--border)">
+            <div class="ch-sec-hdr">
+              <span class="ch-sec-title staged">✓ Staged <span style="opacity:.6;font-weight:400;text-transform:none;letter-spacing:0">(1)</span></span>
+              <span class="ch-sec-act" onclick="unstageAll()">‹ Unstage All</span>
+            </div>
+            <div class="ch-file-list" id="stagedList"></div>
+          </div>
+          <!-- Commit box -->
+          <div class="commit-box" style="border-top:1px solid var(--border)">
+            <textarea class="commit-msg-input" placeholder="Commit message (⌘ + Enter to commit)…" id="commitMsgInput"></textarea>
+            <div class="commit-row-btns">
+              <button class="btn-amend">Amend</button>
+              <button class="btn-commit" id="commitBtn">Commit</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Diff pane with chunks -->
+        <div class="ch-diff-pane">
+          <div class="ch-diff-hdr">
+            <span class="ch-diff-file" id="chDiffFile">src/components/Button.tsx</span>
+            <div class="ch-diff-stats"><span class="a">+14</span>&nbsp;<span class="d">−3</span></div>
+            <div style="flex:1"></div>
+            <button class="tb-btn" style="font-size:11px;padding:3px 8px" onclick="toggleDiffMode()">⇄ Side-by-Side</button>
+          </div>
+          <div class="ch-diff-scroll" id="chDiffScroll"></div>
+        </div>
+
+      </div>
+    </div><!-- /changesView -->
+
+  </div><!-- /main-layout -->
+
+</div><!-- /app -->
+
+<script>
+// ── Data ───────────────────────────────────────────────────────────────────
+
+const COMMITS = [
+  { hash:'a3f8c12', msg:'Merge pull request #42: feature/auth → main',
+    author:'Achim Hilwers', date:'vor 2 Stunden', parents:['b7e1d09','c4a2f38'],
+    isMerge:true, branches:[{l:'main',c:'var(--line-main)'},{l:'origin/main',c:'var(--text-ter)'}],
+    col:0, mergeFrom:1,
+    files:[{s:'M',n:'package.json',d:''},{s:'A',n:'useAuth.ts',d:'src/hooks/'},{s:'M',n:'App.tsx',d:'src/'}]},
+  { hash:'c4a2f38', msg:'Add OAuth2 provider support (Google, GitHub)',
+    author:'Maria Schmidt', date:'vor 5 Stunden', parents:['d1b3e90'],
+    isMerge:false, branches:[{l:'feature/auth',c:'var(--line-feat)'}],
+    col:1, files:[{s:'A',n:'oauth.ts',d:'src/auth/'},{s:'M',n:'config.ts',d:'src/'}]},
+  { hash:'d1b3e90', msg:'Implement JWT token refresh & silent renew',
+    author:'Maria Schmidt', date:'gestern', parents:['e9c5a71'],
+    isMerge:false, branches:[], col:1,
+    files:[{s:'M',n:'jwt.ts',d:'src/auth/'},{s:'A',n:'refresh.ts',d:'src/auth/'}]},
+  { hash:'b7e1d09', msg:'Fix critical null pointer in session middleware',
+    author:'Achim Hilwers', date:'gestern', parents:['f2d7c84'],
+    isMerge:false, branches:[{l:'hotfix/login',c:'var(--line-hot)'}], col:0,
+    files:[{s:'M',n:'session.ts',d:'src/middleware/'}]},
+  { hash:'e9c5a71', msg:'Initial auth module setup & directory structure',
+    author:'Maria Schmidt', date:'vor 2 Tagen', parents:['f2d7c84'],
+    isMerge:false, branches:[], col:1, branchFrom:0,
+    files:[{s:'A',n:'index.ts',d:'src/auth/'},{s:'A',n:'types.ts',d:'src/auth/'}]},
+  { hash:'f2d7c84', msg:'Update dependencies: React 19, TypeScript 5.7',
+    author:'Achim Hilwers', date:'vor 3 Tagen', parents:['17a8b65'],
+    isMerge:false, branches:[{l:'v2.0.1',c:'var(--text-sec)',isTag:true}], col:0,
+    files:[{s:'M',n:'package.json',d:''},{s:'M',n:'package-lock.json',d:''}]},
+  { hash:'17a8b65', msg:'Refactor database connection pool for resilience',
+    author:'Lars Weber', date:'vor 4 Tagen', parents:['29c1f03'],
+    isMerge:false, branches:[], col:0,
+    files:[{s:'M',n:'db.ts',d:'src/lib/'},{s:'M',n:'pool.ts',d:'src/lib/'},{s:'D',n:'db-legacy.ts',d:'src/lib/'}]},
+  { hash:'29c1f03', msg:'Add user profile API endpoint with avatar upload',
+    author:'Achim Hilwers', date:'vor 5 Tagen', parents:[],
+    isMerge:false, branches:[], col:0,
+    files:[{s:'A',n:'profile.ts',d:'src/api/'},{s:'M',n:'router.ts',d:'src/api/'}]},
+];
+
+const UNSTAGED_FILES = [
+  { s:'M', n:'Button.tsx', d:'src/components/', add:14, del:3, active:true },
+  { s:'M', n:'globals.css', d:'src/styles/', add:6, del:1, active:false },
+];
+const STAGED_FILES = [
+  { s:'A', n:'useAuth.ts', d:'src/hooks/', add:42, del:0, active:false },
+];
+
+const HUNKS = {
+  'Button.tsx': [
+    { label:'@@ -12,8 +12,22 @@ import React from \'react\'', staged:false,
+      lines:[
+        {t:'ctx', ln:'12', code:' import React from \'react\';'},
+        {t:'ctx', ln:'13', code:' import { cn } from \'../utils\';'},
+        {t:'del', ln:'14', code:'-const Button = ({ children, onClick }) => {'},
+        {t:'add', ln:'',   code:'+interface ButtonProps {'},
+        {t:'add', ln:'',   code:'+  children: React.ReactNode;'},
+        {t:'add', ln:'',   code:'+  onClick?: () => void;'},
+        {t:'add', ln:'',   code:'+  variant?: \'primary\' | \'secondary\' | \'ghost\';'},
+        {t:'add', ln:'',   code:'+  size?: \'sm\' | \'md\' | \'lg\';'},
+        {t:'add', ln:'',   code:'+  disabled?: boolean;'},
+        {t:'add', ln:'',   code:'+}'},
+        {t:'add', ln:'',   code:'+'},
+        {t:'add', ln:'',   code:'+const Button = ({ children, onClick, variant=\'primary\', size=\'md\', disabled }: ButtonProps) => {'},
+        {t:'ctx', ln:'15', code:'   return ('},
+        {t:'del', ln:'16', code:'-    <button onClick={onClick}>'},
+        {t:'add', ln:'',   code:'+    <button'},
+        {t:'add', ln:'',   code:'+      className={cn(styles.btn, styles[variant], styles[size])}'},
+        {t:'add', ln:'',   code:'+      onClick={onClick}'},
+        {t:'add', ln:'',   code:'+      disabled={disabled}'},
+        {t:'add', ln:'',   code:'+    >'},
+        {t:'ctx', ln:'17', code:'       {children}'},
+        {t:'ctx', ln:'18', code:'     </button>'},
+      ]},
+    { label:'@@ -45,6 +59,8 @@ export default Button', staged:false,
+      lines:[
+        {t:'ctx', ln:'45', code:' Button.displayName = \'Button\';'},
+        {t:'ctx', ln:'46', code:''},
+        {t:'add', ln:'',   code:'+// TODO: add Storybook story'},
+        {t:'add', ln:'',   code:'+// TODO: write unit tests'},
+        {t:'ctx', ln:'47', code:' export default Button;'},
+      ]},
+  ],
+  'globals.css': [
+    { label:'@@ -1,4 +1,10 @@ :root', staged:false,
+      lines:[
+        {t:'ctx', ln:'1',  code:' :root {'},
+        {t:'add', ln:'',   code:'+  --color-primary: #0066CC;'},
+        {t:'add', ln:'',   code:'+  --color-primary-hover: #0055B0;'},
+        {t:'add', ln:'',   code:'+  --color-success: #00875A;'},
+        {t:'add', ln:'',   code:'+  --color-danger:  #D92D20;'},
+        {t:'add', ln:'',   code:'+  --radius-sm: 4px;'},
+        {t:'add', ln:'',   code:'+  --radius-md: 8px;'},
+        {t:'del', ln:'2',  code:'-  --primary: blue;'},
+        {t:'ctx', ln:'3',  code:'   --spacing: 8px;'},
+        {t:'ctx', ln:'4',  code:' }'},
+      ]},
+  ],
+  'useAuth.ts': [
+    { label:'@@ -0,0 +1,42 @@ (neue Datei)', staged:true,
+      lines:[
+        {t:'add', ln:'',  code:'+import { useState, useEffect } from \'react\';'},
+        {t:'add', ln:'',  code:'+import { getAuthToken, refreshToken } from \'../auth\';'},
+        {t:'add', ln:'',  code:'+'},
+        {t:'add', ln:'',  code:'+export function useAuth() {'},
+        {t:'add', ln:'',  code:'+  const [user, setUser] = useState(null);'},
+        {t:'add', ln:'',  code:'+  const [loading, setLoading] = useState(true);'},
+        {t:'add', ln:'',  code:'+'},
+        {t:'add', ln:'',  code:'+  useEffect(() => {'},
+        {t:'add', ln:'',  code:'+    const token = getAuthToken();'},
+        {t:'add', ln:'',  code:'+    if (token) setUser(parseToken(token));'},
+        {t:'add', ln:'',  code:'+    setLoading(false);'},
+        {t:'add', ln:'',  code:'+  }, []);'},
+        {t:'add', ln:'',  code:'+'},
+        {t:'add', ln:'',  code:'+  return { user, loading };'},
+        {t:'add', ln:'',  code:'+}'},
+      ]},
+  ],
+};
+
+// ── State ──────────────────────────────────────────────────────────────────
+let selectedCommit = null;
+let currentView = 'history';
+let activeChFile = 'Button.tsx';
+let hunkStates = {}; // key: "filename-hunkIdx" -> staged
+
+// ── Theme ──────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const d = document.documentElement;
+  const dark = d.dataset.theme === 'dark';
+  d.dataset.theme = dark ? 'light' : 'dark';
+  document.getElementById('themeBtn').textContent = dark ? '🌙' : '☀️';
+  renderGraph();
+}
+
+// ── View switch ────────────────────────────────────────────────────────────
+function switchView(v) {
+  currentView = v;
+  document.getElementById('historyView').style.display = v==='history' ? 'flex' : 'none';
+  document.getElementById('changesView').style.display  = v==='changes' ? 'flex' : 'none';
+  document.getElementById('tabHistory').className = 'view-tab' + (v==='history'?' active':'');
+  document.getElementById('tabChanges').className = 'view-tab' + (v==='changes'?' active':'');
+  // Sidebar nur im History-View sichtbar – im Changes-View nicht relevant
+  document.querySelector('.sidebar').style.display = v==='history' ? '' : 'none';
+  if (v==='changes') renderChangesView();
+}
+
+// ── Repo dropdown ──────────────────────────────────────────────────────────
+function toggleRepoDD(e) {
+  e.stopPropagation();
+  document.getElementById('repoDD').classList.toggle('open');
+}
+function selectRepo(name, el) {
+  document.querySelectorAll('.repo-dd-item').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('curRepo').textContent = name;
+  document.getElementById('repoDD').classList.remove('open');
+}
+document.addEventListener('click', ()=>document.getElementById('repoDD').classList.remove('open'));
+
+// ── Graph ──────────────────────────────────────────────────────────────────
+const COL_W=14, ROW_H=34, OX=12, R=4;
+const LCOLS=['var(--line-main)','var(--line-feat)','var(--line-hot)','var(--line-rel)'];
+
+function renderGraph() {
+  const list = document.getElementById('commitList');
+  list.innerHTML = '';
+  COMMITS.forEach((c,i) => {
+    const row = document.createElement('div');
+    row.className = 'commit-row' + (selectedCommit===c.hash?' selected':'');
+    row.onclick = ()=>selectCommit(c.hash);
+    const cy = ROW_H/2;
+    let svg = `<svg width="80" height="${ROW_H}" style="flex-shrink:0;overflow:visible">`;
+    // vertical lines
+    getActiveCols(i).forEach(col=>{
+      if(col===c.col&&!c.isMerge) return;
+      const x=OX+col*COL_W;
+      svg+=`<line x1="${x}" y1="0" x2="${x}" y2="${ROW_H}" stroke="${LCOLS[col]||LCOLS[0]}" stroke-width="1.5"/>`;
+    });
+    if(c.isMerge&&c.mergeFrom!==undefined){
+      const x0=OX+c.col*COL_W, x1=OX+c.mergeFrom*COL_W;
+      svg+=`<path d="M${x1},0 C${x1},${cy} ${x0},${cy} ${x0},${cy}" stroke="${LCOLS[c.mergeFrom]||LCOLS[0]}" stroke-width="1.5" fill="none"/>`;
+      svg+=`<line x1="${x0}" y1="${cy}" x2="${x0}" y2="0" stroke="${LCOLS[c.col]||LCOLS[0]}" stroke-width="1.5"/>`;
+    }
+    if(c.branchFrom!==undefined){
+      const x0=OX+c.branchFrom*COL_W, x1=OX+c.col*COL_W;
+      svg+=`<path d="M${x0},${cy} C${x0},${ROW_H} ${x1},${ROW_H} ${x1},${ROW_H}" stroke="${LCOLS[c.col]||LCOLS[0]}" stroke-width="1.5" fill="none"/>`;
+      svg+=`<line x1="${x0}" y1="0" x2="${x0}" y2="${cy}" stroke="${LCOLS[c.branchFrom]||LCOLS[0]}" stroke-width="1.5"/>`;
+      svg+=`<line x1="${x0}" y1="${cy}" x2="${x0}" y2="${ROW_H}" stroke="${LCOLS[c.branchFrom]||LCOLS[0]}" stroke-width="1.5"/>`;
+    }
+    if(!c.isMerge&&c.branchFrom===undefined){
+      const x=OX+c.col*COL_W;
+      if(i>0) svg+=`<line x1="${x}" y1="0" x2="${x}" y2="${cy}" stroke="${LCOLS[c.col]||LCOLS[0]}" stroke-width="1.5"/>`;
+      if(i<COMMITS.length-1) svg+=`<line x1="${x}" y1="${cy}" x2="${x}" y2="${ROW_H}" stroke="${LCOLS[c.col]||LCOLS[0]}" stroke-width="1.5"/>`;
+    }
+    const cx=OX+c.col*COL_W;
+    const bg=document.documentElement.dataset.theme==='dark'?'#1C1C1E':'#FFFFFF';
+    svg+=`<circle cx="${cx}" cy="${cy}" r="${c.isMerge?5:R}" fill="${bg}" stroke="${LCOLS[c.col]||LCOLS[0]}" stroke-width="2"/>`;
+    if(c.isMerge) svg+=`<circle cx="${cx}" cy="${cy}" r="2" fill="${LCOLS[c.col]||LCOLS[0]}"/>`;
+    svg+='</svg>';
+    const chips=(c.branches||[]).map(b=>b.isTag
+      ?`<span class="t-chip">🏷 ${b.l}</span>`
+      :`<span class="b-chip" style="background:${b.c}">${b.l}</span>`).join('');
+    row.innerHTML=svg+`<div class="c-info">
+      <div class="c-msg">${chips?chips+' ':''}<span>${esc(c.msg)}</span></div>
+      <div class="c-meta"><span>${esc(c.author)}</span><span class="c-hash">${c.hash}</span><span class="c-time">${c.date}</span></div>
+    </div>`;
+    list.appendChild(row);
+  });
+}
+
+function getActiveCols(ri){
+  const s=new Set();
+  COMMITS.forEach((c,i)=>{if(i<=ri){s.add(c.col);if(c.mergeFrom!=null&&i<=ri)s.add(c.mergeFrom);}});
+  return[...s];
+}
+
+// ── Commit detail ──────────────────────────────────────────────────────────
+function selectCommit(hash){
+  selectedCommit=hash; renderGraph();
+  const c=COMMITS.find(x=>x.hash===hash); if(!c) return;
+  document.getElementById('emptyDet').style.display='none';
+  const dc=document.getElementById('detContent');
+  dc.style.display='flex'; dc.style.flexDirection='column'; dc.style.flex='1'; dc.style.overflow='hidden';
+  document.getElementById('dHash').textContent=c.hash;
+  document.getElementById('dMsg').textContent=c.msg;
+  document.getElementById('dAuthor').textContent=c.author;
+  document.getElementById('dDate').textContent=c.date;
+  document.getElementById('dParents').textContent=c.parents.length?c.parents.join(', '):'—';
+  const fl=document.getElementById('detFileList');
+  fl.innerHTML=c.files.map((f,i)=>`
+    <div class="f-item${i===0?' active':''}" onclick="detSelectFile(this,'${f.d}${f.n}')">
+      <div class="f-st ${f.s}">${f.s}</div>
+      <div><div class="f-name">${f.n}</div>${f.d?`<div class="f-dir">${f.d}</div>`:''}</div>
+    </div>`).join('');
+  detSelectFile(null, c.files[0].d+c.files[0].n);
+}
+
+function detSelectFile(el, name){
+  if(el){document.querySelectorAll('.f-item').forEach(x=>x.classList.remove('active')); el.classList.add('active');}
+  document.getElementById('detDiffFile').textContent=name;
+  document.getElementById('detDiffStats').innerHTML='<span style="color:var(--success);font-weight:600">+14</span> <span style="color:var(--danger);font-weight:600">−3</span>';
+  const lines=document.getElementById('detDiffLines');
+  const sample=[
+    {t:'hunk',code:'@@ -14,7 +14,18 @@ import { signToken }'},
+    {t:'ctx',ln:'14',code:' export async function refreshToken(token: string) {'},
+    {t:'del',ln:'15',code:'-  if (!payload) throw new Error("invalid");'},
+    {t:'add',ln:'',  code:'+  if (!payload) throw new TokenExpiredError("expired");'},
+    {t:'add',ln:'',  code:'+  await auditLog("token.refresh", payload.sub);'},
+    {t:'ctx',ln:'16',code:'   return signToken(payload);'},
+    {t:'ctx',ln:'17',code:' }'},
+  ];
+  let ln=14;
+  lines.innerHTML=sample.map(l=>{
+    const cls=l.t==='add'?'add':l.t==='del'?'del':l.t==='hunk'?'hunk':'';
+    const num=l.t==='ctx'?ln++:l.t==='del'?ln++:'';
+    const pfx=l.t==='add'?'+':l.t==='del'?'-':l.t==='hunk'?'':' ';
+    return`<div class="d-row ${cls}"><div class="d-ln">${l.ln||num||''}</div><div class="d-code">${pfx}${esc(l.code.slice(1))}</div></div>`;
+  }).join('');
+}
+
+function detTab(el, tab){
+  document.querySelectorAll('.det-tab').forEach(t=>t.classList.remove('active')); el.classList.add('active');
+  document.getElementById('detFileList').style.display=tab==='fl'?'':'none';
+  document.getElementById('detDiff').style.display=tab==='df'?'':'';
+}
+
+// ── Changes View ───────────────────────────────────────────────────────────
+function renderChangesView(){
+  // Unstaged
+  const uList=document.getElementById('unstagedList');
+  uList.innerHTML=UNSTAGED_FILES.map((f,i)=>`
+    <div class="ch-file${f.active?' active':''}" onclick="chSelectFile(this,'${f.n}',false)">
+      <div class="f-st ${f.s}">${f.s}</div>
+      <div style="flex:1;overflow:hidden"><div class="ch-file-name">${f.n}</div><div class="ch-file-dir">${f.d}</div></div>
+      <div class="ch-file-stat"><span class="a">+${f.add}</span> <span class="d">−${f.del}</span></div>
+      <button class="ch-file-action stage" onclick="stageFile(event,'${f.n}')">↑ Stage</button>
+    </div>`).join('');
+  // Staged
+  const sList=document.getElementById('stagedList');
+  sList.innerHTML=STAGED_FILES.map((f,i)=>`
+    <div class="ch-file${f.active?' active':''}" onclick="chSelectFile(this,'${f.n}',true)">
+      <div class="f-st ${f.s}">${f.s}</div>
+      <div style="flex:1;overflow:hidden"><div class="ch-file-name">${f.n}</div><div class="ch-file-dir">${f.d}</div></div>
+      <div class="ch-file-stat"><span class="a">+${f.add}</span></div>
+      <button class="ch-file-action unstage" onclick="unstageFile(event,'${f.n}')">↓ Unstage</button>
+    </div>`).join('');
+  renderChunkDiff(activeChFile);
+}
+
+function chSelectFile(el, name, staged){
+  document.querySelectorAll('.ch-file').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  activeChFile=name;
+  renderChunkDiff(name);
+}
+
+function renderChunkDiff(filename){
+  document.getElementById('chDiffFile').textContent=filename;
+  const hunks=HUNKS[filename];
+  const scroll=document.getElementById('chDiffScroll');
+  if(!hunks){ scroll.innerHTML=`<div class="diff-empty"><span style="font-size:24px;opacity:.2">◎</span>Select a file</div>`; return; }
+
+  const isStaged=STAGED_FILES.some(f=>f.n===filename);
+  scroll.innerHTML=hunks.map((h,hi)=>{
+    const key=`${filename}-${hi}`;
+    const staged=hunkStates[key]!=null ? hunkStates[key] : isStaged;
+    const actionBtns=staged
+      ? `<button class="hunk-btn unstage" onclick="toggleHunk('${filename}',${hi},false)">↓ Unstage</button>`
+      : `<button class="hunk-btn stage" onclick="toggleHunk('${filename}',${hi},true)">↑ Stage Chunk</button>
+         <button class="hunk-btn discard" onclick="discardHunk('${filename}',${hi})">✕ Discard</button>`;
+    let lnCounter=parseInt((h.label.match(/@@ -(\d+)/)||['','1'])[1]);
+    const lineHtml=h.lines.map(l=>{
+      const cls=l.t==='add'?'add':l.t==='del'?'del':'ctx';
+      const num=l.t==='ctx'?lnCounter++:l.t==='del'?lnCounter++:'';
+      const pfx=l.t==='add'?'+':l.t==='del'?'-':' ';
+      const lineBtn=l.t==='add'
+        ?`<button class="dl-stage-line" onclick="stageLine(event)">↑</button>`
+        :l.t==='del'
+        ?`<button class="dl-stage-line" onclick="stageLine(event)">✕</button>`:'';
+      return`<div class="dl ${cls}"><div class="dl-ln">${l.ln||num||''}</div><div class="dl-code">${pfx}${esc(l.code.slice(1))}</div>${lineBtn}</div>`;
+    }).join('');
+    return`<div class="hunk-block">
+      <div class="hunk-header">
+        <span class="hunk-label">${esc(h.label)}</span>
+        <div class="hunk-actions">${actionBtns}</div>
+      </div>
+      <div class="hunk-lines">${lineHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHunk(filename, hi, stage){
+  const key=`${filename}-${hi}`;
+  hunkStates[key]=stage;
+  renderChunkDiff(filename);
+  flashMsg(stage ? '✓ Chunk staged' : '↓ Chunk unstaged');
+}
+
+function discardHunk(filename, hi){
+  flashMsg('✕ Chunk discarded', 'danger');
+}
+
+function stageLine(e){ e.stopPropagation(); flashMsg('✓ Line staged'); }
+
+function stageFile(e, name){ e.stopPropagation(); flashMsg(`✓ ${name} fully staged`); }
+function unstageFile(e, name){ e.stopPropagation(); flashMsg(`↓ ${name} un-gestaged`); }
+function stageAll(){ flashMsg('✓ All files staged'); }
+function unstageAll(){ flashMsg('↓ All files unstaged'); }
+function toggleDiffMode(){ flashMsg('⇄ Side-by-Side mode'); }
+
+// ── Flash notification ──────────────────────────────────────────────────────
+let flashT;
+function flashMsg(msg, type='success'){
+  clearTimeout(flashT);
+  let n=document.getElementById('flashNote');
+  if(!n){ n=document.createElement('div'); n.id='flashNote';
+    Object.assign(n.style, {position:'fixed',bottom:'24px',left:'50%',transform:'translateX(-50%)',
+      padding:'8px 16px',borderRadius:'8px',fontSize:'12px',fontFamily:'var(--font-ui)',
+      fontWeight:'500',zIndex:'999',transition:'opacity .3s',boxShadow:'0 4px 16px rgba(0,0,0,.2)'}); document.body.appendChild(n); }
+  n.textContent=msg;
+  n.style.background=type==='danger'?'var(--danger)':'var(--success)';
+  n.style.color='white'; n.style.opacity='1';
+  flashT=setTimeout(()=>{ n.style.opacity='0'; },1800);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderGraph();
+setTimeout(()=>{ selectCommit(COMMITS[0].hash); }, 80);
+</script>
+</body>
+</html>
