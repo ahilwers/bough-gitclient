@@ -1,0 +1,23 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "Bough",
+  "outputfilename": "Bough",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Achim Hilwers",
+    "email": "achim@hilwers.net"
+  },
+  "info": {
+    "companyName": "Achim Hilwers",
+    "productName": "Bough",
+    "productVersion": "0.1.0",
+    "copyright": "Copyright 2026",
+    "comments": "A beautiful Git GUI client"
+  },
+  "nsisType": "multiple",
+  "obfuscated": false,
+  "garbleargs": ""
+}

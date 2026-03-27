@@ -1,0 +1,122 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project: Bough
+
+A cross-platform, native Git GUI client for macOS (primary), Windows, and Linux. One-time purchase with a 30-day free trial. No subscription, no bundled Chromium.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Desktop framework | Wails 2 (Go backend + native WebView, typed IPC) |
+| Backend | Go 1.22+ |
+| Git reads | go-git v5 |
+| Git writes (push/pull/fetch) | CLI exec.Command (for auth, GPG, hooks) |
+| Filesystem watching | fsnotify |
+| Frontend | React 19 + TypeScript 5 |
+| Styling | Tailwind CSS 4 + CSS custom properties design tokens |
+| UI components | shadcn/ui + Radix UI |
+| State | Zustand |
+| Async/cache | TanStack Query v5 |
+| Diff viewer | Monaco Editor |
+| Animations | Framer Motion |
+| Auto-update | Sparkle 2 (macOS), WinSparkle (Windows), AppImageUpdate (Linux) |
+| Licensing | Ed25519-signed keys, OS keychain storage, offline validation |
+
+## Development Commands
+
+All Wails commands must be run from `app/`:
+
+```bash
+# Start dev server (hot reload, Go + frontend)
+cd app && wails dev
+
+# Production build  →  app/build/bin/Bough.app
+cd app && wails build
+
+# Go dependencies
+cd app && go mod tidy
+
+# Frontend only
+cd app/frontend && npm install
+cd app/frontend && npm run dev
+cd app/frontend && npm run build
+```
+
+## Repository Layout
+
+```
+app/            # Wails app (once scaffolded per plans/01-setup.md)
+  main.go
+  app.go        # Go backend methods bound to frontend via Wails
+  frontend/     # React + TypeScript SPA
+    src/
+      components/
+      hooks/
+      store/    # Zustand store
+      i18n/     # EN + DE translations
+licenseserver/  # Separate Go HTTP service for license activation
+plans/          # Step-by-step implementation plans (read these before coding)
+docs/           # Research, design spec, prototype
+```
+
+## Architecture
+
+### IPC Pattern
+Go methods on the `App` struct are automatically bound to the frontend by Wails. The frontend calls them as typed async functions. Never use raw JSON over stdin/stdout.
+
+### Git Backend Strategy
+- Use **go-git** for all read operations (log, diff, status, branches, refs).
+- Use **exec.Command git** for write operations that need credentials or hooks (push, pull, fetch, commit signing).
+- `RepoStatus`, `CommitNode`, `DiffFile`, `DiffHunk`, `DiffLine`, `FileStatus`, `WorktreeInfo` are the canonical shared types defined in the Go backend and mirrored as TypeScript interfaces.
+
+### Frontend State
+- **Zustand store**: theme, active view, selected commit hash, selected file, notifications, sidebar collapse state.
+- **TanStack Query**: all Go backend calls go through query/mutation hooks. Keys follow `[entity, repoPath, ...args]` pattern.
+- Custom hooks (`useCommits`, `useStatus`, `useBranches`, `useWorktrees`) encapsulate query logic and are the only way components access backend data.
+
+### Commit Graph
+Rendered on a `<canvas>` (Canvas 2D API) for performance. DOM rows are absolutely positioned in sync with the canvas scroll position. Column/color layout is computed in Go and returned as part of `CommitNode`.
+
+### Styling
+All colors, spacing, and layout constants use CSS custom properties defined in `global.css`. Tailwind utilities reference these tokens via `var(--token-name)`. Do not hardcode color values. Light and dark themes are both defined at `:root` level, toggled by a class on `<html>`.
+
+Key layout constants: titlebar 40px, toolbar 44px, sidebar 200px, commit row 34px.
+
+### Design Tokens (CSS custom properties)
+- Background: `--bg-window`, `--bg-titlebar`, `--bg-toolbar`, `--bg-sidebar`, `--bg-content`, `--bg-panel`
+- Text: `--text-pri`, `--text-sec`, `--text-ter`, `--text-acc`
+- Accent/semantic: `--acc`, `--danger`, `--success`, `--warn`
+- Diff: `--bg-add`, `--bg-del`, `--bg-hunk`, `--text-add`, `--text-del`
+- Graph lines: `--line-0` through `--line-7`
+- Borders: `--border-sub`, `--border`, `--border-str`
+
+### Chunk-Level Staging
+The Changes view supports per-hunk and per-line staging. `StageHunk` / `UnstageHunk` / `DiscardHunk` Go methods accept a constructed patch string. The frontend's `diffUtils` module is responsible for building minimal valid patches from selected lines.
+
+### Auto-Update
+Version is embedded at compile time via `-ldflags`. A single appcast XML is served at a known URL; each platform's updater library polls it. EdDSA signatures are required on all update artifacts.
+
+### Licensing
+Ed25519 key pairs: private key on license server, public key embedded in binary. License keys are validated offline. OS keychain is used for storage (no plaintext files). Multi-seat: 1 license = 2 activations. Revocation checked via HTTP ~130 days post-activation.
+
+## Implementation Plans
+
+Before implementing any feature, read the relevant plan file in `plans/`:
+
+| File | Topic |
+|------|-------|
+| `plans/00-overview.md` | Phase roadmap, key decisions |
+| `plans/01-setup.md` | Wails scaffold, all dependencies, global CSS tokens, i18n |
+| `plans/02-git-backend.md` | Go types, backend methods |
+| `plans/03-commit-graph.md` | Canvas graph renderer |
+| `plans/04-frontend.md` | App shell, toolbar, sidebar, Zustand store |
+| `plans/05-history-view.md` | History view, CommitDetailPanel, Monaco diff |
+| `plans/06-changes-view.md` | Changes view, hunk staging, CommitBox |
+| `plans/07-worktrees.md` | Worktree management UI |
+| `plans/08-updates-distribution.md` | CI/CD, code signing, appcast |
+| `plans/09-licensing.md` | Trial system, license server |
+
+Each plan ends with a verification checklist — use it to confirm completeness.
