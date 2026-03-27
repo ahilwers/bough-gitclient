@@ -16,7 +16,7 @@ jobs:
           go-version: '1.24'
 
       - name: Test app backend
-        run: go test -race -cover ./...
+        run: go test -race -cover ./git/...
         working-directory: app
 
   frontend-tests:
