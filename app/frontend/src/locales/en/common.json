@@ -1,0 +1,60 @@
+{
+  "app": {
+    "name": "Bough"
+  },
+  "toolbar": {
+    "fetch": "Fetch",
+    "pull": "Pull",
+    "push": "Push",
+    "branch": "Branch",
+    "stash": "Stash",
+    "tag": "Tag"
+  },
+  "views": {
+    "history": "History",
+    "changes": "Changes"
+  },
+  "sidebar": {
+    "branches": "Branches",
+    "remotes": "Remote",
+    "tags": "Tags",
+    "stashes": "Stashes",
+    "worktrees": "Worktrees",
+    "newWorktree": "New Worktree"
+  },
+  "staging": {
+    "unstaged": "Unstaged",
+    "staged": "Staged",
+    "stageAll": "Stage All",
+    "unstageAll": "Unstage All",
+    "stageChunk": "Stage chunk",
+    "discardChunk": "Discard",
+    "unstageChunk": "Unstage",
+    "commitMessage": "Commit message (\u2318 + Enter to commit)\u2026",
+    "amend": "Amend",
+    "commit": "Commit"
+  },
+  "commits": {
+    "selectPrompt": "Select a commit",
+    "files": "Files",
+    "diff": "Diff",
+    "author": "Author",
+    "date": "Date",
+    "parents": "Parents"
+  },
+  "worktrees": {
+    "switchTo": "Switch to this worktree",
+    "openInFinder": "Open in Finder",
+    "openInExplorer": "Open in Explorer",
+    "openInNewWindow": "Open in new window",
+    "remove": "Remove worktree",
+    "newBranch": "Branch",
+    "newPath": "Path",
+    "create": "Create Worktree",
+    "cancel": "Cancel"
+  },
+  "errors": {
+    "notARepo": "Not a git repository",
+    "generic": "An error occurred"
+  }
+}
