@@ -442,6 +442,17 @@ html, body { height: 100%; font-family: var(--font-ui); font-size: 12px;
 .diff-empty { flex:1; display:flex; flex-direction:column; align-items:center;
   justify-content:center; color:var(--text-ter); gap:8px; font-size:12.5px; }
 
+/* ═══ Worktree sidebar elements ══════════════════════════════════════════ */
+.sb-add-btn { background:transparent; border:none; cursor:pointer; padding:1px 3px;
+  border-radius:var(--r-sm); color:var(--text-ter); display:flex; align-items:center;
+  transition:color .15s, background .15s; }
+.sb-add-btn:hover { color:var(--text-pri); background:var(--bg-hover); }
+.sb-wt { gap:5px; }
+.wt-chip { font-family:var(--font-mono); font-size:9.5px; font-weight:600; padding:1px 5px;
+  border-radius:8px; flex-shrink:0; max-width:80px; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; }
+.wt-dirty { color:var(--warn); font-size:9px; flex-shrink:0; line-height:1; }
+
 /* ═══ Scrollbar global ════════════════════════════════════════════════════ */
 ::-webkit-scrollbar { width:6px; height:6px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -535,12 +546,52 @@ html, body { height: 100%; font-family: var(--font-ui); font-size: 12px;
       </div>
       <div class="sb-sec">
         <div class="sb-hdr">Tags</div>
-        <div class="sb-item"><span style="font-size:11px;color:var(--text-ter)">🏷</span><span class="sb-lbl">v2.0.1</span></div>
-        <div class="sb-item"><span style="font-size:11px;color:var(--text-ter)">🏷</span><span class="sb-lbl">v2.0.0</span></div>
+        <div class="sb-item">
+          <!-- Lucide: Tag -->
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--text-ter);flex-shrink:0"><path d="M12 2H2v10l10 10 10-10L12 2z"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/></svg>
+          <span class="sb-lbl">v2.0.1</span>
+        </div>
+        <div class="sb-item">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--text-ter);flex-shrink:0"><path d="M12 2H2v10l10 10 10-10L12 2z"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/></svg>
+          <span class="sb-lbl">v2.0.0</span>
+        </div>
       </div>
       <div class="sb-sec">
         <div class="sb-hdr">Stashes</div>
-        <div class="sb-item"><span style="font-size:11px;color:var(--text-ter)">📁</span><span class="sb-lbl" style="color:var(--text-sec)">WIP: draft changes</span></div>
+        <div class="sb-item">
+          <!-- Lucide: Archive -->
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--text-ter);flex-shrink:0"><rect x="2" y="3" width="20" height="4" rx="1"/><path d="M4 7v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7"/><path d="M10 11h4"/></svg>
+          <span class="sb-lbl" style="color:var(--text-sec)">WIP: draft changes</span>
+        </div>
+      </div>
+      <div class="sb-sec">
+        <div class="sb-hdr" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Worktrees</span>
+          <button class="sb-add-btn" onclick="showWorktreeDialog()" title="Add worktree">
+            <!-- Lucide: Plus -->
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+        <!-- Primary worktree -->
+        <div class="sb-item sb-wt active" onclick="selectWorktree(this,'main')" title="~/code/my-saas-app (primary)">
+          <!-- Lucide: Layers -->
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;color:var(--acc)"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          <span class="sb-lbl" style="flex:1;overflow:hidden;text-overflow:ellipsis">~/code/my-saas-app</span>
+          <span class="wt-chip" style="background:var(--line-main);color:#fff">main</span>
+        </div>
+        <!-- Linked worktree – feature branch, dirty -->
+        <div class="sb-item sb-wt" onclick="selectWorktree(this,'feature/auth')" title="~/code/my-saas-app-auth (feature/auth)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;color:var(--text-ter)"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          <span class="sb-lbl" style="flex:1;overflow:hidden;text-overflow:ellipsis">…/my-saas-app-auth</span>
+          <span class="wt-dirty" title="Uncommitted changes">●</span>
+          <span class="wt-chip" style="background:var(--line-feat);color:#fff">feature/auth</span>
+        </div>
+        <!-- Linked worktree – hotfix -->
+        <div class="sb-item sb-wt" onclick="selectWorktree(this,'hotfix/login')" title="~/code/my-saas-app-hotfix (hotfix/login)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="flex-shrink:0;color:var(--text-ter)"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          <span class="sb-lbl" style="flex:1;overflow:hidden;text-overflow:ellipsis">…/my-saas-app-hotfix</span>
+          <span class="wt-chip" style="background:var(--line-hot);color:#fff">hotfix/login</span>
+        </div>
       </div>
     </div>
 
@@ -1004,6 +1055,18 @@ function flashMsg(msg, type='success'){
   n.style.background=type==='danger'?'var(--danger)':'var(--success)';
   n.style.color='white'; n.style.opacity='1';
   flashT=setTimeout(()=>{ n.style.opacity='0'; },1800);
+}
+
+// ── Worktrees ──────────────────────────────────────────────────────────────
+function selectWorktree(el, branch) {
+  document.querySelectorAll('.sb-wt').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  showFlash('Switched to worktree: ' + branch, false);
+}
+function showWorktreeDialog() {
+  // In the real app this opens a sheet/dialog for branch + path input.
+  // In the prototype we just show a flash notification.
+  showFlash('New Worktree: choose branch and path…', false);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

@@ -244,7 +244,8 @@ Dieser Algorithmus wird im **Go-Backend** implementiert und als vorberechnetes D
 │  ├ Tags     │  ●──╮                 │                        │
 │  ├ Remotes  │  ●  ●                 │ ─────────────────────  │
 │  ├ Stashes  │  │  ●─── hotfix      │ DIFF VIEWER            │
-│  └ Submod.  │  ●──╯                 │ (Monaco DiffEditor)   │
+│  ├ Worktrees│  ●──╯                 │ (Monaco DiffEditor)   │
+│  └ Submod.  │  ●                    │                        │
 │             │  ●                    │                        │
 │             │  ●                    │                        │
 ├─────────────┴────────────────────────┴───────────────────────┤
@@ -272,17 +273,67 @@ Dieser Algorithmus wird im **Go-Backend** implementiert und als vorberechnetes D
 - Interaktiver Rebase (drag & drop im Graph)
 - Cherry-Pick
 - Tag-Management
+- Worktree-Verwaltung (erstellen, wechseln, entfernen)
 - Submodule-Support
 - Blame-Viewer
 - Integriertes Merge-Tool (3-Way)
 
 **Version 2.0:**
 - GitLab/GitHub PR/MR Integration (optional, opt-in)
-- Worktrees
 - Partial Clone / Sparse Checkout
 - CI-Status-Badges im Commit-Graph
 
-### 7.3 State Management Architektur
+### 7.3 Worktree-Verwaltung
+
+Git Worktrees erlauben es, mehrere Working Directories gleichzeitig mit demselben Repository zu verbinden – jeder Worktree prüft einen anderen Branch aus, teilt sich aber dasselbe `.git`-Objektverzeichnis. Das ist ideal für paralleles Arbeiten an mehreren Features oder Bugfixes ohne ständiges Stashen und Branch-Wechseln.
+
+**Backend (Go / go-git):**
+
+go-git bietet native Worktree-Unterstützung über `repository.Worktrees()`. Für das Erstellen und Entfernen wird auf CLI-Git delegiert (analog zur Push/Pull-Strategie), da Worktrees Dateisystemoperationen erfordern, die go-git nicht vollständig abdeckt.
+
+```go
+// git/worktrees.go
+
+type WorktreeInfo struct {
+    Path        string // absoluter Pfad des Worktrees
+    Branch      string // ausgecheckter Branch
+    Head        string // aktueller Commit-Hash (7 Zeichen)
+    IsMain      bool   // true für den primären Worktree
+    IsDirty     bool   // true wenn uncommitted changes vorhanden
+}
+
+func (a *App) ListWorktrees(repoPath string) ([]WorktreeInfo, error) {
+    // go-git: repo.Worktrees() auflisten
+}
+
+func (a *App) AddWorktree(repoPath, branch, targetPath string) error {
+    // CLI: git worktree add <path> <branch>
+}
+
+func (a *App) RemoveWorktree(repoPath, worktreePath string) error {
+    // CLI: git worktree remove <path>
+}
+```
+
+**Frontend (React):**
+
+Worktrees erscheinen als eigene Sektion in der Sidebar unterhalb von Stashes. Jeder Eintrag zeigt:
+- **Pfad** (relativ zum Home-Verzeichnis, gekürzt)
+- **Branch-Name** als farbiger Chip
+- **Dirty-Indikator** (kleiner oranger Punkt wenn uncommitted changes)
+- **Kontext-Menü**: In Finder öffnen / Als aktives Repo setzen / Worktree entfernen
+
+Ein Klick auf einen Worktree-Eintrag wechselt das aktive Repository in Bough auf diesen Worktree – der Commit-Graph und die Changes-View zeigen dann den Zustand dieses Worktrees.
+
+Das Erstellen eines neuen Worktrees erfolgt über einen „+" Button im Worktree-Sektionsheader, der einen Dialog öffnet mit:
+- Branch-Auswahl (bestehend oder neu anlegen)
+- Zielpfad (default: `../repo-name-branch-name`)
+
+**fsnotify-Integration:**
+
+Alle Worktree-Pfade werden vom fsnotify-Watcher überwacht. Änderungen in jedem Worktree lösen ein IPC-Event aus, das die UI des entsprechenden Worktrees aktualisiert.
+
+### 7.4 State Management Architektur
 
 ```typescript
 // Zustand Store - vereinfacht
@@ -291,6 +342,8 @@ interface GitStore {
   activeRepo: string | null;
   commits: Commit[];
   branches: Branch[];
+  worktrees: Worktree[];        // list of all linked worktrees
+  activeWorktree: string | null; // path of the active worktree
   workingCopy: WorkingCopyStatus;
   selectedCommit: string | null;
 
@@ -298,6 +351,9 @@ interface GitStore {
   fetchCommits: (repoPath: string) => Promise<void>;
   stageFile: (filePath: string) => Promise<void>;
   createCommit: (message: string) => Promise<void>;
+  fetchWorktrees: (repoPath: string) => Promise<void>;
+  addWorktree: (branch: string, path: string) => Promise<void>;
+  removeWorktree: (path: string) => Promise<void>;
 }
 ```
 
@@ -349,8 +405,9 @@ git-client/
 │   ├── diff.go          # Diff-Berechnung (go-git)
 │   ├── branches.go      # Branch-Operationen
 │   ├── staging.go       # Stage/Unstage (go-git)
+│   ├── worktrees.go     # Worktree-Verwaltung (go-git + CLI)
 │   ├── cli.go           # CLI-Git Wrapper (exec.Command)
-│   └── watcher.go       # fsnotify Filesystem-Watcher
+│   └── watcher.go       # fsnotify Filesystem-Watcher (alle Worktrees)
 │
 └── frontend/            # React Frontend
     ├── src/
@@ -361,9 +418,10 @@ git-client/
     │   │   ├── Sidebar/         # Navigation
     │   │   └── Toolbar/         # Aktionen
     │   ├── stores/
-    │   │   └── gitStore.ts      # Zustand Store
+    │   │   └── gitStore.ts      # Zustand Store (inkl. Worktree State)
     │   ├── hooks/
-    │   │   └── useGitData.ts    # TanStack Query Hooks
+    │   │   ├── useGitData.ts    # TanStack Query Hooks
+    │   │   └── useWorktrees.ts  # Worktree-spezifische Queries + Mutations
     │   └── App.tsx
     └── wailsjs/             # Auto-generierte Go Bindings
         └── go/main/App.d.ts # TypeScript-Typen für Go-Funktionen
