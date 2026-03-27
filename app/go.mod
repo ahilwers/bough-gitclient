@@ -3,6 +3,7 @@ module bough
 go 1.24.0
 
 require (
+	github.com/fsnotify/fsnotify v1.8.0
 	github.com/go-git/go-git/v5 v5.13.2
 	github.com/wailsapp/wails/v2 v2.10.0
 )

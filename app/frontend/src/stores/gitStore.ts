@@ -14,6 +14,10 @@ interface GitStore {
   activeRepo: string | null
   recentRepos: string[]
 
+  // Selection state (used by History and Changes views)
+  selectedCommit: string | null
+  selectedFile: string | null
+
   // Actions
   setTheme: (t: Theme) => void
   toggleTheme: () => void
@@ -21,16 +25,24 @@ interface GitStore {
   setActiveRepo: (path: string) => void
   showFlash: (message: string, type?: 'success' | 'danger' | 'info') => void
   clearFlash: () => void
+  setSelectedCommit: (hash: string | null) => void
+  setSelectedFile: (path: string | null) => void
+}
+
+const initialState = {
+  theme: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') as Theme,
+  activeView: 'history' as View,
+  flash: null,
+  activeRepo: null,
+  recentRepos: [] as string[],
+  selectedCommit: null,
+  selectedFile: null,
 }
 
 export const useGitStore = create<GitStore>()(
   devtools(
     (set, get) => ({
-      theme: (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
-      activeView: 'history',
-      flash: null,
-      activeRepo: null,
-      recentRepos: [],
+      ...initialState,
 
       setTheme: (theme) => set({ theme }),
       toggleTheme: () => set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
@@ -44,6 +56,9 @@ export const useGitStore = create<GitStore>()(
         setTimeout(() => get().clearFlash(), 2100)
       },
       clearFlash: () => set({ flash: null }),
+      // Selecting a new commit clears the selected file
+      setSelectedCommit: (hash) => set({ selectedCommit: hash, selectedFile: null }),
+      setSelectedFile: (path) => set({ selectedFile: path }),
     }),
     { name: 'BoughStore' }
   )

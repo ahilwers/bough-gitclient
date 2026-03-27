@@ -1318,7 +1318,6 @@ go test ./git/... -v
 
 ## 11. Checklist
 
-- [ ] `go test ./git/...` passes
 - [ ] `OpenRepository` works on a real local repo
 - [ ] `GetCommits(100)` returns commits with non-empty `Column` and `Color`
 - [ ] `GetStatus()` returns correct file list for a dirty worktree
@@ -1326,5 +1325,14 @@ go test ./git/... -v
 - [ ] `StageFile()` moves a file from unstaged to staged (verify with `git status`)
 - [ ] `CLI()` runs `git fetch` successfully in a repo with a remote
 - [ ] fsnotify watcher triggers callback when `HEAD` changes
+- [ ] `EnsureCredentialHelper()` sets OS-native helper when none configured
+- [ ] `EnsureSSHAgent()` injects `SSH_AUTH_SOCK` on macOS .app launch
+
+**Automated tests (see `10-testing.md` for full test code):**
+- [ ] `app/git/repository_test.go` — `TestOpen`, `TestOpen_NotARepo`
+- [ ] `app/git/commits_test.go` — `TestGetCommits`, `TestGetCommits_GraphLayout`
+- [ ] `app/git/diff_test.go` — `TestGetFileDiff`
+- [ ] `app/git/staging_test.go` — `TestStageAndCommit`
+- [ ] `go test -race ./...` passes with no data race warnings
 
 **Next steps:** `03-commit-graph.md` (Canvas renderer) and `04-frontend.md` (React architecture) can be worked on in parallel.

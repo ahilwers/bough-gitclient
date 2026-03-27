@@ -95,6 +95,7 @@ Read the plan files in this order — each builds on the previous:
 07-worktrees.md         ← Worktree feature (depends on 02, 04)
 08-updates-distribution.md ← Packaging & updates (can be done in parallel with Phase 3)
 09-licensing.md         ← One-time purchase + 30-day trial (can be done in parallel with Phase 3)
+10-testing.md           ← Testing strategy: Go, Vitest, Playwright, CI (read before writing any feature)
 ```
 
 ---
@@ -271,6 +272,14 @@ Branch line colors (used for graph swimlanes):
 - Every visible string must use the `t()` hook from `react-i18next`
 - Key format: `namespace.section.key` e.g., `staging.hunk.stageChunk`
 - Never hardcode UI strings in JSX
+
+### Testing
+- Tests are written **alongside** the code, not after. Each plan's checklist includes the required tests.
+- Go backend: `go test -race ./...` — use `t.TempDir()` to create real git repos for integration tests
+- Frontend units/components: Vitest + React Testing Library — all Wails IPC calls mocked via `src/test/wailsmocks/`
+- E2E: Playwright against the Vite dev server with `VITE_MOCK_BACKEND=true`
+- CI runs all three suites on every pull request; see `10-testing.md` and `.github/workflows/test.yml`
+- The Canvas graph renderer is tested at the **data level** (swimlane algorithm in Go) — not pixel level
 
 ### Git Operations — When to Use go-git vs CLI
 | Operation | Use |

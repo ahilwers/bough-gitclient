@@ -1128,6 +1128,14 @@ The app release pipeline (`.github/workflows/release.yml`) remains unchanged —
 - [ ] `Dockerfile` + `fly.toml`
 - [ ] `.github/workflows/licenseserver.yml`
 
+**Automated tests (see `10-testing.md` for full test code):**
+- [ ] `app/license/license_test.go` — `Validate`, `GetStatus`, `MaybeCheckRevocation` (mocked HTTP server)
+- [ ] `app/license/trial_test.go` — `TrialDaysLeft` with simulated time (advance clock past 30 days)
+- [ ] `licenseserver/keygen/keygen_test.go` — `Generate` format, determinism, uniqueness per email
+- [ ] `licenseserver/handler/webhook_test.go` — checkout, refund, dispute events (mock mailer)
+- [ ] `licenseserver/store/db_test.go` — `SaveIssuedKey`, `RevokeByPaymentID`, `GetRevokedKeys`
+- [ ] Frontend: `LicenseDialog.test.tsx` — trial countdown, key entry, activation call
+
 **Infrastructure:**
 - [ ] Ed25519 key pair generated, `private.key` stored in password manager
 - [ ] `public.key` committed to `app/license/`
