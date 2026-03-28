@@ -3,7 +3,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { EventsOn } from '@wailsjs/runtime/runtime'
 import { useGitStore } from '@/stores/gitStore'
 import { useKeyboard } from '@/hooks/useKeyboard'
-import Titlebar from '@/components/Titlebar/Titlebar'
 import Toolbar from '@/components/Toolbar/Toolbar'
 import Sidebar from '@/components/Sidebar/Sidebar'
 import HistoryView from '@/components/HistoryView/HistoryView'
@@ -37,7 +36,6 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden"
          style={{ background: 'var(--bg-window)' }}>
-      <Titlebar />
       <Toolbar />
 
       <div className="flex flex-1 overflow-hidden">
