@@ -58,6 +58,10 @@ export function ListWorktrees() {
   return window['go']['main']['App']['ListWorktrees']();
 }
 
+export function OpenInFinder(arg1) {
+  return window['go']['main']['App']['OpenInFinder'](arg1);
+}
+
 export function OpenRepository(arg1) {
   return window['go']['main']['App']['OpenRepository'](arg1);
 }
@@ -68,6 +72,10 @@ export function Pull(arg1, arg2) {
 
 export function Push(arg1, arg2, arg3) {
   return window['go']['main']['App']['Push'](arg1, arg2, arg3);
+}
+
+export function RemoveWorktree(arg1) {
+  return window['go']['main']['App']['RemoveWorktree'](arg1);
 }
 
 export function SelectRepository() {
@@ -88,6 +96,10 @@ export function StageHunk(arg1) {
 
 export function StoreCredentials(arg1, arg2, arg3) {
   return window['go']['main']['App']['StoreCredentials'](arg1, arg2, arg3);
+}
+
+export function SwitchWorktree(arg1) {
+  return window['go']['main']['App']['SwitchWorktree'](arg1);
 }
 
 export function UnstageFile(arg1) {

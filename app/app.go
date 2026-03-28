@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"os/exec"
+	"runtime"
 
 	gitpkg "bough/git"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App holds application state and exposes methods to the frontend via Wails IPC.
@@ -24,17 +26,17 @@ func (a *App) startup(ctx context.Context) {
 
 	// Auto-configure OS-native credential helper if none is set
 	if err := gitpkg.EnsureCredentialHelper(); err != nil {
-		runtime.LogWarning(ctx, "Could not configure credential helper: "+err.Error())
+		wailsruntime.LogWarning(ctx, "Could not configure credential helper: "+err.Error())
 	}
 
 	var err error
 	a.watcher, err = gitpkg.NewWatcher()
 	if err != nil {
-		runtime.LogError(ctx, "Failed to create watcher: "+err.Error())
+		wailsruntime.LogError(ctx, "Failed to create watcher: "+err.Error())
 		return
 	}
 	a.watcher.OnChange(func(path string) {
-		runtime.EventsEmit(ctx, "repo:changed", path)
+		wailsruntime.EventsEmit(ctx, "repo:changed", path)
 	})
 }
 
@@ -233,7 +235,54 @@ func (a *App) AddWorktree(path, branch string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
-	return a.repo.AddWorktree(path, branch)
+	if err := a.repo.AddWorktree(path, branch); err != nil {
+		return err
+	}
+	// Also watch the new worktree directory so HEAD changes are detected.
+	_ = a.watcher.Watch(path)
+	wailsruntime.EventsEmit(a.ctx, "repo:worktrees-changed")
+	return nil
+}
+
+func (a *App) RemoveWorktree(wtPath string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.RemoveWorktree(wtPath); err != nil {
+		return err
+	}
+	_ = a.watcher.Unwatch(wtPath)
+	wailsruntime.EventsEmit(a.ctx, "repo:worktrees-changed")
+	return nil
+}
+
+// SwitchWorktree opens wtPath as the active repository context. All subsequent
+// calls that depend on a.repo will operate against the switched-to worktree.
+// The frontend is notified via "repo:changed" so it invalidates all cached queries.
+func (a *App) SwitchWorktree(wtPath string) error {
+	repo, err := gitpkg.Open(wtPath)
+	if err != nil {
+		return err
+	}
+	a.repo = repo
+	_ = a.watcher.Watch(wtPath)
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", wtPath)
+	return nil
+}
+
+// OpenInFinder opens the given path in the platform's native file browser.
+// macOS → Finder, Windows → Explorer, Linux → xdg-open.
+func (a *App) OpenInFinder(path string) error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", path)
+	case "windows":
+		cmd = exec.Command("explorer", path)
+	default:
+		cmd = exec.Command("xdg-open", path)
+	}
+	return cmd.Start()
 }
 
 // --- Repository selection (native folder dialog) ---
@@ -242,7 +291,7 @@ func (a *App) AddWorktree(path, branch string) error {
 // selects a path, opens it as the active repository. Returns the resolved
 // repository path on success or an empty string if the dialog was cancelled.
 func (a *App) SelectRepository() (string, error) {
-	path, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+	path, err := wailsruntime.OpenDirectoryDialog(a.ctx, wailsruntime.OpenDialogOptions{
 		Title: "Select Git Repository",
 	})
 	if err != nil || path == "" {
