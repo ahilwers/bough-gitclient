@@ -105,6 +105,12 @@ type WorktreeInfo struct {
 	IsDirty bool   `json:"isDirty"`
 }
 
+// BranchList groups local and remote branches for the sidebar.
+type BranchList struct {
+	Local   []Branch `json:"local"`
+	Remotes []Branch `json:"remotes"`
+}
+
 // RepoStatus summarises the current state of a repository.
 type RepoStatus struct {
 	Branch       string       `json:"branch"`

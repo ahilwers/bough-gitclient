@@ -168,3 +168,43 @@ func (a *App) Push(remote, branch string, force bool) error {
 func (a *App) StoreCredentials(repoURL, username, password string) error {
 	return gitpkg.StoreCredentials(repoURL, username, password)
 }
+
+// --- Branches ---
+
+func (a *App) ListBranches() (gitpkg.BranchList, error) {
+	if a.repo == nil {
+		return gitpkg.BranchList{}, gitpkg.ErrNotARepo
+	}
+	return a.repo.ListBranches()
+}
+
+// --- Worktrees ---
+
+func (a *App) ListWorktrees() ([]gitpkg.WorktreeInfo, error) {
+	if a.repo == nil {
+		return nil, gitpkg.ErrNotARepo
+	}
+	return a.repo.ListWorktrees()
+}
+
+func (a *App) AddWorktree(path, branch string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	return a.repo.AddWorktree(path, branch)
+}
+
+// --- Repository selection (native folder dialog) ---
+
+// SelectRepository opens a native folder-picker dialog and, if the user
+// selects a path, opens it as the active repository. Returns the resolved
+// repository path on success or an empty string if the dialog was cancelled.
+func (a *App) SelectRepository() (string, error) {
+	path, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Select Git Repository",
+	})
+	if err != nil || path == "" {
+		return "", err
+	}
+	return a.OpenRepository(path)
+}

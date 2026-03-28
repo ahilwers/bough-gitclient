@@ -20,14 +20,17 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@wailsjs/*": ["./wailsjs/*"]
     }
   },
   "include": [
     "src"
   ],
   "exclude": [
-    "src/test"
+    "src/test",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
   ],
   "references": [
     {

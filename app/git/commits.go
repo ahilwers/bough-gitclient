@@ -95,8 +95,8 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 		return nil
 	}
 
-	// lanes[col] = hash of the commit currently "owning" that lane.
-	// A lane is freed when its commit has been placed.
+	// lanes[col] = hash of the commit expected to appear in that column.
+	// A lane is freed (set to "") when its commit has been placed.
 	lanes := make([]string, 0, 8)
 
 	nodes := make([]CommitNode, len(commits))
@@ -114,15 +114,15 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 			}
 		}
 		if col == -1 {
-			// New branch — use the first free (empty) lane, or append a new one
-			col = len(lanes)
+			// New branch tip — use the first free (empty) lane, or append a new one
 			for j, owner := range lanes {
 				if owner == "" {
 					col = j
 					break
 				}
 			}
-			if col == len(lanes) {
+			if col == -1 {
+				col = len(lanes)
 				lanes = append(lanes, hash)
 			} else {
 				lanes[col] = hash
@@ -131,11 +131,22 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 
 		color := col % 8
 
-		// Collect lines from this row to the next
+		// Snapshot which lane indices are occupied BEFORE we process parents.
+		// Only these lanes need a pass-through — newly opened merge-parent lanes
+		// have no incoming line yet so they must NOT get a pass-through here.
+		activeBefore := make(map[int]bool, len(lanes))
+		for j, owner := range lanes {
+			if owner != "" {
+				activeBefore[j] = true
+			}
+		}
+
 		var lines []GraphLine
 
 		for pi, parent := range c.ParentHashes {
 			ph := parent.String()
+
+			// Check whether this parent is already waiting in a lane
 			parentLane := -1
 			for j, owner := range lanes {
 				if owner == ph {
@@ -143,17 +154,38 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 					break
 				}
 			}
-			if parentLane == -1 {
-				if pi == 0 {
-					// First parent continues the current lane
+
+			if pi == 0 {
+				// First parent always continues (or merges into) the current lane
+				if parentLane == -1 {
+					// Parent not yet seen — continue the current lane downward
 					parentLane = col
 					lanes[col] = ph
 				} else {
-					// Additional parent (merge) gets a new lane
-					parentLane = len(lanes)
-					lanes = append(lanes, ph)
+					// Parent already in another lane — free the current lane
+					lanes[col] = ""
 				}
+			} else {
+				// Additional parents (merge sources) need their own lane
+				if parentLane == -1 {
+					// Find a free slot or append
+					parentLane = -1
+					for j, owner := range lanes {
+						if owner == "" {
+							parentLane = j
+							break
+						}
+					}
+					if parentLane == -1 {
+						parentLane = len(lanes)
+						lanes = append(lanes, ph)
+					} else {
+						lanes[parentLane] = ph
+					}
+				}
+				// If already in lanes, no change needed — line will point there
 			}
+
 			isMerge := pi > 0
 			lines = append(lines, GraphLine{
 				FromCol: col,
@@ -163,9 +195,26 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 			})
 		}
 
-		// If this commit has no parents (initial commit), free the lane
+		// Root commit (no parents): free the lane
 		if len(c.ParentHashes) == 0 {
 			lanes[col] = ""
+		}
+
+		// Pass-through lines for every lane that was active BEFORE this commit's
+		// parent processing. Newly opened lanes (merge parents not yet seen) are
+		// excluded — they have no prior incoming line so must not start here.
+		for j, owner := range lanes {
+			if owner == "" || j == col {
+				continue
+			}
+			if activeBefore[j] {
+				lines = append(lines, GraphLine{
+					FromCol: j,
+					ToCol:   j,
+					Color:   j % 8,
+					IsMerge: false,
+				})
+			}
 		}
 
 		// Trim trailing empty lanes
