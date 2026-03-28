@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { shortHash, formatRelativeDate, maskLicenseKey, basename } from './format'
+import { shortHash, formatRelativeDate, maskLicenseKey, basename, parseGitError } from './format'
 
 describe('shortHash', () => {
   it('returns first 7 chars of a full hash', () => {
@@ -57,5 +57,55 @@ describe('basename', () => {
   })
   it('handles trailing slash gracefully', () => {
     expect(basename('src/')).toBe('')
+  })
+})
+
+describe('parseGitError', () => {
+  it('extracts the fatal: line from a typical git worktree error', () => {
+    const raw = new Error(
+      "git [worktree add ../gitclient-worktree main]: exit status 128\n" +
+      "Preparing worktree (checking out 'main')\n" +
+      "fatal: 'main' is already used by worktree at '/Users/user/repo'\n"
+    )
+    expect(parseGitError(raw)).toBe("'main' is already used by worktree at '/Users/user/repo'")
+  })
+
+  it('extracts the error: line', () => {
+    const raw = new Error(
+      "git [push origin main]: exit status 1\n" +
+      "error: failed to push some refs to 'origin'\n"
+    )
+    expect(parseGitError(raw)).toBe("failed to push some refs to 'origin'")
+  })
+
+  it('joins multiple fatal/error lines', () => {
+    const raw = new Error(
+      "git [merge feature]: exit status 1\n" +
+      "error: Your local changes would be overwritten by merge.\n" +
+      "error: Please commit or stash them.\n"
+    )
+    expect(parseGitError(raw)).toBe(
+      "Your local changes would be overwritten by merge.\nPlease commit or stash them."
+    )
+  })
+
+  it('strips the command prefix when there is no fatal/error line', () => {
+    const raw = new Error(
+      "git [status --porcelain=v1]: exit status 1\nsome unexpected output"
+    )
+    expect(parseGitError(raw)).toBe('some unexpected output')
+  })
+
+  it('handles plain Error with no git prefix', () => {
+    expect(parseGitError(new Error('no repository open'))).toBe('no repository open')
+  })
+
+  it('handles a non-Error value', () => {
+    expect(parseGitError('something went wrong')).toBe('something went wrong')
+  })
+
+  it('is case-insensitive for the prefix keywords', () => {
+    const raw = new Error("Fatal: not a git repo")
+    expect(parseGitError(raw)).toBe('not a git repo')
   })
 })

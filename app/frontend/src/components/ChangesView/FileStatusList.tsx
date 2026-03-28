@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { StageFile, StageFiles, UnstageFile, UnstageFiles } from '@wailsjs/go/main/App'
 import { useStatus } from '@/hooks/useStatus'
 import { useGitStore } from '@/stores/gitStore'
+import { parseGitError } from '@/lib/format'
 import type { FileStatus } from '@/lib/types'
 
 interface FileStatusListProps {
@@ -24,25 +25,25 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile }: F
   const stageFileMutation = useMutation({
     mutationFn: (path: string) => StageFile(path),
     onSuccess: invalidate,
-    onError: (err: Error) => showFlash(`Failed to stage: ${err.message}`, 'danger'),
+    onError: (err: Error) => showFlash(`Failed to stage: ${parseGitError(err)}`, 'danger'),
   })
 
   const stageAllMutation = useMutation({
     mutationFn: (paths: string[]) => StageFiles(paths),
     onSuccess: invalidate,
-    onError: (err: Error) => showFlash(`Failed to stage all: ${err.message}`, 'danger'),
+    onError: (err: Error) => showFlash(`Failed to stage all: ${parseGitError(err)}`, 'danger'),
   })
 
   const unstageFileMutation = useMutation({
     mutationFn: (path: string) => UnstageFile(path),
     onSuccess: invalidate,
-    onError: (err: Error) => showFlash(`Failed to unstage: ${err.message}`, 'danger'),
+    onError: (err: Error) => showFlash(`Failed to unstage: ${parseGitError(err)}`, 'danger'),
   })
 
   const unstageAllMutation = useMutation({
     mutationFn: (paths: string[]) => UnstageFiles(paths),
     onSuccess: invalidate,
-    onError: (err: Error) => showFlash(`Failed to unstage all: ${err.message}`, 'danger'),
+    onError: (err: Error) => showFlash(`Failed to unstage all: ${parseGitError(err)}`, 'danger'),
   })
 
   const files = status?.files ?? []

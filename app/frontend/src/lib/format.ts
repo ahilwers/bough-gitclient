@@ -47,3 +47,32 @@ export function maskLicenseKey(key: string): string {
 export function basename(path: string): string {
   return path.split('/').pop() ?? path
 }
+
+/**
+ * Extracts a human-readable message from a raw git CLI error.
+ *
+ * Wails surfaces Go errors as rejected Promises whose message looks like:
+ *   "git [worktree add ...]: exit status 128\nPreparing worktree...\nfatal: 'main' is already used by worktree at '...'"
+ *
+ * This function strips the command prefix and boilerplate, returning only the
+ * meaningful git diagnostic line(s) (fatal:, error:, hint:).
+ * Falls back to the trimmed original message when no such lines are found.
+ */
+export function parseGitError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err)
+
+  // Extract lines that carry the actual diagnostic from git.
+  const diagnosticLines = raw
+    .split('\n')
+    .filter(l => /^(fatal|error|hint):\s*/i.test(l))
+    .map(l => l.replace(/^(fatal|error|hint):\s*/i, '').trim())
+    .filter(Boolean)
+
+  if (diagnosticLines.length > 0) {
+    return diagnosticLines.join('\n')
+  }
+
+  // Strip the "git [...]: exit status N" prefix that the Go CLI wrapper adds.
+  const withoutPrefix = raw.replace(/^git \[.*?\]: exit status \d+\s*/m, '').trim()
+  return withoutPrefix || raw.trim()
+}

@@ -4,6 +4,7 @@ import { X, AlertCircle } from 'lucide-react'
 import { useBranches } from '@/hooks/useBranches'
 import { useWorktrees } from '@/hooks/useWorktrees'
 import { useGitStore } from '@/stores/gitStore'
+import { parseGitError } from '@/lib/format'
 
 interface Props {
   onClose: () => void
@@ -49,7 +50,7 @@ export function NewWorktreeDialog({ onClose }: Props) {
           onClose()
         },
         onError: (err: Error) => {
-          showFlash('Failed to create worktree: ' + err.message, 'danger')
+          showFlash(parseGitError(err), 'danger')
         },
       }
     )
