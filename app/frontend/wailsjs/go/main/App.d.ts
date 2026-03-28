@@ -40,6 +40,8 @@ export function Push(arg1:string,arg2:string,arg3:boolean):Promise<void>;
 
 export function RemoveWorktree(arg1:string):Promise<void>;
 
+export function SaveWindowSize(arg1:number,arg2:number):Promise<void>;
+
 export function SelectRepository():Promise<string>;
 
 export function StageFile(arg1:string):Promise<void>;

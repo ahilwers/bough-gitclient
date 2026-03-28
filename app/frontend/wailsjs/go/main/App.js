@@ -78,6 +78,10 @@ export function RemoveWorktree(arg1) {
   return window['go']['main']['App']['RemoveWorktree'](arg1);
 }
 
+export function SaveWindowSize(arg1, arg2) {
+  return window['go']['main']['App']['SaveWindowSize'](arg1, arg2);
+}
+
 export function SelectRepository() {
   return window['go']['main']['App']['SelectRepository']();
 }

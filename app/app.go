@@ -21,6 +21,11 @@ func NewApp() *App { return &App{} }
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
+	// Restore window position (size is already set via options.App in main.go).
+	if ws := loadWindowState(); ws.HasPos {
+		wailsruntime.WindowSetPosition(ctx, ws.X, ws.Y)
+	}
+
 	// Ensure SSH_AUTH_SOCK is set for macOS .app bundles launched via launchd
 	gitpkg.EnsureSSHAgent()
 
@@ -283,6 +288,18 @@ func (a *App) OpenInFinder(path string) error {
 		cmd = exec.Command("xdg-open", path)
 	}
 	return cmd.Start()
+}
+
+// --- Window state ---
+
+// SaveWindowSize persists the window dimensions and current position so the
+// next launch restores them. Called by the frontend on a debounced resize event.
+// Position is read from the Go runtime so the frontend doesn't need to supply it.
+func (a *App) SaveWindowSize(width, height int) {
+	x, y := wailsruntime.WindowGetPosition(a.ctx)
+	if err := saveWindowState(width, height, x, y); err != nil {
+		wailsruntime.LogWarning(a.ctx, "Could not save window state: "+err.Error())
+	}
 }
 
 // --- Repository selection (native folder dialog) ---

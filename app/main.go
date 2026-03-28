@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 
 	"github.com/wailsapp/wails/v2"
@@ -8,6 +9,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 //go:embed all:frontend/dist
@@ -18,11 +20,12 @@ var version = "dev"
 
 func main() {
 	app := NewApp()
+	ws := loadWindowState()
 
 	err := wails.Run(&options.App{
 		Title:            "Bough",
-		Width:            1280,
-		Height:           800,
+		Width:            ws.Width,
+		Height:           ws.Height,
 		MinWidth:         900,
 		MinHeight:        600,
 		BackgroundColour: &options.RGBA{R: 28, G: 28, B: 30, A: 255},
@@ -30,7 +33,15 @@ func main() {
 			Assets: assets,
 		},
 		OnStartup: app.startup,
-		Bind:      []interface{}{app},
+		// Save size + position on close so that moving the window without
+		// resizing is also persisted (there is no "move" event in the frontend).
+		OnBeforeClose: func(ctx context.Context) (prevent bool) {
+			w, h := wailsruntime.WindowGetSize(ctx)
+			x, y := wailsruntime.WindowGetPosition(ctx)
+			_ = saveWindowState(w, h, x, y)
+			return false
+		},
+		Bind: []interface{}{app},
 		Mac: &mac.Options{
 			TitleBar:             mac.TitleBarDefault(),
 			Appearance:           mac.DefaultAppearance,
