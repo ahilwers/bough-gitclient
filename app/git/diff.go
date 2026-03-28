@@ -80,6 +80,24 @@ func (r *Repository) GetFileAtCommitParent(hash, filePath string) (string, error
 	return r.GetFileAtCommit(commit.ParentHashes[0].String(), filePath)
 }
 
+// GetUntrackedFileDiff returns the full content of an untracked file as an additions-only diff.
+// Uses `git diff --no-index /dev/null <file>` which exits with code 1 (expected for any diff).
+func (r *Repository) GetUntrackedFileDiff(filePath string) (*DiffFile, error) {
+	cmd := execGit(r.Path, "diff", "--unified=3", "--no-color", "--no-index", "--", "/dev/null", filePath)
+	out, err := cmd.CombinedOutput()
+	// git diff --no-index exits 1 when there are differences (always for new files) — that's expected
+	if err != nil && len(out) == 0 {
+		return nil, fmt.Errorf("git diff --no-index: %w", err)
+	}
+	files := parsePatchOutput(string(out))
+	if len(files) == 0 {
+		return &DiffFile{Path: filePath}, nil
+	}
+	// Normalise path: --no-index uses "b/<filePath>" as the new path
+	files[0].Path = filePath
+	return &files[0], nil
+}
+
 // GetFileDiff returns the staged or unstaged diff for a working-copy file.
 // staged=true: compares HEAD vs index; staged=false: compares index vs worktree.
 func (r *Repository) GetFileDiff(filePath string, staged bool) (*DiffFile, error) {

@@ -24,6 +24,8 @@ export function GetFileDiff(arg1:string,arg2:boolean):Promise<git.DiffFile>;
 
 export function GetStatus():Promise<git.RepoStatus>;
 
+export function GetUntrackedFileDiff(arg1:string):Promise<git.DiffFile>;
+
 export function ListBranches():Promise<git.BranchList>;
 
 export function ListWorktrees():Promise<Array<git.WorktreeInfo>>;
@@ -38,8 +40,14 @@ export function SelectRepository():Promise<string>;
 
 export function StageFile(arg1:string):Promise<void>;
 
+export function StageFiles(arg1:Array<string>):Promise<void>;
+
 export function StageHunk(arg1:string):Promise<void>;
 
 export function StoreCredentials(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function UnstageFile(arg1:string):Promise<void>;
+
+export function UnstageFiles(arg1:Array<string>):Promise<void>;
+
+export function UnstageHunk(arg1:string):Promise<void>;

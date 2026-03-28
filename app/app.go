@@ -96,7 +96,28 @@ func (a *App) GetFileDiff(filePath string, staged bool) (*gitpkg.DiffFile, error
 	return a.repo.GetFileDiff(filePath, staged)
 }
 
+func (a *App) GetUntrackedFileDiff(filePath string) (*gitpkg.DiffFile, error) {
+	if a.repo == nil {
+		return nil, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetUntrackedFileDiff(filePath)
+}
+
 // --- Staging ---
+
+func (a *App) StageFiles(filePaths []string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	return a.repo.StageFiles(filePaths)
+}
+
+func (a *App) UnstageFiles(filePaths []string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	return a.repo.UnstageFiles(filePaths)
+}
 
 func (a *App) StageFile(filePath string) error {
 	if a.repo == nil {
@@ -117,6 +138,13 @@ func (a *App) StageHunk(patch string) error {
 		return gitpkg.ErrNotARepo
 	}
 	return a.repo.StageHunkViaApply(patch)
+}
+
+func (a *App) UnstageHunk(patch string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	return a.repo.UnstageHunkViaApply(patch)
 }
 
 func (a *App) DiscardHunk(patch string) error {

@@ -23,9 +23,14 @@ export const GetStatus = vi.fn((): Promise<RepoStatus> =>
   Promise.resolve({ branch: 'main', ahead: 0, behind: 0, files: [], hasConflicts: false }))
 export const GetFileDiff = vi.fn((_path: string, _staged: boolean): Promise<DiffFile> =>
   Promise.resolve({ path: '', oldPath: '', hunks: [], binary: false }))
+export const GetUntrackedFileDiff = vi.fn((_path: string): Promise<DiffFile> =>
+  Promise.resolve({ path: '', oldPath: '', hunks: [], binary: false }))
 export const StageFile = vi.fn((_path: string): Promise<void> => Promise.resolve())
+export const StageFiles = vi.fn((_paths: string[]): Promise<void> => Promise.resolve())
 export const UnstageFile = vi.fn((_path: string): Promise<void> => Promise.resolve())
+export const UnstageFiles = vi.fn((_paths: string[]): Promise<void> => Promise.resolve())
 export const StageHunk = vi.fn((_patch: string): Promise<void> => Promise.resolve())
+export const UnstageHunk = vi.fn((_patch: string): Promise<void> => Promise.resolve())
 export const DiscardHunk = vi.fn((_patch: string): Promise<void> => Promise.resolve())
 export const CreateCommit = vi.fn((_message: string): Promise<string> =>
   Promise.resolve('abc1234567890abcdef1234567890abcdef1234ab'))

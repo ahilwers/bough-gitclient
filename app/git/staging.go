@@ -10,13 +10,26 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
-// StageFile stages an entire file (equivalent to `git add <file>`).
+// StageFiles stages multiple files in a single `git add` invocation, avoiding
+// concurrent index.lock contention that occurs when staging files individually.
+func (r *Repository) StageFiles(filePaths []string) error {
+	args := append([]string{"add", "--"}, filePaths...)
+	_, err := CLI(r.Path, args...)
+	return err
+}
+
+// UnstageFiles unstages multiple files in a single `git restore --staged` call.
+func (r *Repository) UnstageFiles(filePaths []string) error {
+	args := append([]string{"restore", "--staged", "--"}, filePaths...)
+	_, err := CLI(r.Path, args...)
+	return err
+}
+
+// StageFile stages an entire file or directory (equivalent to `git add <path>`).
+// Uses CLI instead of go-git to avoid go-git's path.Clean panic and to support
+// concurrent calls safely (each CLI call is an independent process).
 func (r *Repository) StageFile(filePath string) error {
-	wt, err := r.repo.Worktree()
-	if err != nil {
-		return err
-	}
-	_, err = wt.Add(filePath)
+	_, err := CLI(r.Path, "add", "--", filePath)
 	return err
 }
 
@@ -34,6 +47,18 @@ func (r *Repository) StageHunkViaApply(hunkPatch string) error {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("git apply: %w\n%s", err, string(out))
+	}
+	return nil
+}
+
+// UnstageHunkViaApply unstages a single hunk from the index by reversing the patch.
+// hunkPatch must be a valid unified diff patch string for exactly one hunk (staged diff).
+func (r *Repository) UnstageHunkViaApply(hunkPatch string) error {
+	cmd := execGit(r.Path, "apply", "--cached", "-R", "--unidiff-zero", "-")
+	cmd.Stdin = strings.NewReader(hunkPatch)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git apply --cached -R: %w\n%s", err, string(out))
 	}
 	return nil
 }
