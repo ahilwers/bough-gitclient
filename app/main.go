@@ -25,7 +25,6 @@ func main() {
 		Height:           800,
 		MinWidth:         900,
 		MinHeight:        600,
-		Frameless:        true,
 		BackgroundColour: &options.RGBA{R: 28, G: 28, B: 30, A: 255},
 		AssetServer: &assetserver.Options{
 			Assets: assets,
@@ -33,7 +32,7 @@ func main() {
 		OnStartup: app.startup,
 		Bind:      []interface{}{app},
 		Mac: &mac.Options{
-			TitleBar:             mac.TitleBarHiddenInset(),
+			TitleBar:             mac.TitleBarDefault(),
 			Appearance:           mac.DefaultAppearance,
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,

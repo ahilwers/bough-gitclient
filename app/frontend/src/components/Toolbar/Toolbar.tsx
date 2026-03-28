@@ -1,4 +1,4 @@
-import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare } from 'lucide-react'
+import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useGitStore } from '@/stores/gitStore'
 import { useStatus } from '@/hooks/useStatus'
@@ -7,7 +7,7 @@ import { Fetch, Pull, Push } from '@wailsjs/go/main/App'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function Toolbar() {
-  const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash } = useGitStore()
+  const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash, theme, toggleTheme } = useGitStore()
   const queryClient = useQueryClient()
   const { data: status } = useStatus()
 
@@ -157,6 +157,12 @@ export default function Toolbar() {
           icon={<Search size={14} />}
           label="Command Palette (⌘K)"
           onClick={() => window.dispatchEvent(new CustomEvent('palette:open'))}
+        />
+        <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
+        <IconButton
+          icon={theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+          label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          onClick={toggleTheme}
         />
       </div>
     </div>
