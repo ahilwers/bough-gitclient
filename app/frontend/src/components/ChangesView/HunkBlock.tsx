@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { StageHunk, UnstageHunk, DiscardHunk } from '@wailsjs/go/main/App'
 import { useGitStore } from '@/stores/gitStore'
 import { buildHunkPatch } from '@/lib/diffUtils'
+import { parseGitError } from '@/lib/format'
 import type { DiffHunk, DiffLine } from '@/lib/types'
 
 interface HunkBlockProps {
@@ -25,19 +26,19 @@ export function HunkBlock({ hunk, filePath, staged }: HunkBlockProps) {
   const stageHunkMutation = useMutation({
     mutationFn: () => StageHunk(buildHunkPatch(filePath, hunk)),
     onSuccess: () => { invalidate(); showFlash('Hunk staged') },
-    onError: (err: Error) => showFlash(`Stage failed: ${err.message}`, 'danger'),
+    onError: (err: Error) => showFlash(`Stage failed: ${parseGitError(err)}`, 'danger'),
   })
 
   const unstageHunkMutation = useMutation({
     mutationFn: () => UnstageHunk(buildHunkPatch(filePath, hunk)),
     onSuccess: () => { invalidate(); showFlash('Hunk unstaged') },
-    onError: (err: Error) => showFlash(`Unstage failed: ${err.message}`, 'danger'),
+    onError: (err: Error) => showFlash(`Unstage failed: ${parseGitError(err)}`, 'danger'),
   })
 
   const discardHunkMutation = useMutation({
     mutationFn: () => DiscardHunk(buildHunkPatch(filePath, hunk)),
     onSuccess: () => { invalidate(); showFlash('Changes discarded') },
-    onError: (err: Error) => showFlash(`Discard failed: ${err.message}`, 'danger'),
+    onError: (err: Error) => showFlash(`Discard failed: ${parseGitError(err)}`, 'danger'),
   })
 
   const isPending = stageHunkMutation.isPending || unstageHunkMutation.isPending || discardHunkMutation.isPending

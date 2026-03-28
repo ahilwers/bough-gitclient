@@ -7,6 +7,7 @@ import { useGitStore } from '@/stores/gitStore'
 import { ContextMenu } from '@/components/shared/ContextMenu'
 import { NewWorktreeDialog } from '@/components/WorktreeManager/NewWorktreeDialog'
 import { OpenInFinder } from '@wailsjs/go/main/App'
+import { parseGitError } from '@/lib/format'
 import type { WorktreeInfo } from '@/lib/types'
 
 export default function Sidebar() {
@@ -30,13 +31,13 @@ export default function Sidebar() {
     if (!window.confirm(`Remove worktree at "${wt.path}"?\n\nThis will delete the directory and its git link.`)) return
     removeMutation.mutate(wt.path, {
       onSuccess: () => showFlash('Worktree removed', 'success'),
-      onError: (err: Error) => showFlash('Failed to remove worktree: ' + err.message, 'danger'),
+      onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
     })
   }
 
   const handleSwitchWorktree = (wt: WorktreeInfo) => {
     switchMutation.mutate(wt.path, {
-      onError: (err: Error) => showFlash('Failed to switch worktree: ' + err.message, 'danger'),
+      onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
     })
   }
 
@@ -109,7 +110,7 @@ export default function Sidebar() {
               isActive={activeWorktree === wt.path}
               onSwitch={() => handleSwitchWorktree(wt)}
               onRemove={() => handleRemoveWorktree(wt)}
-              onOpenInFinder={() => OpenInFinder(wt.path).catch((err: Error) => showFlash(err.message, 'danger'))}
+              onOpenInFinder={() => OpenInFinder(wt.path).catch((err: Error) => showFlash(parseGitError(err), 'danger'))}
             />
           ))}
         </Section>

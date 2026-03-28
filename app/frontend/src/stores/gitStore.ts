@@ -37,7 +37,7 @@ interface GitStore {
 
   // Flash notifications
   flash: { message: string; type: 'success' | 'danger' | 'info' } | null
-  showFlash: (message: string, type?: 'success' | 'danger' | 'info') => void
+  showFlash: (message: string, type?: 'success' | 'danger' | 'info', durationMs?: number) => void
   clearFlash: () => void
 }
 
@@ -99,9 +99,11 @@ export const useGitStore = create<GitStore>()(
       setSelectedCommit: (hash) => set({ selectedCommit: hash, selectedFile: null }),
       setSelectedFile: (path) => set({ selectedFile: path }),
 
-      showFlash: (message, type = 'success') => {
+      showFlash: (message, type = 'success', durationMs) => {
         set({ flash: { message, type } })
-        setTimeout(() => get().clearFlash(), 2100)
+        // Errors stay visible longer so the user has time to read them.
+        const timeout = durationMs ?? (type === 'danger' ? 6000 : 2100)
+        setTimeout(() => get().clearFlash(), timeout)
       },
       clearFlash: () => set({ flash: null }),
     }),

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CreateCommit, AmendCommit } from '@wailsjs/go/main/App'
 import { useGitStore } from '@/stores/gitStore'
+import { parseGitError } from '@/lib/format'
 
 export function CommitBox() {
   const queryClient = useQueryClient()
@@ -26,7 +27,7 @@ export function CommitBox() {
       invalidate()
       showFlash(amend ? 'Commit amended' : 'Changes committed')
     },
-    onError: (err: Error) => showFlash(`Commit failed: ${err.message}`, 'danger'),
+    onError: (err: Error) => showFlash(`Commit failed: ${parseGitError(err)}`, 'danger'),
   })
 
   const disabled = !message.trim() || commitMutation.isPending
