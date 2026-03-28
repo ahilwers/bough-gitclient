@@ -53,8 +53,23 @@ func (a *App) OpenRepository(path string) (string, error) {
 		return "", err
 	}
 	a.repo = repo
-	_ = a.watcher.Watch(path)
+	_ = a.watcher.Watch(repo.Path)
+
+	// Persist to the recent repos list so it survives restarts.
+	updated := addRecentRepo(repo.Path)
+	_ = saveRecentRepos(updated)
+
 	return repo.Path, nil
+}
+
+// GetRecentRepos returns the persisted list of recently opened repository paths,
+// most recent first. Called once on app launch to seed the frontend store.
+func (a *App) GetRecentRepos() []string {
+	repos := loadRecentRepos()
+	if repos == nil {
+		return []string{}
+	}
+	return repos
 }
 
 // --- Commits ---

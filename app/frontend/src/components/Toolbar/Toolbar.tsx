@@ -1,9 +1,9 @@
-import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon } from 'lucide-react'
+import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon, FolderOpen } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useGitStore } from '@/stores/gitStore'
 import { useStatus } from '@/hooks/useStatus'
-import { SelectRepository } from '@wailsjs/go/main/App'
-import { Fetch, Pull, Push } from '@wailsjs/go/main/App'
+import { SelectRepository, OpenRepository, Fetch, Pull, Push } from '@wailsjs/go/main/App'
+import { parseGitError } from '@/lib/format'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function Toolbar() {
@@ -14,6 +14,18 @@ export default function Toolbar() {
   const changesCount = (status?.files?.length ?? 0)
   const repoName = activeRepo ? activeRepo.split('/').pop() : 'No Repository'
 
+  const handleOpenRepo = async (path: string) => {
+    try {
+      const resolved = await OpenRepository(path)
+      if (resolved) {
+        setActiveRepo(resolved)
+        queryClient.invalidateQueries()
+      }
+    } catch (err) {
+      showFlash(parseGitError(err), 'danger')
+    }
+  }
+
   const handleSelectRepo = async () => {
     try {
       const path = await SelectRepository()
@@ -22,7 +34,7 @@ export default function Toolbar() {
         queryClient.invalidateQueries()
       }
     } catch (err) {
-      showFlash(String(err), 'danger')
+      showFlash(parseGitError(err), 'danger')
     }
   }
 
@@ -32,7 +44,7 @@ export default function Toolbar() {
       showFlash('Fetched successfully')
       queryClient.invalidateQueries()
     } catch (err) {
-      showFlash(String(err), 'danger')
+      showFlash(parseGitError(err), 'danger')
     }
   }
 
@@ -42,7 +54,7 @@ export default function Toolbar() {
       showFlash('Pulled successfully')
       queryClient.invalidateQueries()
     } catch (err) {
-      showFlash(String(err), 'danger')
+      showFlash(parseGitError(err), 'danger')
     }
   }
 
@@ -52,7 +64,7 @@ export default function Toolbar() {
       showFlash('Pushed successfully')
       queryClient.invalidateQueries()
     } catch (err) {
-      showFlash(String(err), 'danger')
+      showFlash(parseGitError(err), 'danger')
     }
   }
 
@@ -72,7 +84,7 @@ export default function Toolbar() {
       {/* Repo selector dropdown */}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
-          <button className="toolbar-btn" style={{ maxWidth: 160, gap: 4, paddingLeft: 10, paddingRight: 8 }}>
+          <button className="toolbar-btn" style={{ maxWidth: 200, gap: 4, paddingLeft: 10, paddingRight: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {repoName}
             </span>
@@ -88,32 +100,38 @@ export default function Toolbar() {
               borderRadius: 'var(--r-md)',
               boxShadow: 'var(--shadow-lg)',
               padding: '4px 0',
-              minWidth: 220,
+              minWidth: 260,
               zIndex: 1000,
             }}
             sideOffset={4}
           >
             <DropdownMenu.Item
               onSelect={handleSelectRepo}
-              style={{ padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: 'var(--text-pri)' }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '7px 12px', fontSize: 12, cursor: 'pointer', color: 'var(--text-pri)',
+                outline: 'none',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-content)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
+              <FolderOpen size={13} style={{ flexShrink: 0, color: 'var(--text-ter)' }} />
               Open Repository…
             </DropdownMenu.Item>
 
             {recentRepos.length > 0 && (
               <>
                 <DropdownMenu.Separator style={{ height: 1, background: 'var(--border-sub)', margin: '4px 0' }} />
+                <div style={{ padding: '2px 12px 4px', fontSize: 10, fontWeight: 600, color: 'var(--text-ter)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Recent
+                </div>
                 {recentRepos.map(repo => (
-                  <DropdownMenu.Item
+                  <RecentRepoItem
                     key={repo}
-                    onSelect={() => {
-                      setActiveRepo(repo)
-                      queryClient.invalidateQueries()
-                    }}
-                    style={{ padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: 'var(--text-sec)' }}
-                  >
-                    {repo.split('/').pop()}
-                  </DropdownMenu.Item>
+                    path={repo}
+                    isActive={repo === activeRepo}
+                    onSelect={() => handleOpenRepo(repo)}
+                  />
                 ))}
               </>
             )}
@@ -166,6 +184,39 @@ export default function Toolbar() {
         />
       </div>
     </div>
+  )
+}
+
+// RecentRepoItem shows the repo name prominently and the parent path dimly.
+function RecentRepoItem({ path, isActive, onSelect }: { path: string; isActive: boolean; onSelect: () => void }) {
+  const parts = path.split('/')
+  const name = parts.pop() ?? path
+  // Collapse the home directory prefix for readability
+  const parent = parts.join('/').replace(/^\/Users\/[^/]+/, '~') || '/'
+
+  return (
+    <DropdownMenu.Item
+      onSelect={onSelect}
+      title={path}
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+        padding: '5px 12px', cursor: 'pointer', outline: 'none',
+        background: isActive ? 'color-mix(in srgb, var(--acc) 10%, transparent)' : 'transparent',
+      }}
+      onMouseEnter={e => {
+        if (!isActive) (e.currentTarget as HTMLElement).style.background = 'var(--bg-content)'
+      }}
+      onMouseLeave={e => {
+        if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'
+      }}
+    >
+      <span style={{ fontSize: 12, fontWeight: isActive ? 600 : 400, color: isActive ? 'var(--acc)' : 'var(--text-pri)' }}>
+        {name}
+      </span>
+      <span style={{ fontSize: 10, color: 'var(--text-ter)', marginTop: 1 }}>
+        {parent}
+      </span>
+    </DropdownMenu.Item>
   )
 }
 

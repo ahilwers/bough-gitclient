@@ -22,6 +22,8 @@ export function GetFileAtCommitParent(arg1:string,arg2:string):Promise<string>;
 
 export function GetFileDiff(arg1:string,arg2:boolean):Promise<git.DiffFile>;
 
+export function GetRecentRepos():Promise<Array<string>>;
+
 export function GetStatus():Promise<git.RepoStatus>;
 
 export function GetUntrackedFileDiff(arg1:string):Promise<git.DiffFile>;

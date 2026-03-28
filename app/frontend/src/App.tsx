@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { EventsOn } from '@wailsjs/runtime/runtime'
-import { SaveWindowSize } from '@wailsjs/go/main/App'
+import { SaveWindowSize, GetRecentRepos } from '@wailsjs/go/main/App'
 import { useGitStore } from '@/stores/gitStore'
 import { useKeyboard } from '@/hooks/useKeyboard'
 import Toolbar from '@/components/Toolbar/Toolbar'
@@ -31,6 +31,13 @@ export default function App() {
     })
     return unsubscribe
   }, [queryClient])
+
+  // Seed recent repos from the Go backend once on mount.
+  useEffect(() => {
+    GetRecentRepos().then(repos => {
+      if (repos?.length) useGitStore.getState().setRecentRepos(repos)
+    }).catch(() => { /* non-critical */ })
+  }, [])
 
   // Persist window size across sessions.
   // Debounced so we don't hammer the Go backend during a live resize.
