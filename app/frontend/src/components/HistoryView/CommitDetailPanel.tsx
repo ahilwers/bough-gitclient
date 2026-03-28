@@ -36,7 +36,7 @@ export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
 
   if (!commit) {
     return (
-      <div style={{ width: 370, borderLeft: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', color: 'var(--text-ter)', fontSize: 12 }}>
+      <div style={{ flex: 1, borderLeft: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', color: 'var(--text-ter)', fontSize: 12 }}>
         Loading…
       </div>
     )
@@ -44,7 +44,7 @@ export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
 
   return (
     <div style={{
-      width: 370, flexShrink: 0,
+      flex: 1,
       borderLeft: '1px solid var(--border)',
       background: 'var(--bg-panel)',
       display: 'flex', flexDirection: 'column',
