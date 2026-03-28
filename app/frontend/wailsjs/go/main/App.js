@@ -46,6 +46,10 @@ export function GetStatus() {
   return window['go']['main']['App']['GetStatus']();
 }
 
+export function GetUntrackedFileDiff(arg1) {
+  return window['go']['main']['App']['GetUntrackedFileDiff'](arg1);
+}
+
 export function ListBranches() {
   return window['go']['main']['App']['ListBranches']();
 }
@@ -74,6 +78,10 @@ export function StageFile(arg1) {
   return window['go']['main']['App']['StageFile'](arg1);
 }
 
+export function StageFiles(arg1) {
+  return window['go']['main']['App']['StageFiles'](arg1);
+}
+
 export function StageHunk(arg1) {
   return window['go']['main']['App']['StageHunk'](arg1);
 }
@@ -84,4 +92,12 @@ export function StoreCredentials(arg1, arg2, arg3) {
 
 export function UnstageFile(arg1) {
   return window['go']['main']['App']['UnstageFile'](arg1);
+}
+
+export function UnstageFiles(arg1) {
+  return window['go']['main']['App']['UnstageFiles'](arg1);
+}
+
+export function UnstageHunk(arg1) {
+  return window['go']['main']['App']['UnstageHunk'](arg1);
 }

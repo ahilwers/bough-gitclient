@@ -129,6 +129,78 @@ func TestStageHunk(t *testing.T) {
 	}
 }
 
+func TestUnstageHunk(t *testing.T) {
+	dir := initRepo(t)
+	addCommit(t, dir, "unstage.txt", "line1\nline2\nline3\n", "initial")
+	repo, _ := git.Open(dir)
+
+	// Modify and stage the file
+	if err := os.WriteFile(filepath.Join(dir, "unstage.txt"), []byte("line1\nLINE2_CHANGED\nline3\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.StageFile("unstage.txt"); err != nil {
+		t.Fatalf("StageFile: %v", err)
+	}
+
+	// Confirm it's staged
+	status, _ := repo.Status()
+	f := filesByPath(status.Files, "unstage.txt")
+	if len(f) == 0 || f[0].Staged == "" {
+		t.Fatal("expected unstage.txt to be staged")
+	}
+
+	// Build patch from the staged diff and unstage the hunk
+	diff, err := repo.GetFileDiff("unstage.txt", true)
+	if err != nil {
+		t.Fatalf("GetFileDiff (staged): %v", err)
+	}
+	if len(diff.Hunks) == 0 {
+		t.Fatal("expected staged hunks")
+	}
+	patch := buildPatch("unstage.txt", diff.Hunks[0])
+	if err := repo.UnstageHunkViaApply(patch); err != nil {
+		t.Fatalf("UnstageHunkViaApply: %v", err)
+	}
+
+	// After unstaging, staged code should be empty, "?" or " " (unmodified)
+	status, _ = repo.Status()
+	f = filesByPath(status.Files, "unstage.txt")
+	notStaged := map[string]bool{"": true, "?": true, " ": true}
+	if len(f) > 0 && !notStaged[f[0].Staged] {
+		t.Errorf("expected Staged to be empty/unmodified after UnstageHunkViaApply, got %q", f[0].Staged)
+	}
+}
+
+func TestDiscardHunk(t *testing.T) {
+	dir := initRepo(t)
+	addCommit(t, dir, "discard.txt", "line1\nline2\nline3\n", "initial")
+	repo, _ := git.Open(dir)
+
+	// Modify the file without staging
+	if err := os.WriteFile(filepath.Join(dir, "discard.txt"), []byte("line1\nLINE2_CHANGED\nline3\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	diff, err := repo.GetFileDiff("discard.txt", false)
+	if err != nil {
+		t.Fatalf("GetFileDiff: %v", err)
+	}
+	if len(diff.Hunks) == 0 {
+		t.Fatal("expected hunks for modified file")
+	}
+
+	patch := buildPatch("discard.txt", diff.Hunks[0])
+	if err := repo.DiscardHunk(patch); err != nil {
+		t.Fatalf("DiscardHunk: %v", err)
+	}
+
+	// After discarding, the file should be back to original (no unstaged changes)
+	after, _ := repo.GetFileDiff("discard.txt", false)
+	if len(after.Hunks) > 0 {
+		t.Error("expected no hunks after DiscardHunk")
+	}
+}
+
 func TestAmendCommit(t *testing.T) {
 	dir := initRepo(t)
 	addCommit(t, dir, "a.txt", "hello", "original message")

@@ -1,0 +1,76 @@
+import { renderHook, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createWrapper } from '@/test/queryWrapper'
+import { useFileDiff } from './useFileDiff'
+import { GetFileDiff } from '@wailsjs/go/main/App'
+import { EventsOn } from '@wailsjs/runtime/runtime'
+import type { DiffFile } from '@/lib/types'
+
+const makeDiff = (overrides: Partial<DiffFile> = {}): DiffFile => ({
+  path: 'foo.ts', oldPath: '',
+  hunks: [], binary: false,
+  ...overrides,
+})
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.mocked(EventsOn).mockReturnValue(vi.fn())
+})
+
+describe('useFileDiff', () => {
+  it('returns diff data from the backend', async () => {
+    const diff = makeDiff({ path: 'src/app.ts', hunks: [] })
+    vi.mocked(GetFileDiff).mockResolvedValue(diff)
+
+    const { result } = renderHook(() => useFileDiff('src/app.ts', false), { wrapper: createWrapper() })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.data?.path).toBe('src/app.ts')
+  })
+
+  it('passes staged=false to GetFileDiff', async () => {
+    vi.mocked(GetFileDiff).mockResolvedValue(makeDiff())
+
+    const { result } = renderHook(() => useFileDiff('file.ts', false), { wrapper: createWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(GetFileDiff).toHaveBeenCalledWith('file.ts', false)
+  })
+
+  it('passes staged=true to GetFileDiff', async () => {
+    vi.mocked(GetFileDiff).mockResolvedValue(makeDiff())
+
+    const { result } = renderHook(() => useFileDiff('file.ts', true), { wrapper: createWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(GetFileDiff).toHaveBeenCalledWith('file.ts', true)
+  })
+
+  it('is disabled when filePath is null', () => {
+    const { result } = renderHook(() => useFileDiff(null, false), { wrapper: createWrapper() })
+
+    expect(result.current.isPending).toBe(true)
+    expect(GetFileDiff).not.toHaveBeenCalled()
+  })
+
+  it('subscribes to repo:changed on mount', async () => {
+    vi.mocked(GetFileDiff).mockResolvedValue(makeDiff())
+
+    const { result } = renderHook(() => useFileDiff('f.ts', false), { wrapper: createWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(EventsOn).toHaveBeenCalledWith('repo:changed', expect.any(Function))
+  })
+
+  it('calls the unsubscribe function on unmount', async () => {
+    const unsubscribe = vi.fn()
+    vi.mocked(EventsOn).mockReturnValue(unsubscribe)
+    vi.mocked(GetFileDiff).mockResolvedValue(makeDiff())
+
+    const { result, unmount } = renderHook(() => useFileDiff('f.ts', false), { wrapper: createWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    unmount()
+    expect(unsubscribe).toHaveBeenCalledOnce()
+  })
+})
