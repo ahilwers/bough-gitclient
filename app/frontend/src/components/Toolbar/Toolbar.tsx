@@ -1,4 +1,61 @@
+import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare } from 'lucide-react'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { useGitStore } from '@/stores/gitStore'
+import { useStatus } from '@/hooks/useStatus'
+import { SelectRepository } from '@wailsjs/go/main/App'
+import { Fetch, Pull, Push } from '@wailsjs/go/main/App'
+import { useQueryClient } from '@tanstack/react-query'
+
 export default function Toolbar() {
+  const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash } = useGitStore()
+  const queryClient = useQueryClient()
+  const { data: status } = useStatus()
+
+  const changesCount = (status?.files?.length ?? 0)
+  const repoName = activeRepo ? activeRepo.split('/').pop() : 'No Repository'
+
+  const handleSelectRepo = async () => {
+    try {
+      const path = await SelectRepository()
+      if (path) {
+        setActiveRepo(path)
+        queryClient.invalidateQueries()
+      }
+    } catch (err) {
+      showFlash(String(err), 'danger')
+    }
+  }
+
+  const handleFetch = async () => {
+    try {
+      await Fetch('')
+      showFlash('Fetched successfully')
+      queryClient.invalidateQueries()
+    } catch (err) {
+      showFlash(String(err), 'danger')
+    }
+  }
+
+  const handlePull = async () => {
+    try {
+      await Pull('', '')
+      showFlash('Pulled successfully')
+      queryClient.invalidateQueries()
+    } catch (err) {
+      showFlash(String(err), 'danger')
+    }
+  }
+
+  const handlePush = async () => {
+    try {
+      await Push('', '', false)
+      showFlash('Pushed successfully')
+      queryClient.invalidateQueries()
+    } catch (err) {
+      showFlash(String(err), 'danger')
+    }
+  }
+
   return (
     <div
       style={{
@@ -6,7 +63,188 @@ export default function Toolbar() {
         background: 'var(--bg-toolbar)',
         borderBottom: '1px solid var(--border-sub)',
         flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '0 8px',
       }}
-    />
+    >
+      {/* Repo selector dropdown */}
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <button className="toolbar-btn" style={{ maxWidth: 160, gap: 4, paddingLeft: 10, paddingRight: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {repoName}
+            </span>
+            <ChevronDown size={12} style={{ flexShrink: 0, color: 'var(--text-ter)' }} />
+          </button>
+        </DropdownMenu.Trigger>
+
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content
+            style={{
+              background: 'var(--bg-panel)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--r-md)',
+              boxShadow: 'var(--shadow-lg)',
+              padding: '4px 0',
+              minWidth: 220,
+              zIndex: 1000,
+            }}
+            sideOffset={4}
+          >
+            <DropdownMenu.Item
+              onSelect={handleSelectRepo}
+              style={{ padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: 'var(--text-pri)' }}
+            >
+              Open Repository…
+            </DropdownMenu.Item>
+
+            {recentRepos.length > 0 && (
+              <>
+                <DropdownMenu.Separator style={{ height: 1, background: 'var(--border-sub)', margin: '4px 0' }} />
+                {recentRepos.map(repo => (
+                  <DropdownMenu.Item
+                    key={repo}
+                    onSelect={() => {
+                      setActiveRepo(repo)
+                      queryClient.invalidateQueries()
+                    }}
+                    style={{ padding: '6px 12px', fontSize: 12, cursor: 'pointer', color: 'var(--text-sec)' }}
+                  >
+                    {repo.split('/').pop()}
+                  </DropdownMenu.Item>
+                ))}
+              </>
+            )}
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+
+      {/* Divider */}
+      <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 4px' }} />
+
+      {/* View tabs */}
+      <TabButton
+        icon={<History size={13} />}
+        label="History"
+        active={activeView === 'history'}
+        onClick={() => setActiveView('history')}
+      />
+      <TabButton
+        icon={<GitCompare size={13} />}
+        label="Changes"
+        active={activeView === 'changes'}
+        badge={changesCount}
+        onClick={() => setActiveView('changes')}
+      />
+
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Action buttons */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 4px' }} />
+        <IconButton icon={<RefreshCw size={14} />} label="Fetch" onClick={handleFetch} />
+        <IconButton icon={<ArrowDown size={14} />} label="Pull" onClick={handlePull} />
+        <IconButton icon={<ArrowUp size={14} />} label="Push" onClick={handlePush} />
+        <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
+        <IconButton icon={<GitBranch size={14} />} label="Branch" />
+        <IconButton icon={<Layers size={14} />} label="Stash" />
+        <IconButton icon={<Tag size={14} />} label="Tag" />
+        <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
+        <IconButton
+          icon={<Search size={14} />}
+          label="Command Palette (⌘K)"
+          onClick={() => window.dispatchEvent(new CustomEvent('palette:open'))}
+        />
+      </div>
+    </div>
+  )
+}
+
+interface TabButtonProps {
+  icon: React.ReactNode
+  label: string
+  active: boolean
+  badge?: number
+  onClick: () => void
+}
+
+function TabButton({ icon, label, active, badge, onClick }: TabButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        height: 28,
+        padding: '0 10px',
+        borderRadius: 'var(--r-sm)',
+        border: 'none',
+        fontSize: 12,
+        fontWeight: 500,
+        cursor: 'pointer',
+        position: 'relative',
+        background: active ? 'var(--acc)' : 'transparent',
+        color: active ? '#fff' : 'var(--text-pri)',
+      }}
+    >
+      {icon}
+      {label}
+      {badge !== undefined && badge > 0 && (
+        <span
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: -2,
+            minWidth: 16,
+            height: 16,
+            background: 'var(--danger)',
+            borderRadius: 8,
+            color: '#fff',
+            fontSize: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transform: 'translateY(-4px)',
+            padding: '0 3px',
+          }}
+        >
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
+    </button>
+  )
+}
+
+interface IconButtonProps {
+  icon: React.ReactNode
+  label: string
+  onClick?: () => void
+}
+
+function IconButton({ icon, label, onClick }: IconButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 30,
+        height: 30,
+        borderRadius: 'var(--r-sm)',
+        border: 'none',
+        background: 'transparent',
+        color: 'var(--text-pri)',
+        cursor: 'pointer',
+      }}
+    >
+      {icon}
+    </button>
   )
 }

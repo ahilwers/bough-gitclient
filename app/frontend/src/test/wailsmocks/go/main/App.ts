@@ -32,3 +32,12 @@ export const Fetch = vi.fn((_remote: string): Promise<void> => Promise.resolve()
 export const Pull = vi.fn((_remote: string, _branch: string): Promise<void> => Promise.resolve())
 export const Push = vi.fn((_remote: string, _branch: string, _force: boolean): Promise<void> => Promise.resolve())
 export const StoreCredentials = vi.fn((_url: string, _user: string, _pass: string): Promise<void> => Promise.resolve())
+
+// Branches & worktrees
+export interface BranchInfo { name: string; remote: string; isHead: boolean; upstream: string; ahead: number; behind: number }
+export interface BranchList { local: BranchInfo[]; remotes: BranchInfo[] }
+export interface WorktreeInfo { path: string; branch: string; head: string; isMain: boolean; isDirty: boolean }
+export const ListBranches = vi.fn((): Promise<BranchList> => Promise.resolve({ local: [], remotes: [] }))
+export const ListWorktrees = vi.fn((): Promise<WorktreeInfo[]> => Promise.resolve([]))
+export const AddWorktree = vi.fn((_path: string, _branch: string): Promise<void> => Promise.resolve())
+export const SelectRepository = vi.fn((): Promise<string> => Promise.resolve(''))

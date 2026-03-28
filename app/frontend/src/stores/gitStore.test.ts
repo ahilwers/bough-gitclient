@@ -6,9 +6,12 @@ beforeEach(() => {
   // Reset store to initial state between tests
   useGitStore.setState({
     activeView: 'history',
+    showSidebar: true,
     flash: null,
     activeRepo: null,
     recentRepos: [],
+    worktrees: [],
+    activeWorktree: null,
     selectedCommit: null,
     selectedFile: null,
   })
@@ -96,6 +99,26 @@ describe('activeRepo', () => {
       }
     })
     expect(useGitStore.getState().recentRepos.length).toBe(10)
+  })
+})
+
+describe('showSidebar', () => {
+  it('defaults to true', () => {
+    expect(useGitStore.getState().showSidebar).toBe(true)
+  })
+
+  it('setShowSidebar toggles visibility', () => {
+    act(() => useGitStore.getState().setShowSidebar(false))
+    expect(useGitStore.getState().showSidebar).toBe(false)
+    act(() => useGitStore.getState().setShowSidebar(true))
+    expect(useGitStore.getState().showSidebar).toBe(true)
+  })
+})
+
+describe('setActiveView', () => {
+  it('is an alias for setView', () => {
+    act(() => useGitStore.getState().setActiveView('changes'))
+    expect(useGitStore.getState().activeView).toBe('changes')
   })
 })
 
