@@ -52,3 +52,4 @@ export const SwitchWorktree = vi.fn((_path: string): Promise<void> => Promise.re
 export const OpenInFinder = vi.fn((_path: string): Promise<void> => Promise.resolve())
 export const SelectRepository = vi.fn((): Promise<string> => Promise.resolve(''))
 export const SaveWindowSize = vi.fn((_width: number, _height: number): Promise<void> => Promise.resolve())
+export const GetRecentRepos = vi.fn((): Promise<string[]> => Promise.resolve([]))

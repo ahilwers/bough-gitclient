@@ -22,6 +22,7 @@ interface GitStore {
   activeRepo: string | null
   recentRepos: string[]
   setActiveRepo: (path: string) => void
+  setRecentRepos: (repos: string[]) => void
 
   // Worktrees
   worktrees: WorktreeInfo[]
@@ -92,6 +93,7 @@ export const useGitStore = create<GitStore>()(
         activeRepo: path,
         recentRepos: [path, ...s.recentRepos.filter(r => r !== path)].slice(0, 10),
       })),
+      setRecentRepos: (repos) => set({ recentRepos: repos }),
 
       setWorktrees: (worktrees) => set({ worktrees }),
       setActiveWorktree: (activeWorktree) => set({ activeWorktree }),

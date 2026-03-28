@@ -42,6 +42,10 @@ export function GetFileDiff(arg1, arg2) {
   return window['go']['main']['App']['GetFileDiff'](arg1, arg2);
 }
 
+export function GetRecentRepos() {
+  return window['go']['main']['App']['GetRecentRepos']();
+}
+
 export function GetStatus() {
   return window['go']['main']['App']['GetStatus']();
 }
