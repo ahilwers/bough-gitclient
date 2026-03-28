@@ -30,11 +30,15 @@ export function ListBranches():Promise<git.BranchList>;
 
 export function ListWorktrees():Promise<Array<git.WorktreeInfo>>;
 
+export function OpenInFinder(arg1:string):Promise<void>;
+
 export function OpenRepository(arg1:string):Promise<string>;
 
 export function Pull(arg1:string,arg2:string):Promise<void>;
 
 export function Push(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
+export function RemoveWorktree(arg1:string):Promise<void>;
 
 export function SelectRepository():Promise<string>;
 
@@ -45,6 +49,8 @@ export function StageFiles(arg1:Array<string>):Promise<void>;
 export function StageHunk(arg1:string):Promise<void>;
 
 export function StoreCredentials(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function SwitchWorktree(arg1:string):Promise<void>;
 
 export function UnstageFile(arg1:string):Promise<void>;
 

@@ -38,7 +38,10 @@ func Open(path string) (*Repository, error) {
 	return &Repository{repo: repo, Path: wt.Filesystem.Root()}, nil
 }
 
-var ErrNotARepo = errors.New("not a git repository")
+var (
+	ErrNotARepo                 = errors.New("not a git repository")
+	ErrCannotRemoveMainWorktree = errors.New("cannot remove the main worktree")
+)
 
 // CurrentBranch returns the name of the currently checked-out branch,
 // or "HEAD" if in detached HEAD state.

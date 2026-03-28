@@ -5,18 +5,41 @@ import (
 )
 
 // ListWorktrees returns all git worktrees for this repository using `git worktree list`.
+// IsDirty is populated for each worktree by running `git status --porcelain`.
 func (r *Repository) ListWorktrees() ([]WorktreeInfo, error) {
 	out, err := CLI(r.Path, "worktree", "list", "--porcelain")
 	if err != nil {
 		return nil, err
 	}
-	return parseWorktrees(out), nil
+	worktrees := parseWorktrees(out)
+	for i := range worktrees {
+		worktrees[i].IsDirty = isWorktreeDirty(worktrees[i].Path)
+	}
+	return worktrees, nil
 }
 
 // AddWorktree creates a new linked worktree at path checked out to branch.
 // Uses CLI-git because go-git does not support worktree add.
 func (r *Repository) AddWorktree(path, branch string) error {
 	_, err := CLI(r.Path, "worktree", "add", path, branch)
+	return err
+}
+
+// RemoveWorktree removes a linked worktree. Refuses to remove the main worktree.
+// Passes --force so git removes the directory even if it has local modifications
+// (the UI asks for confirmation before calling this).
+func (r *Repository) RemoveWorktree(wtPath string) error {
+	if wtPath == r.Path {
+		return ErrCannotRemoveMainWorktree
+	}
+	_, err := CLI(r.Path, "worktree", "remove", "--force", wtPath)
+	return err
+}
+
+// PruneWorktrees removes stale worktree administrative files for worktrees whose
+// directories no longer exist.
+func (r *Repository) PruneWorktrees() error {
+	_, err := CLI(r.Path, "worktree", "prune")
 	return err
 }
 
@@ -58,4 +81,13 @@ func parseWorktrees(output string) []WorktreeInfo {
 		result = append(result, cur)
 	}
 	return result
+}
+
+// isWorktreeDirty returns true when the worktree has uncommitted changes.
+func isWorktreeDirty(path string) bool {
+	out, err := CLI(path, "status", "--porcelain")
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(out) != ""
 }

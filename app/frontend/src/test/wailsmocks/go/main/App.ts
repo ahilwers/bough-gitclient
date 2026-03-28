@@ -47,4 +47,7 @@ export interface WorktreeInfo { path: string; branch: string; head: string; isMa
 export const ListBranches = vi.fn((): Promise<BranchList> => Promise.resolve({ local: [], remotes: [] }))
 export const ListWorktrees = vi.fn((): Promise<WorktreeInfo[]> => Promise.resolve([]))
 export const AddWorktree = vi.fn((_path: string, _branch: string): Promise<void> => Promise.resolve())
+export const RemoveWorktree = vi.fn((_path: string): Promise<void> => Promise.resolve())
+export const SwitchWorktree = vi.fn((_path: string): Promise<void> => Promise.resolve())
+export const OpenInFinder = vi.fn((_path: string): Promise<void> => Promise.resolve())
 export const SelectRepository = vi.fn((): Promise<string> => Promise.resolve(''))
