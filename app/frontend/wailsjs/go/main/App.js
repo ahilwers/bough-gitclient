@@ -26,8 +26,16 @@ export function GetCommitDiff(arg1) {
   return window['go']['main']['App']['GetCommitDiff'](arg1);
 }
 
-export function GetCommits(arg1) {
-  return window['go']['main']['App']['GetCommits'](arg1);
+export function GetCommits(arg1, arg2) {
+  return window['go']['main']['App']['GetCommits'](arg1, arg2);
+}
+
+export function GetFileAtCommit(arg1, arg2) {
+  return window['go']['main']['App']['GetFileAtCommit'](arg1, arg2);
+}
+
+export function GetFileAtCommitParent(arg1, arg2) {
+  return window['go']['main']['App']['GetFileAtCommitParent'](arg1, arg2);
 }
 
 export function GetFileDiff(arg1, arg2) {

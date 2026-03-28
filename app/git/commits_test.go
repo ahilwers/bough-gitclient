@@ -12,7 +12,7 @@ func TestGetCommits_Order(t *testing.T) {
 	addCommit(t, dir, "b.txt", "world", "third commit")
 
 	repo, _ := git.Open(dir)
-	commits, err := repo.GetCommits(100)
+	commits, err := repo.GetCommits(100, true)
 	if err != nil {
 		t.Fatalf("GetCommits: %v", err)
 	}
@@ -33,7 +33,7 @@ func TestGetCommits_Limit(t *testing.T) {
 	addCommit(t, dir, "d.txt", "d", "commit 5")
 
 	repo, _ := git.Open(dir)
-	commits, err := repo.GetCommits(3)
+	commits, err := repo.GetCommits(3, true)
 	if err != nil {
 		t.Fatalf("GetCommits: %v", err)
 	}
@@ -47,7 +47,7 @@ func TestGetCommits_GraphLayout(t *testing.T) {
 	addCommit(t, dir, "a.txt", "v1", "feature work")
 
 	repo, _ := git.Open(dir)
-	commits, err := repo.GetCommits(100)
+	commits, err := repo.GetCommits(100, true)
 	if err != nil {
 		t.Fatalf("GetCommits: %v", err)
 	}
@@ -75,7 +75,7 @@ func TestGetCommits_RefsPresent(t *testing.T) {
 	dir := initRepo(t)
 	repo, _ := git.Open(dir)
 
-	commits, err := repo.GetCommits(10)
+	commits, err := repo.GetCommits(10, true)
 	if err != nil {
 		t.Fatalf("GetCommits: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestGetCommits_ParentLinks(t *testing.T) {
 	addCommit(t, dir, "a.txt", "v1", "second")
 
 	repo, _ := git.Open(dir)
-	commits, err := repo.GetCommits(100)
+	commits, err := repo.GetCommits(100, true)
 	if err != nil {
 		t.Fatalf("GetCommits: %v", err)
 	}

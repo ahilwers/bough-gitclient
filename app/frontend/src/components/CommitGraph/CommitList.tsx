@@ -17,9 +17,11 @@ interface ColState {
 
 interface CommitListProps {
   limit?: number
+  all?: boolean
+  searchQuery?: string
 }
 
-export function CommitList({ limit = 500 }: CommitListProps) {
+export function CommitList({ limit = 500, all = true, searchQuery = '' }: CommitListProps) {
   const { selectedCommit, setSelectedCommit } = useGitStore()
   const outerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -28,7 +30,20 @@ export function CommitList({ limit = 500 }: CommitListProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
   const [cols, setCols] = useState<ColState>({ graph: null, author: 130, date: 90 })
 
-  const { data: commits = [] } = useCommits(limit)
+  const { data: allCommits = [] } = useCommits(limit, all)
+
+  // Client-side search filter
+  const commits = useMemo(() => {
+    if (!searchQuery.trim()) return allCommits
+    const q = searchQuery.toLowerCase()
+    return allCommits.filter(c =>
+      c.message.toLowerCase().includes(q) ||
+      c.hash.toLowerCase().includes(q) ||
+      c.author.toLowerCase().includes(q)
+    )
+  }, [allCommits, searchQuery])
+
+  const isSearching = !!searchQuery.trim()
 
   // Auto graph width based on deepest column used, capped at MAX_AUTO_COLS
   const autoGraphWidth = useMemo(() => {
@@ -112,7 +127,7 @@ export function CommitList({ limit = 500 }: CommitListProps) {
 
   return (
     <div ref={outerRef} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-      {/* Column header */}
+      {/* Column header — graph column hidden during search */}
       <div style={{
         display: 'flex',
         height: HEADER_HEIGHT,
@@ -121,9 +136,11 @@ export function CommitList({ limit = 500 }: CommitListProps) {
         flexShrink: 0,
         userSelect: 'none',
       }}>
-        <div style={{ width: graphWidth, position: 'relative', flexShrink: 0 }}>
-          <DragHandle onMouseDown={e => { e.preventDefault(); startDrag('graph', e.clientX, graphWidth) }} />
-        </div>
+        {!isSearching && (
+          <div style={{ width: graphWidth, position: 'relative', flexShrink: 0 }}>
+            <DragHandle onMouseDown={e => { e.preventDefault(); startDrag('graph', e.clientX, graphWidth) }} />
+          </div>
+        )}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 11, color: 'var(--text-ter)' }}>
           Summary
         </div>
@@ -139,15 +156,18 @@ export function CommitList({ limit = 500 }: CommitListProps) {
 
       {/* Canvas overlay + scrollable rows */}
       <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
-        <GraphCanvas
-          commits={commits}
-          selectedHash={selectedCommit}
-          hoveredIdx={hoveredIdx}
-          scrollTop={scrollTop}
-          containerHeight={containerSize.height}
-          containerWidth={containerSize.width}
-          graphWidth={graphWidth}
-        />
+        {/* Canvas is only shown when not searching — filtered commits don't have valid graph lines */}
+        {!isSearching && (
+          <GraphCanvas
+            commits={commits}
+            selectedHash={selectedCommit}
+            hoveredIdx={hoveredIdx}
+            scrollTop={scrollTop}
+            containerHeight={containerSize.height}
+            containerWidth={containerSize.width}
+            graphWidth={graphWidth}
+          />
+        )}
 
         <div
           ref={scrollRef}
@@ -167,7 +187,7 @@ export function CommitList({ limit = 500 }: CommitListProps) {
                 key={commit.hash}
                 commit={commit}
                 isSelected={commit.hash === selectedCommit}
-                graphWidth={graphWidth}
+                graphWidth={isSearching ? 0 : graphWidth}
                 authorWidth={cols.author}
                 dateWidth={cols.date}
                 style={{ position: 'absolute', top: (startIdx + i) * ROW_HEIGHT, left: 0, right: 0 }}

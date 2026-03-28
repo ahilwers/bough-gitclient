@@ -1,0 +1,184 @@
+import { useState } from 'react'
+import { Copy, ChevronRight } from 'lucide-react'
+import { useGitStore } from '@/stores/gitStore'
+import { useCommits } from '@/hooks/useCommits'
+import { useCommitFiles } from '@/hooks/useCommitFiles'
+import { FileList } from './FileList'
+import { DiffViewer } from './DiffViewer'
+import { formatRelativeDate } from '@/lib/format'
+
+interface CommitDetailPanelProps {
+  commitHash: string
+}
+
+export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
+  const { setSelectedCommit } = useGitStore()
+  const [activeTab, setActiveTab] = useState<'files' | 'diff'>('files')
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  // Find commit metadata from already-loaded list (no extra network call)
+  const { data: commits = [] } = useCommits()
+  const commit = commits.find(c => c.hash === commitHash) ?? null
+
+  const { data: files = [], isLoading: filesLoading } = useCommitFiles(commitHash)
+
+  function copyHash() {
+    navigator.clipboard.writeText(commitHash).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
+  function handleFileSelect(path: string) {
+    setSelectedFile(path)
+    setActiveTab('diff')
+  }
+
+  if (!commit) {
+    return (
+      <div style={{ width: 370, borderLeft: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', color: 'var(--text-ter)', fontSize: 12 }}>
+        Loading…
+      </div>
+    )
+  }
+
+  return (
+    <div style={{
+      width: 370, flexShrink: 0,
+      borderLeft: '1px solid var(--border)',
+      background: 'var(--bg-panel)',
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{ flexShrink: 0, borderBottom: '1px solid var(--border-sub)', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Hash + copy */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <code style={{
+            flex: 1, padding: '4px 8px', background: 'var(--bg-content)',
+            borderRadius: 4, fontSize: 11, fontFamily: 'monospace',
+            color: 'var(--text-sec)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {commit.hash}
+          </code>
+          <button
+            onClick={copyHash}
+            title="Copy full hash"
+            style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer', color: copied ? 'var(--success)' : 'var(--text-ter)', borderRadius: 4 }}
+          >
+            <Copy size={13} />
+          </button>
+        </div>
+
+        {/* Full message */}
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-pri)', lineHeight: 1.4, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          {commit.fullMessage || commit.message}
+        </p>
+
+        {/* Metadata grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', fontSize: 11 }}>
+          <div>
+            <div style={{ color: 'var(--text-ter)', marginBottom: 2 }}>Author</div>
+            <div style={{ color: 'var(--text-pri)', fontWeight: 500 }}>{commit.author}</div>
+          </div>
+          <div>
+            <div style={{ color: 'var(--text-ter)', marginBottom: 2 }}>Date</div>
+            <div style={{ color: 'var(--text-pri)' }}>{formatRelativeDate(commit.date)}</div>
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <div style={{ color: 'var(--text-ter)', marginBottom: 2 }}>Email</div>
+            <div style={{ color: 'var(--text-sec)', fontFamily: 'monospace', fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{commit.email}</div>
+          </div>
+        </div>
+
+        {/* Parent links */}
+        {commit.parents.length > 0 && (
+          <div>
+            <div style={{ color: 'var(--text-ter)', fontSize: 11, marginBottom: 4 }}>
+              {commit.parents.length === 1 ? 'Parent' : 'Parents'}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {commit.parents.map((p, i) => (
+                <code
+                  key={i}
+                  onClick={() => setSelectedCommit(p)}
+                  style={{
+                    padding: '2px 6px', background: 'var(--bg-content)',
+                    borderRadius: 4, fontSize: 11, fontFamily: 'monospace',
+                    color: 'var(--acc)', cursor: 'pointer',
+                  }}
+                  title={p}
+                >
+                  {p.slice(0, 7)}
+                </code>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Tab strip */}
+      <div style={{
+        display: 'flex', gap: 4, padding: '6px 10px',
+        borderBottom: '1px solid var(--border-sub)',
+        background: 'var(--bg-content)', flexShrink: 0,
+      }}>
+        <TabButton label="Files" count={files.length} active={activeTab === 'files'} onClick={() => setActiveTab('files')} />
+        <TabButton label="Diff" active={activeTab === 'diff'} onClick={() => setActiveTab('diff')} />
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {activeTab === 'files' && (
+          filesLoading
+            ? <Loading />
+            : <FileList files={files} selectedFile={selectedFile} onSelect={handleFileSelect} />
+        )}
+        {activeTab === 'diff' && selectedFile && (
+          <DiffViewer commitHash={commitHash} filePath={selectedFile} />
+        )}
+        {activeTab === 'diff' && !selectedFile && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8, color: 'var(--text-ter)', fontSize: 12 }}>
+            <ChevronRight size={20} />
+            Select a file from the Files tab
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+interface TabButtonProps {
+  label: string
+  count?: number
+  active: boolean
+  onClick: () => void
+}
+
+function TabButton({ label, count, active, onClick }: TabButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '3px 10px', border: 'none', borderRadius: 4,
+        fontSize: 12, fontWeight: 500, cursor: 'pointer',
+        background: active ? 'var(--acc)' : 'transparent',
+        color: active ? 'white' : 'var(--text-sec)',
+        display: 'flex', alignItems: 'center', gap: 5,
+      }}
+    >
+      {label}
+      {count !== undefined && count > 0 && (
+        <span style={{ fontSize: 10, opacity: 0.8 }}>{count}</span>
+      )}
+    </button>
+  )
+}
+
+function Loading() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 12, color: 'var(--text-ter)' }}>
+      Loading…
+    </div>
+  )
+}

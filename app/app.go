@@ -52,11 +52,11 @@ func (a *App) OpenRepository(path string) (string, error) {
 
 // --- Commits ---
 
-func (a *App) GetCommits(limit int) ([]gitpkg.CommitNode, error) {
+func (a *App) GetCommits(limit int, all bool) ([]gitpkg.CommitNode, error) {
 	if a.repo == nil {
 		return nil, gitpkg.ErrNotARepo
 	}
-	return a.repo.GetCommits(limit)
+	return a.repo.GetCommits(limit, all)
 }
 
 func (a *App) GetCommitDiff(hash string) ([]gitpkg.DiffFile, error) {
@@ -64,6 +64,20 @@ func (a *App) GetCommitDiff(hash string) ([]gitpkg.DiffFile, error) {
 		return nil, gitpkg.ErrNotARepo
 	}
 	return a.repo.GetCommitDiff(hash)
+}
+
+func (a *App) GetFileAtCommit(hash, filePath string) (string, error) {
+	if a.repo == nil {
+		return "", gitpkg.ErrNotARepo
+	}
+	return a.repo.GetFileAtCommit(hash, filePath)
+}
+
+func (a *App) GetFileAtCommitParent(hash, filePath string) (string, error) {
+	if a.repo == nil {
+		return "", gitpkg.ErrNotARepo
+	}
+	return a.repo.GetFileAtCommitParent(hash, filePath)
 }
 
 // --- Status & Diff ---

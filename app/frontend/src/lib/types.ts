@@ -17,7 +17,8 @@ export interface Ref {
 export interface CommitNode {
   hash: string
   shortHash: string
-  message: string
+  message: string      // first line only — for list display
+  fullMessage: string  // complete commit message
   author: string
   email: string
   date: string  // ISO string from Go time.Time

@@ -92,6 +92,7 @@ export namespace git {
 	    hash: string;
 	    shortHash: string;
 	    message: string;
+	    fullMessage: string;
 	    author: string;
 	    email: string;
 	    // Go type: time
@@ -111,6 +112,7 @@ export namespace git {
 	        this.hash = source["hash"];
 	        this.shortHash = source["shortHash"];
 	        this.message = source["message"];
+	        this.fullMessage = source["fullMessage"];
 	        this.author = source["author"];
 	        this.email = source["email"];
 	        this.date = this.convertValues(source["date"], null);

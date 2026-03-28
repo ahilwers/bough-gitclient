@@ -4,7 +4,7 @@ import { vi } from 'vitest'
 export interface GraphLine { fromCol: number; toCol: number; color: number; isMerge: boolean }
 export interface Ref { name: string; type: string; isHead: boolean }
 export interface CommitNode {
-  hash: string; shortHash: string; message: string; author: string; email: string
+  hash: string; shortHash: string; message: string; fullMessage: string; author: string; email: string
   date: Date; parents: string[]; refs: Ref[]; column: number; color: number; lines: GraphLine[]
 }
 export interface DiffLine { type: string; content: string; oldNo: number; newNo: number }
@@ -15,8 +15,10 @@ export interface RepoStatus { branch: string; ahead: number; behind: number; fil
 
 // Default mock implementations — override per test with vi.mocked(Fn).mockResolvedValue(...)
 export const OpenRepository = vi.fn((_path: string): Promise<string> => Promise.resolve('/tmp/test-repo'))
-export const GetCommits = vi.fn((_limit: number): Promise<CommitNode[]> => Promise.resolve([]))
+export const GetCommits = vi.fn((_limit: number, _all: boolean): Promise<CommitNode[]> => Promise.resolve([]))
 export const GetCommitDiff = vi.fn((_hash: string): Promise<DiffFile[]> => Promise.resolve([]))
+export const GetFileAtCommit = vi.fn((_hash: string, _path: string): Promise<string> => Promise.resolve(''))
+export const GetFileAtCommitParent = vi.fn((_hash: string, _path: string): Promise<string> => Promise.resolve(''))
 export const GetStatus = vi.fn((): Promise<RepoStatus> =>
   Promise.resolve({ branch: 'main', ahead: 0, behind: 0, files: [], hasConflicts: false }))
 export const GetFileDiff = vi.fn((_path: string, _staged: boolean): Promise<DiffFile> =>

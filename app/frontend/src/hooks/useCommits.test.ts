@@ -10,6 +10,7 @@ const makeCommit = (overrides: Partial<CommitNode> = {}): CommitNode => ({
   hash: 'abc1234567890abcdef1234567890abcdef1234ab',
   shortHash: 'abc1234',
   message: 'Fix bug',
+  fullMessage: 'Fix bug',
   author: 'Alice',
   email: 'alice@example.com',
   date: new Date().toISOString(),
@@ -44,7 +45,7 @@ describe('useCommits', () => {
     const { result } = renderHook(() => useCommits(250), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-    expect(GetCommits).toHaveBeenCalledWith(250)
+    expect(GetCommits).toHaveBeenCalledWith(250, true)
   })
 
   it('returns empty array when backend returns null', async () => {
