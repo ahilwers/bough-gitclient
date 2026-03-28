@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { EventsOn } from '@wailsjs/runtime/runtime'
+import { SaveWindowSize } from '@wailsjs/go/main/App'
 import { useGitStore } from '@/stores/gitStore'
 import { useKeyboard } from '@/hooks/useKeyboard'
 import Toolbar from '@/components/Toolbar/Toolbar'
@@ -13,6 +14,7 @@ import CommandPalette from '@/components/shared/CommandPalette'
 export default function App() {
   const { activeView, showSidebar, theme } = useGitStore()
   const queryClient = useQueryClient()
+  const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Apply theme to <html data-theme>
   useEffect(() => {
@@ -29,6 +31,22 @@ export default function App() {
     })
     return unsubscribe
   }, [queryClient])
+
+  // Persist window size across sessions.
+  // Debounced so we don't hammer the Go backend during a live resize.
+  useEffect(() => {
+    const onResize = () => {
+      if (resizeTimer.current) clearTimeout(resizeTimer.current)
+      resizeTimer.current = setTimeout(() => {
+        SaveWindowSize(window.innerWidth, window.innerHeight)
+      }, 500)
+    }
+    window.addEventListener('resize', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      if (resizeTimer.current) clearTimeout(resizeTimer.current)
+    }
+  }, [])
 
   // Global keyboard shortcuts (⌘K, ⌘1, ⌘2)
   useKeyboard()
