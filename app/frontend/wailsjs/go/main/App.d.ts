@@ -14,7 +14,11 @@ export function Fetch(arg1:string):Promise<void>;
 
 export function GetCommitDiff(arg1:string):Promise<Array<git.DiffFile>>;
 
-export function GetCommits(arg1:number):Promise<Array<git.CommitNode>>;
+export function GetCommits(arg1:number,arg2:boolean):Promise<Array<git.CommitNode>>;
+
+export function GetFileAtCommit(arg1:string,arg2:string):Promise<string>;
+
+export function GetFileAtCommitParent(arg1:string,arg2:string):Promise<string>;
 
 export function GetFileDiff(arg1:string,arg2:boolean):Promise<git.DiffFile>;
 

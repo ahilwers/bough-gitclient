@@ -13,7 +13,7 @@ func TestGetCommitDiff_NewFile(t *testing.T) {
 	addCommit(t, dir, "hello.txt", "line one\nline two\n", "add hello")
 
 	repo, _ := git.Open(dir)
-	commits, _ := repo.GetCommits(10)
+	commits, _ := repo.GetCommits(10, true)
 
 	diffs, err := repo.GetCommitDiff(commits[0].Hash)
 	if err != nil {
@@ -33,7 +33,7 @@ func TestGetCommitDiff_InitialCommit(t *testing.T) {
 	addCommit(t, dir, "readme.md", "# Project\n", "add readme")
 
 	repo, _ := git.Open(dir)
-	commits, _ := repo.GetCommits(10)
+	commits, _ := repo.GetCommits(10, true)
 
 	// Find the initial commit (last one)
 	initial := commits[len(commits)-1]
@@ -49,7 +49,7 @@ func TestGetCommitDiff_ModifiedFile(t *testing.T) {
 	addCommit(t, dir, "file.txt", "modified content\n", "modify")
 
 	repo, _ := git.Open(dir)
-	commits, _ := repo.GetCommits(10)
+	commits, _ := repo.GetCommits(10, true)
 
 	diffs, err := repo.GetCommitDiff(commits[0].Hash)
 	if err != nil {
@@ -157,5 +157,70 @@ func TestParsePatchOutput_LineNumbers(t *testing.T) {
 				t.Errorf("ctx line missing line numbers: OldNo=%d NewNo=%d", line.OldNo, line.NewNo)
 			}
 		}
+	}
+}
+
+func TestGetFileAtCommit_Content(t *testing.T) {
+	dir := initRepo(t)
+	addCommit(t, dir, "hello.txt", "content here\n", "add hello")
+
+	repo, _ := git.Open(dir)
+	commits, _ := repo.GetCommits(10, true)
+
+	content, err := repo.GetFileAtCommit(commits[0].Hash, "hello.txt")
+	if err != nil {
+		t.Fatalf("GetFileAtCommit: %v", err)
+	}
+	if content != "content here\n" {
+		t.Errorf("content = %q, want %q", content, "content here\n")
+	}
+}
+
+func TestGetFileAtCommit_MissingFile(t *testing.T) {
+	dir := initRepo(t)
+	repo, _ := git.Open(dir)
+	commits, _ := repo.GetCommits(10, true)
+
+	content, err := repo.GetFileAtCommit(commits[0].Hash, "nonexistent.txt")
+	if err != nil {
+		t.Fatalf("unexpected error for missing file: %v", err)
+	}
+	if content != "" {
+		t.Errorf("expected empty content for missing file, got %q", content)
+	}
+}
+
+func TestGetFileAtCommitParent_PreviousContent(t *testing.T) {
+	dir := initRepo(t)
+	addCommit(t, dir, "file.txt", "version one\n", "v1")
+	addCommit(t, dir, "file.txt", "version two\n", "v2")
+
+	repo, _ := git.Open(dir)
+	commits, _ := repo.GetCommits(10, true)
+
+	// commits[0] is v2 — its parent should have "version one"
+	parent, err := repo.GetFileAtCommitParent(commits[0].Hash, "file.txt")
+	if err != nil {
+		t.Fatalf("GetFileAtCommitParent: %v", err)
+	}
+	if parent != "version one\n" {
+		t.Errorf("parent content = %q, want %q", parent, "version one\n")
+	}
+}
+
+func TestGetFileAtCommitParent_InitialCommit(t *testing.T) {
+	dir := initRepo(t)
+	addCommit(t, dir, "readme.md", "# Hello\n", "init")
+
+	repo, _ := git.Open(dir)
+	commits, _ := repo.GetCommits(10, true)
+	initial := commits[len(commits)-1]
+
+	content, err := repo.GetFileAtCommitParent(initial.Hash, "readme.md")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if content != "" {
+		t.Errorf("initial commit parent content should be empty, got %q", content)
 	}
 }

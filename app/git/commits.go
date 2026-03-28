@@ -1,6 +1,8 @@
 package git
 
 import (
+	"strings"
+
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -10,7 +12,9 @@ import (
 const maxCommits = 5000 // cap for initial load
 
 // GetCommits returns the last n commits with pre-computed graph layout.
-func (r *Repository) GetCommits(limit int) ([]CommitNode, error) {
+// When all is true every branch is included; when false only commits
+// reachable from HEAD are returned.
+func (r *Repository) GetCommits(limit int, all bool) ([]CommitNode, error) {
 	if limit <= 0 || limit > maxCommits {
 		limit = maxCommits
 	}
@@ -23,7 +27,7 @@ func (r *Repository) GetCommits(limit int) ([]CommitNode, error) {
 	iter, err := r.repo.Log(&gogit.LogOptions{
 		From:  head.Hash(),
 		Order: gogit.LogOrderCommitterTime,
-		All:   true, // include all branches
+		All:   all,
 	})
 	if err != nil {
 		return nil, err
@@ -223,17 +227,18 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 		}
 
 		nodes[i] = CommitNode{
-			Hash:      hash,
-			ShortHash: short,
-			Message:   firstLine(c.Message),
-			Author:    c.Author.Name,
-			Email:     c.Author.Email,
-			Date:      c.Author.When,
-			Parents:   hashStrings(c.ParentHashes),
-			Refs:      refs[c.Hash],
-			Column:    col,
-			Color:     color,
-			Lines:     lines,
+			Hash:        hash,
+			ShortHash:   short,
+			Message:     firstLine(c.Message),
+			FullMessage: strings.TrimSpace(c.Message),
+			Author:      c.Author.Name,
+			Email:       c.Author.Email,
+			Date:        c.Author.When,
+			Parents:     hashStrings(c.ParentHashes),
+			Refs:        refs[c.Hash],
+			Column:      col,
+			Color:       color,
+			Lines:       lines,
 		}
 	}
 	return nodes

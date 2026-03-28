@@ -4,13 +4,13 @@ import { GetCommits } from '@wailsjs/go/main/App'
 import { EventsOn } from '@wailsjs/runtime/runtime'
 import type { CommitNode } from '@/lib/types'
 
-export function useCommits(limit = 500) {
+export function useCommits(limit = 500, all = true) {
   const queryClient = useQueryClient()
 
   const query = useQuery({
-    queryKey: ['commits', limit],
+    queryKey: ['commits', limit, all],
     queryFn: async () => {
-      const result = await GetCommits(limit)
+      const result = await GetCommits(limit, all)
       return (result || []) as CommitNode[]
     },
     staleTime: 30_000,

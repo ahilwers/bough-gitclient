@@ -88,7 +88,7 @@ func TestCreateCommit(t *testing.T) {
 	}
 
 	// Verify the commit appears in the log
-	commits, _ := repo.GetCommits(10)
+	commits, _ := repo.GetCommits(10, true)
 	if commits[0].Message != "test commit message" {
 		t.Errorf("top commit message = %q, want %q", commits[0].Message, "test commit message")
 	}
@@ -138,7 +138,7 @@ func TestAmendCommit(t *testing.T) {
 		t.Fatalf("AmendCommit: %v", err)
 	}
 
-	commits, _ := repo.GetCommits(10)
+	commits, _ := repo.GetCommits(10, true)
 	if commits[0].Message != "amended message" {
 		t.Errorf("after amend: message = %q, want %q", commits[0].Message, "amended message")
 	}

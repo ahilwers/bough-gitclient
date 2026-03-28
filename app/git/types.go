@@ -5,14 +5,15 @@ import "time"
 // CommitNode is one entry in the graph — it carries both git data
 // and pre-computed layout information for the Canvas renderer.
 type CommitNode struct {
-	Hash      string    `json:"hash"`      // full 40-char SHA
-	ShortHash string    `json:"shortHash"` // first 7 chars
-	Message   string    `json:"message"`   // first line only
-	Author    string    `json:"author"`
-	Email     string    `json:"email"`
-	Date      time.Time `json:"date"`
-	Parents   []string  `json:"parents"` // parent hashes (full SHA)
-	Refs      []Ref     `json:"refs"`    // branches/tags pointing here
+	Hash        string    `json:"hash"`        // full 40-char SHA
+	ShortHash   string    `json:"shortHash"`   // first 7 chars
+	Message     string    `json:"message"`     // first line only (for list display)
+	FullMessage string    `json:"fullMessage"` // complete commit message
+	Author      string    `json:"author"`
+	Email       string    `json:"email"`
+	Date        time.Time `json:"date"`
+	Parents     []string  `json:"parents"` // parent hashes (full SHA)
+	Refs        []Ref     `json:"refs"`    // branches/tags pointing here
 
 	// Graph layout (pre-computed by swimlane algorithm)
 	Column int         `json:"column"` // swimlane index (0-based)

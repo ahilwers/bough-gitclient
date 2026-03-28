@@ -48,6 +48,38 @@ func (r *Repository) GetCommitDiff(hash string) ([]DiffFile, error) {
 	return changesFromObjectDiff(changes)
 }
 
+// GetFileAtCommit returns the raw text content of filePath at hash.
+// Returns an empty string (not an error) when the file did not exist at that commit.
+func (r *Repository) GetFileAtCommit(hash, filePath string) (string, error) {
+	commit, err := r.repo.CommitObject(plumbing.NewHash(hash))
+	if err != nil {
+		return "", err
+	}
+	tree, err := commit.Tree()
+	if err != nil {
+		return "", err
+	}
+	file, err := tree.File(filePath)
+	if err != nil {
+		return "", nil // file didn't exist at this commit
+	}
+	return file.Contents()
+}
+
+// GetFileAtCommitParent returns the content of filePath at the first parent of hash.
+// Returns an empty string when the commit has no parent (initial commit) or the
+// file didn't exist in the parent.
+func (r *Repository) GetFileAtCommitParent(hash, filePath string) (string, error) {
+	commit, err := r.repo.CommitObject(plumbing.NewHash(hash))
+	if err != nil {
+		return "", err
+	}
+	if len(commit.ParentHashes) == 0 {
+		return "", nil
+	}
+	return r.GetFileAtCommit(commit.ParentHashes[0].String(), filePath)
+}
+
 // GetFileDiff returns the staged or unstaged diff for a working-copy file.
 // staged=true: compares HEAD vs index; staged=false: compares index vs worktree.
 func (r *Repository) GetFileDiff(filePath string, staged bool) (*DiffFile, error) {
