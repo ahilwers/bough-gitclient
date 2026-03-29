@@ -63,6 +63,13 @@ func (r *Repository) UnstageHunkViaApply(hunkPatch string) error {
 	return nil
 }
 
+// DiscardFile discards all unstaged changes to a tracked file (irreversible).
+// Equivalent to `git restore -- <file>`. Has no effect on untracked files.
+func (r *Repository) DiscardFile(filePath string) error {
+	_, err := CLI(r.Path, "restore", "--", filePath)
+	return err
+}
+
 // DiscardHunk discards a hunk from the working tree (irreversible).
 // Uses `git apply -R` (reverse) to undo changes in the worktree.
 func (r *Repository) DiscardHunk(hunkPatch string) error {

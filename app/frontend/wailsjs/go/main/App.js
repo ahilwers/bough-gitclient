@@ -14,6 +14,10 @@ export function CreateCommit(arg1) {
   return window['go']['main']['App']['CreateCommit'](arg1);
 }
 
+export function DiscardFile(arg1) {
+  return window['go']['main']['App']['DiscardFile'](arg1);
+}
+
 export function DiscardHunk(arg1) {
   return window['go']['main']['App']['DiscardHunk'](arg1);
 }

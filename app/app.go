@@ -169,6 +169,13 @@ func (a *App) UnstageHunk(patch string) error {
 	return a.repo.UnstageHunkViaApply(patch)
 }
 
+func (a *App) DiscardFile(filePath string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	return a.repo.DiscardFile(filePath)
+}
+
 func (a *App) DiscardHunk(patch string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo

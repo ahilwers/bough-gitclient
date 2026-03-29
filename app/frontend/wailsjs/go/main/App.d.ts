@@ -8,6 +8,8 @@ export function AmendCommit(arg1:string):Promise<void>;
 
 export function CreateCommit(arg1:string):Promise<string>;
 
+export function DiscardFile(arg1:string):Promise<void>;
+
 export function DiscardHunk(arg1:string):Promise<void>;
 
 export function Fetch(arg1:string):Promise<void>;
