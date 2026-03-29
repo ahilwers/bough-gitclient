@@ -43,17 +43,28 @@ var (
 	ErrCannotRemoveMainWorktree = errors.New("cannot remove the main worktree")
 )
 
+// SwitchPath changes the working-directory path used for CLI operations
+// without replacing the underlying go-git repository object. All worktrees
+// share the same object store and refs; only the working directory and HEAD
+// differ. Using CLI for HEAD-dependent operations (see GetCommits, CurrentBranch)
+// ensures each worktree is handled correctly.
+func (r *Repository) SwitchPath(newPath string) {
+	r.Path = newPath
+}
+
 // CurrentBranch returns the name of the currently checked-out branch,
 // or "HEAD" if in detached HEAD state.
+// Uses CLI so the result is correct for linked worktrees.
 func (r *Repository) CurrentBranch() (string, error) {
-	head, err := r.repo.Head()
+	out, err := CLI(r.Path, "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
 		return "", err
 	}
-	if head.Name().IsBranch() {
-		return head.Name().Short(), nil
+	branch := strings.TrimSpace(out)
+	if branch == "HEAD" {
+		return "HEAD", nil // detached HEAD
 	}
-	return "HEAD", nil // detached HEAD
+	return branch, nil
 }
 
 // Status returns the current working copy status using git status --porcelain=v1.
