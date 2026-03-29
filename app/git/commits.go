@@ -1,66 +1,130 @@
 package git
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
-	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/go-git/go-git/v5/plumbing/storer"
 )
+
+// logSep separates fields within one commit record.
+// logEnd separates commit records from each other.
+const logSep = "\x1f"
+const logEnd = "\x1e"
+
+// logFormat asks git to emit: hash, parents, ISO date, author name, author email, subject, body
+// Fields are separated by US (unit separator, \x1f), records by RS (record separator, \x1e).
+const logFormat = "%H" + logSep + "%P" + logSep + "%aI" + logSep + "%an" + logSep + "%ae" + logSep + "%s" + logSep + "%b" + logEnd
+
+// rawCommit holds the data from a single `git log` record.
+type rawCommit struct {
+	Hash        string
+	ParentHashes []string
+	Date        time.Time
+	AuthorName  string
+	AuthorEmail string
+	Subject     string
+	Body        string
+}
 
 const maxCommits = 5000 // cap for initial load
 
 // GetCommits returns the last n commits with pre-computed graph layout.
 // When all is true every branch is included; when false only commits
 // reachable from HEAD are returned.
+// Uses CLI git log to avoid go-git packfile scanning (O(commits×seeks)).
 func (r *Repository) GetCommits(limit int, all bool) ([]CommitNode, error) {
 	if limit <= 0 || limit > maxCommits {
 		limit = maxCommits
 	}
 
-	head, err := r.repo.Head()
+	args := []string{
+		"log",
+		fmt.Sprintf("--format=%s", logFormat),
+		fmt.Sprintf("-n%d", limit),
+	}
+	if all {
+		args = append(args, "--all")
+	}
+
+	out, err := CLI(r.Path, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	iter, err := r.repo.Log(&gogit.LogOptions{
-		From:  head.Hash(),
-		Order: gogit.LogOrderCommitterTime,
-		All:   all,
-	})
-	if err != nil {
-		return nil, err
+	rawCommits := parseGitLog(out)
+	if len(rawCommits) == 0 {
+		return nil, nil
 	}
 
 	// Collect all refs for label display
 	refs, _ := r.collectRefs()
 
-	var rawCommits []*object.Commit
-	err = iter.ForEach(func(c *object.Commit) error {
-		rawCommits = append(rawCommits, c)
-		if len(rawCommits) >= limit {
-			return storer.ErrStop
-		}
-		return nil
-	})
-	if err != nil && err != storer.ErrStop {
-		return nil, err
-	}
-
 	nodes := computeLayout(rawCommits, refs)
 	return nodes, nil
 }
 
+// parseGitLog parses the output of `git log --format=<logFormat>`.
+func parseGitLog(output string) []rawCommit {
+	output = strings.TrimSpace(output)
+	if output == "" {
+		return nil
+	}
+
+	records := strings.Split(output, logEnd)
+	result := make([]rawCommit, 0, len(records))
+
+	for _, rec := range records {
+		rec = strings.TrimSpace(rec)
+		if rec == "" {
+			continue
+		}
+		fields := strings.SplitN(rec, logSep, 7)
+		if len(fields) < 6 {
+			continue
+		}
+
+		var parents []string
+		if p := strings.TrimSpace(fields[1]); p != "" {
+			parents = strings.Fields(p)
+		}
+
+		date, _ := time.Parse(time.RFC3339, strings.TrimSpace(fields[2]))
+
+		body := ""
+		if len(fields) == 7 {
+			body = strings.TrimSpace(fields[6])
+		}
+
+		result = append(result, rawCommit{
+			Hash:        strings.TrimSpace(fields[0]),
+			ParentHashes: parents,
+			Date:        date,
+			AuthorName:  strings.TrimSpace(fields[3]),
+			AuthorEmail: strings.TrimSpace(fields[4]),
+			Subject:     strings.TrimSpace(fields[5]),
+			Body:        body,
+		})
+	}
+	return result
+}
+
 // collectRefs builds a map from commit hash → []Ref for label display.
+// Uses go-git for ref iteration only (fast: reads ref files, not pack objects).
 func (r *Repository) collectRefs() (map[plumbing.Hash][]Ref, error) {
 	result := make(map[plumbing.Hash][]Ref)
 
-	head, _ := r.repo.Head()
+	// Use CLI-resolved HEAD so linked worktrees show the correct "current" marker.
+	out, err := CLI(r.Path, "rev-parse", "HEAD")
+	var headHash plumbing.Hash
+	if err == nil {
+		headHash = plumbing.NewHash(strings.TrimSpace(out))
+	}
 
 	branches, _ := r.repo.Branches()
 	_ = branches.ForEach(func(ref *plumbing.Reference) error {
-		isHead := head != nil && ref.Hash() == head.Hash() && ref.Name() == head.Name()
+		isHead := headHash != plumbing.ZeroHash && ref.Hash() == headHash
 		result[ref.Hash()] = append(result[ref.Hash()], Ref{
 			Name:   ref.Name().Short(),
 			Type:   "branch",
@@ -94,7 +158,7 @@ func (r *Repository) collectRefs() (map[plumbing.Hash][]Ref, error) {
 
 // computeLayout assigns each commit to a swimlane column and computes
 // the connecting lines that the Canvas renderer will draw.
-func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []CommitNode {
+func computeLayout(commits []rawCommit, refs map[plumbing.Hash][]Ref) []CommitNode {
 	if len(commits) == 0 {
 		return nil
 	}
@@ -106,8 +170,11 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 	nodes := make([]CommitNode, len(commits))
 
 	for i, c := range commits {
-		hash := c.Hash.String()
-		short := hash[:7]
+		hash := c.Hash
+		short := hash
+		if len(short) > 7 {
+			short = short[:7]
+		}
 
 		// Find or assign a lane for this commit
 		col := -1
@@ -136,8 +203,6 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 		color := col % 8
 
 		// Snapshot which lane indices are occupied BEFORE we process parents.
-		// Only these lanes need a pass-through — newly opened merge-parent lanes
-		// have no incoming line yet so they must NOT get a pass-through here.
 		activeBefore := make(map[int]bool, len(lanes))
 		for j, owner := range lanes {
 			if owner != "" {
@@ -147,9 +212,7 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 
 		var lines []GraphLine
 
-		for pi, parent := range c.ParentHashes {
-			ph := parent.String()
-
+		for pi, ph := range c.ParentHashes {
 			// Check whether this parent is already waiting in a lane
 			parentLane := -1
 			for j, owner := range lanes {
@@ -162,17 +225,14 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 			if pi == 0 {
 				// First parent always continues (or merges into) the current lane
 				if parentLane == -1 {
-					// Parent not yet seen — continue the current lane downward
 					parentLane = col
 					lanes[col] = ph
 				} else {
-					// Parent already in another lane — free the current lane
 					lanes[col] = ""
 				}
 			} else {
 				// Additional parents (merge sources) need their own lane
 				if parentLane == -1 {
-					// Find a free slot or append
 					parentLane = -1
 					for j, owner := range lanes {
 						if owner == "" {
@@ -187,7 +247,6 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 						lanes[parentLane] = ph
 					}
 				}
-				// If already in lanes, no change needed — line will point there
 			}
 
 			isMerge := pi > 0
@@ -204,9 +263,7 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 			lanes[col] = ""
 		}
 
-		// Pass-through lines for every lane that was active BEFORE this commit's
-		// parent processing. Newly opened lanes (merge parents not yet seen) are
-		// excluded — they have no prior incoming line so must not start here.
+		// Pass-through lines for lanes active before this commit
 		for j, owner := range lanes {
 			if owner == "" || j == col {
 				continue
@@ -226,16 +283,17 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 			lanes = lanes[:len(lanes)-1]
 		}
 
+		h := plumbing.NewHash(hash)
 		nodes[i] = CommitNode{
 			Hash:        hash,
 			ShortHash:   short,
-			Message:     firstLine(c.Message),
-			FullMessage: strings.TrimSpace(c.Message),
-			Author:      c.Author.Name,
-			Email:       c.Author.Email,
-			Date:        c.Author.When,
-			Parents:     hashStrings(c.ParentHashes),
-			Refs:        refs[c.Hash],
+			Message:     c.Subject,
+			FullMessage: fullMessage(c.Subject, c.Body),
+			Author:      c.AuthorName,
+			Email:       c.AuthorEmail,
+			Date:        c.Date,
+			Parents:     c.ParentHashes,
+			Refs:        refs[h],
 			Column:      col,
 			Color:       color,
 			Lines:       lines,
@@ -244,19 +302,9 @@ func computeLayout(commits []*object.Commit, refs map[plumbing.Hash][]Ref) []Com
 	return nodes
 }
 
-func firstLine(s string) string {
-	for i, ch := range s {
-		if ch == '\n' {
-			return s[:i]
-		}
+func fullMessage(subject, body string) string {
+	if body == "" {
+		return subject
 	}
-	return s
-}
-
-func hashStrings(hashes []plumbing.Hash) []string {
-	out := make([]string, len(hashes))
-	for i, h := range hashes {
-		out[i] = h.String()
-	}
-	return out
+	return subject + "\n\n" + body
 }

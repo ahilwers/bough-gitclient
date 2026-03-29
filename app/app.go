@@ -276,15 +276,17 @@ func (a *App) RemoveWorktree(wtPath string) error {
 	return nil
 }
 
-// SwitchWorktree opens wtPath as the active repository context. All subsequent
-// calls that depend on a.repo will operate against the switched-to worktree.
-// The frontend is notified via "repo:changed" so it invalidates all cached queries.
+// SwitchWorktree changes the active working directory to wtPath without
+// replacing the underlying go-git repository object. All worktrees share
+// the same object store; only the working directory and HEAD differ.
+// CLI-based operations (status, staging, commits) automatically pick up
+// the correct worktree state because they run git -C wtPath.
+// The frontend is notified via "repo:changed" so it invalidates all queries.
 func (a *App) SwitchWorktree(wtPath string) error {
-	repo, err := gitpkg.Open(wtPath)
-	if err != nil {
-		return err
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
 	}
-	a.repo = repo
+	a.repo.SwitchPath(wtPath)
 	_ = a.watcher.Watch(wtPath)
 	wailsruntime.EventsEmit(a.ctx, "repo:changed", wtPath)
 	return nil
