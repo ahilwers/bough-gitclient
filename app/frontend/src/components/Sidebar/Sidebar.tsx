@@ -10,10 +10,14 @@ import { NewWorktreeDialog } from '@/components/WorktreeManager/NewWorktreeDialo
 import { OpenInFinder } from '@wailsjs/go/main/App'
 import { parseGitError } from '@/lib/format'
 import type { WorktreeInfo } from '@/lib/types'
+import type { Branch } from '@/lib/types'
 
 type PendingConfirm =
   | { kind: 'checkout'; branch: string }
   | { kind: 'removeWorktree'; worktree: WorktreeInfo }
+  | { kind: 'checkoutRemote'; remoteBranch: string; localBranch: string }
+  | { kind: 'pullIntoLocal'; remote: string; localBranch: string }
+  | { kind: 'pullIntoCurrent'; remote: string; branch: string; currentBranch: string }
 
 export default function Sidebar() {
   const [expanded, setExpanded] = useState({
@@ -26,12 +30,33 @@ export default function Sidebar() {
   const [showNewWorktreeDialog, setShowNewWorktreeDialog] = useState(false)
   const [pending, setPending] = useState<PendingConfirm | null>(null)
 
-  const { data: branches, checkoutMutation } = useBranches()
+  const { data: branches, checkoutMutation, checkoutRemoteMutation, pullIntoLocalMutation, pullIntoCurrentMutation } = useBranches()
   const { data: worktrees, removeMutation, switchMutation } = useWorktrees()
   const { activeWorktree, showFlash } = useGitStore()
 
   const toggle = (key: keyof typeof expanded) =>
     setExpanded(s => ({ ...s, [key]: !s[key] }))
+
+  const currentBranch = branches?.local?.find(b => b.isHead)?.name ?? ''
+
+  // Derive local branch name from a remote branch (e.g. "origin/main" → "main")
+  const localNameFor = (b: Branch) => b.name.slice(b.remote.length + 1)
+
+  const handleRemoteBranchClick = (b: Branch) => {
+    const localName = localNameFor(b)
+    const local = branches?.local?.find(l => l.name === localName)
+
+    if (!local) {
+      setPending({ kind: 'checkoutRemote', remoteBranch: b.name, localBranch: localName })
+    } else if (local.behind > 0) {
+      setPending({ kind: 'pullIntoLocal', remote: b.remote, localBranch: localName })
+    } else if (!local.isHead) {
+      // Up to date, just switch
+      setPending({ kind: 'checkout', branch: localName })
+    } else {
+      showFlash(`Already on '${localName}' and up to date`, 'info')
+    }
+  }
 
   const handleSwitchWorktree = (wt: WorktreeInfo) => {
     switchMutation.mutate(wt.path, {
@@ -41,33 +66,73 @@ export default function Sidebar() {
 
   const handleConfirm = () => {
     if (!pending) return
-    if (pending.kind === 'checkout') {
-      const { branch } = pending
-      checkoutMutation.mutate(branch, {
-        onSuccess: () => showFlash(`Switched to "${branch}"`, 'success'),
-        onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
-      })
-    } else if (pending.kind === 'removeWorktree') {
-      const { worktree } = pending
-      removeMutation.mutate(worktree.path, {
-        onSuccess: () => showFlash('Worktree removed', 'success'),
-        onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
-      })
+    switch (pending.kind) {
+      case 'checkout':
+        checkoutMutation.mutate(pending.branch, {
+          onSuccess: () => showFlash(`Switched to '${pending.branch}'`, 'success'),
+          onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
+        })
+        break
+      case 'removeWorktree':
+        removeMutation.mutate(pending.worktree.path, {
+          onSuccess: () => showFlash('Worktree removed', 'success'),
+          onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
+        })
+        break
+      case 'checkoutRemote':
+        checkoutRemoteMutation.mutate(pending.remoteBranch, {
+          onSuccess: () => showFlash(`Checked out '${pending.localBranch}'`, 'success'),
+          onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
+        })
+        break
+      case 'pullIntoLocal':
+        pullIntoLocalMutation.mutate({ remote: pending.remote, localBranch: pending.localBranch }, {
+          onSuccess: () => showFlash(`Pulled into '${pending.localBranch}'`, 'success'),
+          onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
+        })
+        break
+      case 'pullIntoCurrent':
+        pullIntoCurrentMutation.mutate({ remote: pending.remote, branch: pending.branch }, {
+          onSuccess: () => showFlash(`Pulled ${pending.remote}/${pending.branch} into '${pending.currentBranch}'`, 'success'),
+          onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
+        })
+        break
     }
     setPending(null)
   }
 
-  const confirmTitle = pending?.kind === 'checkout'
-    ? `Switch to "${pending.branch}"?`
-    : pending?.kind === 'removeWorktree'
-    ? `Remove worktree?`
-    : ''
+  const confirmTitle = (() => {
+    if (!pending) return ''
+    switch (pending.kind) {
+      case 'checkout': return `Switch to '${pending.branch}'?`
+      case 'removeWorktree': return 'Remove worktree?'
+      case 'checkoutRemote': return `Checkout '${pending.localBranch}' locally?`
+      case 'pullIntoLocal': return `Pull ${pending.remote}/${pending.localBranch} into '${pending.localBranch}'?`
+      case 'pullIntoCurrent': return `Pull ${pending.remote}/${pending.branch} into '${pending.currentBranch}'?`
+    }
+  })()
 
-  const confirmBody = pending?.kind === 'removeWorktree'
-    ? `This will delete the directory and its git link at "${pending.worktree.path}".`
-    : undefined
+  const confirmBody = (() => {
+    if (!pending) return undefined
+    switch (pending.kind) {
+      case 'removeWorktree':
+        return `This will delete the directory and its git link at "${pending.worktree.path}".`
+      case 'checkoutRemote':
+        return `Creates a local tracking branch '${pending.localBranch}' from ${pending.remoteBranch}.`
+      case 'pullIntoLocal':
+        return pending.localBranch !== currentBranch
+          ? `This will switch to '${pending.localBranch}' and pull the latest changes.`
+          : undefined
+      default:
+        return undefined
+    }
+  })()
 
-  const confirmLabel = pending?.kind === 'removeWorktree' ? 'Remove' : 'Switch'
+  const confirmLabel = pending?.kind === 'removeWorktree' ? 'Remove'
+    : pending?.kind === 'checkout' ? 'Switch'
+    : pending?.kind === 'checkoutRemote' ? 'Checkout'
+    : 'Pull'
+
   const confirmDanger = pending?.kind === 'removeWorktree'
 
   return (
@@ -106,9 +171,32 @@ export default function Sidebar() {
           expanded={expanded.remotes}
           onToggle={() => toggle('remotes')}
         >
-          {branches?.remotes?.map(b => (
-            <SidebarItem key={b.name} label={b.name} />
-          ))}
+          {branches?.remotes?.map(b => {
+            const localName = localNameFor(b)
+            const local = branches?.local?.find(l => l.name === localName)
+            const items = [
+              ...(local
+                ? [
+                    ...(!local.isHead ? [{ label: `Switch to '${localName}'`, onClick: () => setPending({ kind: 'checkout', branch: localName }) }] : []),
+                    ...(local.isHead ? [{ label: `Pull into '${localName}'`, onClick: () => setPending({ kind: 'pullIntoLocal', remote: b.remote, localBranch: localName }) }] : []),
+                  ]
+                : [
+                    { label: `Checkout '${localName}' locally`, onClick: () => setPending({ kind: 'checkoutRemote', remoteBranch: b.name, localBranch: localName }) },
+                  ]
+              ),
+              ...(currentBranch && currentBranch !== localName ? [{ label: `Pull into '${currentBranch}'`, onClick: () => setPending({ kind: 'pullIntoCurrent', remote: b.remote, branch: localName, currentBranch }) }] : []),
+            ]
+            return (
+              <ContextMenu key={b.name} items={items}>
+                <div>
+                  <SidebarItem
+                    label={b.name}
+                    onClick={() => handleRemoteBranchClick(b)}
+                  />
+                </div>
+              </ContextMenu>
+            )
+          })}
         </Section>
 
         <Section

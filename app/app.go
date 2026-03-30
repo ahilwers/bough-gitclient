@@ -316,6 +316,28 @@ func (a *App) CheckoutBranch(branch string) error {
 	return nil
 }
 
+func (a *App) CheckoutRemoteBranch(remoteBranch string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.CheckoutRemoteBranch(remoteBranch); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+func (a *App) PullIntoLocalBranch(remote, localBranch string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.PullIntoLocalBranch(remote, localBranch); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
 // --- Worktrees ---
 
 func (a *App) ListWorktrees() ([]gitpkg.WorktreeInfo, error) {

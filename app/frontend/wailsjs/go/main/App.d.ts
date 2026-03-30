@@ -11,6 +11,8 @@ export function AmendCommit(arg1:string):Promise<void>;
 
 export function CheckoutBranch(arg1:string):Promise<void>;
 
+export function CheckoutRemoteBranch(arg1:string):Promise<void>;
+
 export function CreateCommit(arg1:string):Promise<string>;
 
 export function DiscardFile(arg1:string):Promise<void>;
@@ -48,6 +50,8 @@ export function OpenInFinder(arg1:string):Promise<void>;
 export function OpenRepository(arg1:string):Promise<string>;
 
 export function Pull(arg1:string,arg2:string):Promise<void>;
+
+export function PullIntoLocalBranch(arg1:string,arg2:string):Promise<void>;
 
 export function Push(arg1:string,arg2:string,arg3:boolean):Promise<void>;
 

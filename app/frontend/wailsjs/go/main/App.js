@@ -18,6 +18,10 @@ export function CheckoutBranch(arg1) {
   return window['go']['main']['App']['CheckoutBranch'](arg1);
 }
 
+export function CheckoutRemoteBranch(arg1) {
+  return window['go']['main']['App']['CheckoutRemoteBranch'](arg1);
+}
+
 export function CreateCommit(arg1) {
   return window['go']['main']['App']['CreateCommit'](arg1);
 }
@@ -92,6 +96,10 @@ export function OpenRepository(arg1) {
 
 export function Pull(arg1, arg2) {
   return window['go']['main']['App']['Pull'](arg1, arg2);
+}
+
+export function PullIntoLocalBranch(arg1, arg2) {
+  return window['go']['main']['App']['PullIntoLocalBranch'](arg1, arg2);
 }
 
 export function Push(arg1, arg2, arg3) {
