@@ -23,6 +23,17 @@
         <string>true</string>
         <key>NSHumanReadableCopyright</key>
         <string>{{.Info.Copyright}}</string>
+        <!-- Sparkle 2 auto-update -->
+        <key>SUFeedURL</key>
+        <string>https://updates.bough.app/appcast.xml</string>
+        <key>SUPublicEDKey</key>
+        <string>REPLACE_WITH_EDDSA_PUBLIC_KEY</string>
+        <key>SUAllowsAutomaticUpdates</key>
+        <true/>
+        <key>SUEnableAutomaticChecks</key>
+        <true/>
+        <key>SUScheduledCheckInterval</key>
+        <integer>86400</integer>
         {{if .Info.FileAssociations}}
         <key>CFBundleDocumentTypes</key>
         <array>

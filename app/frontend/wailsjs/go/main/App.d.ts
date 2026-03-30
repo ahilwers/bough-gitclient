@@ -14,6 +14,8 @@ export function DiscardHunk(arg1:string):Promise<void>;
 
 export function Fetch(arg1:string):Promise<void>;
 
+export function GetAppVersion():Promise<string>;
+
 export function GetCommitDiff(arg1:string):Promise<Array<git.DiffFile>>;
 
 export function GetCommits(arg1:number,arg2:boolean):Promise<Array<git.CommitNode>>;

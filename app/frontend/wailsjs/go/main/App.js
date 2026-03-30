@@ -26,6 +26,10 @@ export function Fetch(arg1) {
   return window['go']['main']['App']['Fetch'](arg1);
 }
 
+export function GetAppVersion() {
+  return window['go']['main']['App']['GetAppVersion']();
+}
+
 export function GetCommitDiff(arg1) {
   return window['go']['main']['App']['GetCommitDiff'](arg1);
 }
