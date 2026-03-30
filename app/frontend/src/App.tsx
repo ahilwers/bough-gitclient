@@ -45,8 +45,8 @@ export default function App() {
     GetLicenseStatus().then(status => {
       const store = useGitStore.getState()
       store.setLicenseStatus(status)
-      // Open the dialog automatically when trial is nearly over (≤3 days) or expired.
-      if (status.state === 'expired' || (status.state === 'trial' && status.daysLeft <= 3)) {
+      // Block access only when expired — trial users keep full access.
+      if (status.state === 'expired') {
         store.setLicenseDialogOpen(true)
       }
     }).catch(() => { /* non-critical */ })

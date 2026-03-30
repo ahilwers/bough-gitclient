@@ -64,7 +64,7 @@
       "keyInputLabel": "Lizenzschlüssel",
       "activateButton": "Aktivieren",
       "activating": "Wird aktiviert…",
-      "continueReadOnly": "Im Nur-Lese-Modus fortfahren"
+      "continueReadOnly": "Weiter"
     },
     "error": {
       "emptyKey": "Bitte gib deinen Lizenzschlüssel ein.",

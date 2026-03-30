@@ -8,21 +8,20 @@ import (
 )
 
 func TestTrialDaysLeft_NotStarted(t *testing.T) {
-	withTempConfig(t)
+	defer license.UseInMemoryTrialStorage()()
 
-	// No trial file exists yet — TrialDaysLeft should return 0.
+	// No trial recorded yet — TrialDaysLeft should return 0.
 	if got := license.TrialDaysLeft(); got != 0 {
 		t.Errorf("TrialDaysLeft before start = %d, want 0", got)
 	}
 }
 
-func TestEnsureTrialStarted_CreatesFile(t *testing.T) {
-	withTempConfig(t)
+func TestEnsureTrialStarted_CreatesRecord(t *testing.T) {
+	defer license.UseInMemoryTrialStorage()()
 
 	if err := license.EnsureTrialStarted(); err != nil {
 		t.Fatalf("EnsureTrialStarted: %v", err)
 	}
-	// Confirm the file exists by reading it back through TrialDaysLeft.
 	days := license.TrialDaysLeft()
 	if days < 28 || days > 30 {
 		t.Errorf("TrialDaysLeft after first start = %d, want 28-30", days)
@@ -30,7 +29,7 @@ func TestEnsureTrialStarted_CreatesFile(t *testing.T) {
 }
 
 func TestEnsureTrialStarted_Idempotent(t *testing.T) {
-	withTempConfig(t)
+	defer license.UseInMemoryTrialStorage()()
 
 	if err := license.EnsureTrialStarted(); err != nil {
 		t.Fatalf("first call: %v", err)
@@ -38,7 +37,6 @@ func TestEnsureTrialStarted_Idempotent(t *testing.T) {
 	if err := license.EnsureTrialStarted(); err != nil {
 		t.Fatalf("second call: %v", err)
 	}
-	// Should still show ~30 days.
 	days := license.TrialDaysLeft()
 	if days < 28 || days > 30 {
 		t.Errorf("TrialDaysLeft after double-start = %d, want 28-30", days)
@@ -46,7 +44,7 @@ func TestEnsureTrialStarted_Idempotent(t *testing.T) {
 }
 
 func TestTrialDaysLeft_ActiveTrial(t *testing.T) {
-	withTempConfig(t)
+	defer license.UseInMemoryTrialStorage()()
 
 	_ = license.EnsureTrialStarted()
 	days := license.TrialDaysLeft()
@@ -56,7 +54,7 @@ func TestTrialDaysLeft_ActiveTrial(t *testing.T) {
 }
 
 func TestTrialDaysLeft_SimulatedClock(t *testing.T) {
-	withTempConfig(t)
+	defer license.UseInMemoryTrialStorage()()
 
 	// Start trial at a fixed point in time.
 	trialStart := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
@@ -78,8 +76,7 @@ func TestTrialDaysLeft_SimulatedClock(t *testing.T) {
 	}
 }
 
-// withTempConfig redirects the OS config dir to a temp directory and returns
-// the temp dir path.
+// withTempConfig is kept for tests in license_test.go that still use it.
 func withTempConfig(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()

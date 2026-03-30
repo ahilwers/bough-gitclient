@@ -92,13 +92,13 @@ describe('LicenseDialog', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
   })
 
-  it('shows "Continue in Read-Only Mode" link during trial', () => {
+  it('shows "Continue" button during trial', () => {
     render(<LicenseDialog status={trialStatus} />)
-    expect(screen.getByRole('button', { name: /read.only/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^continue$/i })).toBeInTheDocument()
   })
 
-  it('does not show read-only link when expired', () => {
+  it('does not show "Continue" button when expired', () => {
     render(<LicenseDialog status={expiredStatus} />)
-    expect(screen.queryByRole('button', { name: /read.only/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^continue$/i })).not.toBeInTheDocument()
   })
 })

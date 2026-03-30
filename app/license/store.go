@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	keychainService = "Bough"
-	keychainAccount = "license"
+	keychainService      = "Bough"
+	keychainAccount      = "license"
+	keychainTrialAccount = "trial"
 )
 
 // storageBackend is the set of primitive save/load/delete functions.
@@ -59,23 +60,26 @@ func DeleteLicense() error {
 
 // ── OS-level string storage ───────────────────────────────────────────────────
 
-func saveString(value string) error {
+// saveString / loadString / deleteString target the license keychain account.
+func saveString(value string) error     { return saveStringForAccount(keychainAccount, value) }
+func loadString() (string, error)       { return loadStringForAccount(keychainAccount) }
+func deleteString() error               { return deleteStringForAccount(keychainAccount) }
+
+func saveStringForAccount(account, value string) error {
 	switch runtime.GOOS {
 	case "darwin":
-		// Delete any existing entry first (ignore error if absent).
 		exec.Command("security", "delete-generic-password",
-			"-s", keychainService, "-a", keychainAccount).Run()
+			"-s", keychainService, "-a", account).Run()
 		cmd := exec.Command("security", "add-generic-password",
-			"-s", keychainService, "-a", keychainAccount, "-w", value)
+			"-s", keychainService, "-a", account, "-w", value)
 		if out, err := cmd.CombinedOutput(); err != nil {
 			return fmt.Errorf("keychain save: %w\n%s", err, out)
 		}
 		return nil
 	case "windows":
-		// Use cmdkey for Windows Credential Manager.
 		cmd := exec.Command("cmdkey",
-			fmt.Sprintf("/generic:%s", keychainService),
-			fmt.Sprintf("/user:%s", keychainAccount),
+			fmt.Sprintf("/generic:%s/%s", keychainService, account),
+			fmt.Sprintf("/user:%s", account),
 			fmt.Sprintf("/pass:%s", value))
 		if out, err := cmd.CombinedOutput(); err != nil {
 			return fmt.Errorf("credential manager save: %w\n%s", err, out)
@@ -83,35 +87,32 @@ func saveString(value string) error {
 		return nil
 	default: // Linux — use secret-tool (libsecret/GNOME Keyring)
 		cmd := exec.Command("secret-tool", "store",
-			"--label", "Bough License",
+			"--label", fmt.Sprintf("Bough %s", account),
 			"service", keychainService,
-			"account", keychainAccount)
+			"account", account)
 		cmd.Stdin = strings.NewReader(value)
 		if _, err := cmd.CombinedOutput(); err != nil {
-			// Fallback: persist to a config-directory file.
 			return saveLicenseFile(value)
 		}
 		return nil
 	}
 }
 
-func loadString() (string, error) {
+func loadStringForAccount(account string) (string, error) {
 	switch runtime.GOOS {
 	case "darwin":
 		out, err := exec.Command("security", "find-generic-password",
-			"-s", keychainService, "-a", keychainAccount, "-w").Output()
+			"-s", keychainService, "-a", account, "-w").Output()
 		if err != nil {
-			return "", nil // not found = no license
+			return "", nil // not found
 		}
 		return strings.TrimSpace(string(out)), nil
 	case "windows":
-		// Windows Credential Manager does not expose a simple CLI read.
-		// Fall back to file storage; TODO: replace with wincred binding.
 		return loadLicenseFile()
 	default: // Linux
 		out, err := exec.Command("secret-tool", "lookup",
 			"service", keychainService,
-			"account", keychainAccount).Output()
+			"account", account).Output()
 		if err != nil {
 			return loadLicenseFile()
 		}
@@ -119,18 +120,18 @@ func loadString() (string, error) {
 	}
 }
 
-func deleteString() error {
+func deleteStringForAccount(account string) error {
 	switch runtime.GOOS {
 	case "darwin":
 		return exec.Command("security", "delete-generic-password",
-			"-s", keychainService, "-a", keychainAccount).Run()
+			"-s", keychainService, "-a", account).Run()
 	case "windows":
 		return exec.Command("cmdkey",
-			fmt.Sprintf("/delete:%s", keychainService)).Run()
+			fmt.Sprintf("/delete:%s/%s", keychainService, account)).Run()
 	default:
 		exec.Command("secret-tool", "clear",
 			"service", keychainService,
-			"account", keychainAccount).Run()
+			"account", account).Run()
 		return deleteLicenseFile()
 	}
 }

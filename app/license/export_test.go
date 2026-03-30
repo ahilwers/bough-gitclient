@@ -46,3 +46,15 @@ func UseInMemoryStorage() func() {
 	storageBackend.delete = func() error { mu.Lock(); stored = ""; mu.Unlock(); return nil }
 	return func() { storageBackend = old }
 }
+
+// UseInMemoryTrialStorage replaces the trial keychain entry with a simple
+// in-memory value. Returns a restore function.
+func UseInMemoryTrialStorage() func() {
+	var mu sync.Mutex
+	var stored string
+	old := trialStorageBackend
+	trialStorageBackend.save = func(v string) error { mu.Lock(); stored = v; mu.Unlock(); return nil }
+	trialStorageBackend.load = func() (string, error) { mu.Lock(); defer mu.Unlock(); return stored, nil }
+	trialStorageBackend.delete = func() error { mu.Lock(); stored = ""; mu.Unlock(); return nil }
+	return func() { trialStorageBackend = old }
+}

@@ -6,7 +6,7 @@ export type View = 'history' | 'changes'
 export type Theme = 'light' | 'dark'
 
 export interface LicenseStatus {
-  state: 'trial' | 'active' | 'expired' | 'invalid'
+  state: string
   daysLeft: number
   licenseKey: string
   activatedAt: string

@@ -69,7 +69,7 @@
       "keyInputLabel": "License key",
       "activateButton": "Activate",
       "activating": "Activating…",
-      "continueReadOnly": "Continue in Read-Only Mode"
+      "continueReadOnly": "Continue"
     },
     "error": {
       "emptyKey": "Please enter your license key.",
