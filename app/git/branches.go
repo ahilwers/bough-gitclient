@@ -1,6 +1,8 @@
 package git
 
 import (
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing"
@@ -15,15 +17,22 @@ func (r *Repository) ListBranches() (BranchList, error) {
 	// including after a CLI checkout and for linked worktrees.
 	currentBranch, _ := r.CurrentBranch()
 
+	// Ahead/behind counts from the upstream tracking branch.
+	aheadBehind := r.fetchAheadBehind()
+
 	// Local branches (refs/heads/*)
 	iter, err := r.repo.Branches()
 	if err != nil {
 		return bl, err
 	}
 	_ = iter.ForEach(func(ref *plumbing.Reference) error {
+		name := ref.Name().Short()
+		ab := aheadBehind[name]
 		bl.Local = append(bl.Local, Branch{
-			Name:   ref.Name().Short(),
-			IsHead: ref.Name().Short() == currentBranch,
+			Name:   name,
+			IsHead: name == currentBranch,
+			Ahead:  ab[0],
+			Behind: ab[1],
 		})
 		return nil
 	})
@@ -54,4 +63,59 @@ func (r *Repository) ListBranches() (BranchList, error) {
 func (r *Repository) CheckoutBranch(branch string) error {
 	_, err := CLI(r.Path, "checkout", branch)
 	return err
+}
+
+// CheckoutRemoteBranch creates a local tracking branch from the given remote
+// branch (e.g. "origin/main") and checks it out.
+func (r *Repository) CheckoutRemoteBranch(remoteBranch string) error {
+	_, err := CLI(r.Path, "checkout", "--track", remoteBranch)
+	return err
+}
+
+// PullIntoLocalBranch switches to localBranch and pulls from remote, ensuring
+// the local branch is updated regardless of which branch is currently active.
+func (r *Repository) PullIntoLocalBranch(remote, localBranch string) error {
+	if _, err := CLI(r.Path, "checkout", localBranch); err != nil {
+		return err
+	}
+	_, err := CLI(r.Path, "pull", remote, localBranch)
+	return err
+}
+
+// fetchAheadBehind returns a map of local branch name → [ahead, behind] counts
+// relative to each branch's upstream tracking ref.
+func (r *Repository) fetchAheadBehind() map[string][2]int {
+	out, err := CLI(r.Path, "for-each-ref", "--format=%(refname:short)\t%(upstream:track)", "refs/heads/")
+	if err != nil {
+		return nil
+	}
+	result := make(map[string][2]int)
+	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
+		parts := strings.SplitN(line, "\t", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		name, track := parts[0], parts[1]
+		result[name] = [2]int{parseTrackAhead(track), parseTrackBehind(track)}
+	}
+	return result
+}
+
+var reAhead = regexp.MustCompile(`ahead (\d+)`)
+var reBehind = regexp.MustCompile(`behind (\d+)`)
+
+func parseTrackAhead(track string) int {
+	if m := reAhead.FindStringSubmatch(track); len(m) > 1 {
+		n, _ := strconv.Atoi(m[1])
+		return n
+	}
+	return 0
+}
+
+func parseTrackBehind(track string) int {
+	if m := reBehind.FindStringSubmatch(track); len(m) > 1 {
+		n, _ := strconv.Atoi(m[1])
+		return n
+	}
+	return 0
 }

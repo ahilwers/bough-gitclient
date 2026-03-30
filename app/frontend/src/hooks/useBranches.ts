@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ListBranches, CheckoutBranch } from '@wailsjs/go/main/App'
+import { ListBranches, CheckoutBranch, CheckoutRemoteBranch, PullIntoLocalBranch, Pull } from '@wailsjs/go/main/App'
 import { EventsOn } from '@wailsjs/runtime/runtime'
 import type { BranchList } from '@/lib/types'
 
@@ -20,14 +20,33 @@ export function useBranches() {
     return unsubscribe
   }, [queryClient])
 
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['branches'] })
+    queryClient.invalidateQueries({ queryKey: ['commits'] })
+    queryClient.invalidateQueries({ queryKey: ['status'] })
+  }
+
   const checkoutMutation = useMutation({
     mutationFn: (branch: string) => CheckoutBranch(branch),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['branches'] })
-      queryClient.invalidateQueries({ queryKey: ['commits'] })
-      queryClient.invalidateQueries({ queryKey: ['status'] })
-    },
+    onSuccess: invalidateAll,
   })
 
-  return { ...query, checkoutMutation }
+  const checkoutRemoteMutation = useMutation({
+    mutationFn: (remoteBranch: string) => CheckoutRemoteBranch(remoteBranch),
+    onSuccess: invalidateAll,
+  })
+
+  const pullIntoLocalMutation = useMutation({
+    mutationFn: ({ remote, localBranch }: { remote: string; localBranch: string }) =>
+      PullIntoLocalBranch(remote, localBranch),
+    onSuccess: invalidateAll,
+  })
+
+  const pullIntoCurrentMutation = useMutation({
+    mutationFn: ({ remote, branch }: { remote: string; branch: string }) =>
+      Pull(remote, branch),
+    onSuccess: invalidateAll,
+  })
+
+  return { ...query, checkoutMutation, checkoutRemoteMutation, pullIntoLocalMutation, pullIntoCurrentMutation }
 }
