@@ -103,6 +103,7 @@ func TestActivate_BadFormat(t *testing.T) {
 
 func TestGetStatus_Trial(t *testing.T) {
 	withTempConfig(t)
+	defer license.UseInMemoryTrialStorage()()
 	_ = license.EnsureTrialStarted()
 
 	status := license.GetStatus()
@@ -116,6 +117,7 @@ func TestGetStatus_Trial(t *testing.T) {
 
 func TestGetStatus_Expired(t *testing.T) {
 	withTempConfig(t)
+	defer license.UseInMemoryTrialStorage()()
 
 	// Start trial 31 days ago.
 	trialStart := time.Now().Add(-31 * 24 * time.Hour)

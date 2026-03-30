@@ -2,8 +2,6 @@ package license
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
 	"time"
 )
 
@@ -13,47 +11,41 @@ type trialRecord struct {
 	StartedAt time.Time `json:"startedAt"`
 }
 
-func trialFilePath() (string, error) {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "Bough", "trial.json"), nil
+// trialStorageBackend mirrors storageBackend but targets the "trial" keychain
+// account. Overridable in tests via UseInMemoryTrialStorage.
+var trialStorageBackend = struct {
+	save   func(string) error
+	load   func() (string, error)
+	delete func() error
+}{
+	save:   func(v string) error    { return saveStringForAccount(keychainTrialAccount, v) },
+	load:   func() (string, error)  { return loadStringForAccount(keychainTrialAccount) },
+	delete: func() error            { return deleteStringForAccount(keychainTrialAccount) },
 }
 
 // EnsureTrialStarted records the trial start date the first time it is called.
 // Subsequent calls are no-ops. Safe to call on every startup.
 func EnsureTrialStarted() error {
-	path, err := trialFilePath()
-	if err != nil {
-		return err
-	}
-	if _, err := os.Stat(path); err == nil {
-		return nil // already recorded
-	}
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
-		return err
+	raw, err := trialStorageBackend.load()
+	if err != nil || raw != "" {
+		return err // already recorded (or load error)
 	}
 	data, err := json.Marshal(trialRecord{StartedAt: now()})
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0600)
+	return trialStorageBackend.save(string(data))
 }
 
 // TrialDaysLeft returns the number of full days remaining in the trial.
 // Returns 0 when the trial has expired or was never started.
 func TrialDaysLeft() int {
-	path, err := trialFilePath()
-	if err != nil {
-		return 0
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
+	raw, err := trialStorageBackend.load()
+	if err != nil || raw == "" {
 		return 0
 	}
 	var rec trialRecord
-	if err := json.Unmarshal(data, &rec); err != nil {
+	if err := json.Unmarshal([]byte(raw), &rec); err != nil {
 		return 0
 	}
 	remaining := rec.StartedAt.Add(trialDuration).Sub(now())
