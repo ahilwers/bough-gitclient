@@ -55,3 +55,10 @@ export const SaveWindowSize = vi.fn((_width: number, _height: number): Promise<v
 export const GetRecentRepos = vi.fn((): Promise<string[]> => Promise.resolve([]))
 export const GetAppVersion = vi.fn((): Promise<string> => Promise.resolve('0.1.0'))
 export const DiscardFile = vi.fn((_path: string): Promise<void> => Promise.resolve())
+
+// Licensing
+export interface LicenseStatus { state: string; daysLeft: number; licenseKey: string; activatedAt: string; email: string }
+export const GetLicenseStatus = vi.fn((): Promise<LicenseStatus> =>
+  Promise.resolve({ state: 'trial', daysLeft: 28, licenseKey: '', activatedAt: '', email: '' }))
+export const ActivateLicense = vi.fn((_key: string): Promise<LicenseStatus> =>
+  Promise.resolve({ state: 'active', daysLeft: 0, licenseKey: 'BOUGH-TEST-****-****-****', activatedAt: new Date().toISOString(), email: 'test@example.com' }))

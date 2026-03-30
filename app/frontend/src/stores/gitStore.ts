@@ -5,6 +5,14 @@ import type { WorktreeInfo } from '@/lib/types'
 export type View = 'history' | 'changes'
 export type Theme = 'light' | 'dark'
 
+export interface LicenseStatus {
+  state: 'trial' | 'active' | 'expired' | 'invalid'
+  daysLeft: number
+  licenseKey: string
+  activatedAt: string
+  email: string
+}
+
 interface GitStore {
   // Appearance
   theme: Theme
@@ -35,6 +43,12 @@ interface GitStore {
   selectedFile: string | null
   setSelectedCommit: (hash: string | null) => void
   setSelectedFile: (path: string | null) => void
+
+  // Licensing
+  licenseStatus: LicenseStatus | null
+  setLicenseStatus: (s: LicenseStatus | null) => void
+  licenseDialogOpen: boolean
+  setLicenseDialogOpen: (open: boolean) => void
 
   // Flash notifications
   flash: { message: string; type: 'success' | 'danger' | 'info' } | null
@@ -67,6 +81,8 @@ const initialState = {
   activeWorktree: null,
   selectedCommit: null,
   selectedFile: null,
+  licenseStatus: null as LicenseStatus | null,
+  licenseDialogOpen: false,
 }
 
 export const useGitStore = create<GitStore>()(
@@ -100,6 +116,9 @@ export const useGitStore = create<GitStore>()(
 
       setSelectedCommit: (hash) => set({ selectedCommit: hash, selectedFile: null }),
       setSelectedFile: (path) => set({ selectedFile: path }),
+
+      setLicenseStatus: (licenseStatus) => set({ licenseStatus }),
+      setLicenseDialogOpen: (licenseDialogOpen) => set({ licenseDialogOpen }),
 
       showFlash: (message, type = 'success', durationMs) => {
         set({ flash: { message, type } })

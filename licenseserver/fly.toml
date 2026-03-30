@@ -1,0 +1,25 @@
+app            = "bough-licenseserver"
+primary_region = "fra"   # Frankfurt — close to EU customers
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https   = true
+  auto_stop_machines  = true
+  auto_start_machines = true
+
+[env]
+  PORT    = "8080"
+  DB_PATH = "/data/bough-licenses.db"
+
+# Required secrets (set via `fly secrets set KEY=value` — NEVER commit these):
+#   PRIVATE_KEY_HEX          — Ed25519 private key seed as 64-char hex
+#   STRIPE_WEBHOOK_SECRET    — whsec_...  from Stripe dashboard
+#   RESEND_API_KEY           — re_...     from Resend dashboard
+#   FROM_EMAIL               — e.g. "Bough <license@boughapp.com>"
+
+[[mounts]]
+  source      = "licenseserver_data"
+  destination = "/data"

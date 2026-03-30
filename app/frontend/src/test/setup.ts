@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom'
+import '../i18n'
 
 // Mock the Wails runtime object that the real app gets injected by the WebView
 Object.defineProperty(window, 'runtime', {
