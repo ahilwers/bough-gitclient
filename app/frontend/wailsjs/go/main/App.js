@@ -14,6 +14,10 @@ export function AmendCommit(arg1) {
   return window['go']['main']['App']['AmendCommit'](arg1);
 }
 
+export function CheckoutBranch(arg1) {
+  return window['go']['main']['App']['CheckoutBranch'](arg1);
+}
+
 export function CreateCommit(arg1) {
   return window['go']['main']['App']['CreateCommit'](arg1);
 }

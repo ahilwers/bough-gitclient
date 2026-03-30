@@ -11,7 +11,9 @@ import (
 func (r *Repository) ListBranches() (BranchList, error) {
 	var bl BranchList
 
-	head, _ := r.repo.Head()
+	// Use the CLI-based CurrentBranch so the result is always accurate,
+	// including after a CLI checkout and for linked worktrees.
+	currentBranch, _ := r.CurrentBranch()
 
 	// Local branches (refs/heads/*)
 	iter, err := r.repo.Branches()
@@ -21,7 +23,7 @@ func (r *Repository) ListBranches() (BranchList, error) {
 	_ = iter.ForEach(func(ref *plumbing.Reference) error {
 		bl.Local = append(bl.Local, Branch{
 			Name:   ref.Name().Short(),
-			IsHead: head != nil && head.Name() == ref.Name(),
+			IsHead: ref.Name().Short() == currentBranch,
 		})
 		return nil
 	})
@@ -45,4 +47,11 @@ func (r *Repository) ListBranches() (BranchList, error) {
 	})
 
 	return bl, nil
+}
+
+// CheckoutBranch switches the working tree to the named local branch using the
+// git CLI so that hooks and credential helpers run as expected.
+func (r *Repository) CheckoutBranch(branch string) error {
+	_, err := CLI(r.Path, "checkout", branch)
+	return err
 }

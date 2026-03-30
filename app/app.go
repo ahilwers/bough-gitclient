@@ -305,6 +305,17 @@ func (a *App) ListBranches() (gitpkg.BranchList, error) {
 	return a.repo.ListBranches()
 }
 
+func (a *App) CheckoutBranch(branch string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.CheckoutBranch(branch); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
 // --- Worktrees ---
 
 func (a *App) ListWorktrees() ([]gitpkg.WorktreeInfo, error) {

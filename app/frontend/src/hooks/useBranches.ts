@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ListBranches } from '@wailsjs/go/main/App'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ListBranches, CheckoutBranch } from '@wailsjs/go/main/App'
 import { EventsOn } from '@wailsjs/runtime/runtime'
 import type { BranchList } from '@/lib/types'
 
@@ -20,5 +20,14 @@ export function useBranches() {
     return unsubscribe
   }, [queryClient])
 
-  return query
+  const checkoutMutation = useMutation({
+    mutationFn: (branch: string) => CheckoutBranch(branch),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['branches'] })
+      queryClient.invalidateQueries({ queryKey: ['commits'] })
+      queryClient.invalidateQueries({ queryKey: ['status'] })
+    },
+  })
+
+  return { ...query, checkoutMutation }
 }
