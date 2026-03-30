@@ -314,6 +314,14 @@ func (a *App) OpenInFinder(path string) error {
 	return cmd.Start()
 }
 
+// --- Version & updates ---
+
+// GetAppVersion returns the application version embedded at build time via -ldflags.
+// Returns "dev" when running outside of a release build.
+func (a *App) GetAppVersion() string {
+	return version
+}
+
 // --- Window state ---
 
 // SaveWindowSize persists the window dimensions and current position so the

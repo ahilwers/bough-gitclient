@@ -27,6 +27,18 @@ go.work.sum
 # env file
 .env
 
+# EdDSA signing keys — NEVER commit private keys
+.secrets/
+sparkle_key
+*.p12
+*.pfx
+
+# Local build artefacts
+bin/
+*.AppImage
+Bough.AppDir/
+appcast/
+
 # Editor/IDE
 # .idea/
 # .vscode/

@@ -53,3 +53,5 @@ export const OpenInFinder = vi.fn((_path: string): Promise<void> => Promise.reso
 export const SelectRepository = vi.fn((): Promise<string> => Promise.resolve(''))
 export const SaveWindowSize = vi.fn((_width: number, _height: number): Promise<void> => Promise.resolve())
 export const GetRecentRepos = vi.fn((): Promise<string[]> => Promise.resolve([]))
+export const GetAppVersion = vi.fn((): Promise<string> => Promise.resolve('0.1.0'))
+export const DiscardFile = vi.fn((_path: string): Promise<void> => Promise.resolve())
