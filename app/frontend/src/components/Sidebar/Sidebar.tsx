@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { ChevronRight, GitBranch, Globe, Tag, Archive, Layers } from 'lucide-react'
+import { ChevronRight, GitBranch, Globe, Tag as TagIcon, Archive, Layers } from 'lucide-react'
 import { Plus } from 'lucide-react'
 import { useBranches } from '@/hooks/useBranches'
 import { useWorktrees } from '@/hooks/useWorktrees'
+import { useTags } from '@/hooks/useTags'
+import { useStashes } from '@/hooks/useStashes'
 import { useGitStore } from '@/stores/gitStore'
 import { ContextMenu } from '@/components/shared/ContextMenu'
 import { NewWorktreeDialog } from '@/components/WorktreeManager/NewWorktreeDialog'
+import { StashDiffView } from '@/components/StashView/StashDiffView'
 import { OpenInFinder } from '@wailsjs/go/main/App'
 import { parseGitError } from '@/lib/format'
-import type { WorktreeInfo } from '@/lib/types'
-import type { Branch } from '@/lib/types'
+import type { WorktreeInfo, Branch, Tag, StashEntry } from '@/lib/types'
 
 type PendingConfirm =
   | { kind: 'checkout'; branch: string }
@@ -18,6 +20,9 @@ type PendingConfirm =
   | { kind: 'checkoutRemote'; remoteBranch: string; localBranch: string }
   | { kind: 'pullIntoLocal'; remote: string; localBranch: string }
   | { kind: 'pullIntoCurrent'; remote: string; branch: string; currentBranch: string }
+  | { kind: 'checkoutTag'; tag: string }
+  | { kind: 'deleteTag'; tag: string }
+  | { kind: 'dropStash'; entry: StashEntry }
 
 export default function Sidebar() {
   const [expanded, setExpanded] = useState({
@@ -29,9 +34,12 @@ export default function Sidebar() {
   })
   const [showNewWorktreeDialog, setShowNewWorktreeDialog] = useState(false)
   const [pending, setPending] = useState<PendingConfirm | null>(null)
+  const [openStash, setOpenStash] = useState<StashEntry | null>(null)
 
   const { data: branches, checkoutMutation, checkoutRemoteMutation, pullIntoLocalMutation, pullIntoCurrentMutation } = useBranches()
   const { data: worktrees, removeMutation, switchMutation } = useWorktrees()
+  const { data: tags, checkoutMutation: tagCheckoutMutation, deleteMutation: tagDeleteMutation } = useTags()
+  const { data: stashes, dropMutation } = useStashes()
   const { activeWorktree, showFlash } = useGitStore()
 
   const toggle = (key: keyof typeof expanded) =>
@@ -39,7 +47,6 @@ export default function Sidebar() {
 
   const currentBranch = branches?.local?.find(b => b.isHead)?.name ?? ''
 
-  // Derive local branch name from a remote branch (e.g. "origin/main" → "main")
   const localNameFor = (b: Branch) => b.name.slice(b.remote.length + 1)
 
   const handleRemoteBranchClick = (b: Branch) => {
@@ -51,7 +58,6 @@ export default function Sidebar() {
     } else if (local.behind > 0) {
       setPending({ kind: 'pullIntoLocal', remote: b.remote, localBranch: localName })
     } else if (!local.isHead) {
-      // Up to date, just switch
       setPending({ kind: 'checkout', branch: localName })
     } else {
       showFlash(`Already on '${localName}' and up to date`, 'info')
@@ -97,6 +103,24 @@ export default function Sidebar() {
           onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
         })
         break
+      case 'checkoutTag':
+        tagCheckoutMutation.mutate(pending.tag, {
+          onSuccess: () => showFlash(`Detached HEAD at '${pending.tag}'`, 'info'),
+          onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
+        })
+        break
+      case 'deleteTag':
+        tagDeleteMutation.mutate(pending.tag, {
+          onSuccess: () => showFlash(`Deleted tag '${pending.tag}'`, 'success'),
+          onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
+        })
+        break
+      case 'dropStash':
+        dropMutation.mutate(pending.entry.index, {
+          onSuccess: () => showFlash('Stash dropped', 'success'),
+          onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
+        })
+        break
     }
     setPending(null)
   }
@@ -104,11 +128,14 @@ export default function Sidebar() {
   const confirmTitle = (() => {
     if (!pending) return ''
     switch (pending.kind) {
-      case 'checkout': return `Switch to '${pending.branch}'?`
-      case 'removeWorktree': return 'Remove worktree?'
-      case 'checkoutRemote': return `Checkout '${pending.localBranch}' locally?`
-      case 'pullIntoLocal': return `Pull ${pending.remote}/${pending.localBranch} into '${pending.localBranch}'?`
+      case 'checkout':        return `Switch to '${pending.branch}'?`
+      case 'removeWorktree':  return 'Remove worktree?'
+      case 'checkoutRemote':  return `Checkout '${pending.localBranch}' locally?`
+      case 'pullIntoLocal':   return `Pull ${pending.remote}/${pending.localBranch} into '${pending.localBranch}'?`
       case 'pullIntoCurrent': return `Pull ${pending.remote}/${pending.branch} into '${pending.currentBranch}'?`
+      case 'checkoutTag':     return `Checkout tag '${pending.tag}'?`
+      case 'deleteTag':       return `Delete tag '${pending.tag}'?`
+      case 'dropStash':       return 'Drop stash?'
     }
   })()
 
@@ -123,17 +150,33 @@ export default function Sidebar() {
         return pending.localBranch !== currentBranch
           ? `This will switch to '${pending.localBranch}' and pull the latest changes.`
           : undefined
+      case 'checkoutTag':
+        return 'This will detach HEAD at the tagged commit.'
+      case 'deleteTag':
+        return 'This only removes the local tag. Push a delete to share the change.'
+      case 'dropStash':
+        return `'${pending.entry.message}' will be permanently deleted.`
       default:
         return undefined
     }
   })()
 
-  const confirmLabel = pending?.kind === 'removeWorktree' ? 'Remove'
-    : pending?.kind === 'checkout' ? 'Switch'
-    : pending?.kind === 'checkoutRemote' ? 'Checkout'
-    : 'Pull'
+  const confirmLabel = (() => {
+    if (!pending) return 'OK'
+    switch (pending.kind) {
+      case 'removeWorktree': return 'Remove'
+      case 'checkout':       return 'Switch'
+      case 'checkoutRemote': return 'Checkout'
+      case 'checkoutTag':    return 'Checkout'
+      case 'deleteTag':      return 'Delete'
+      case 'dropStash':      return 'Drop'
+      default:               return 'Pull'
+    }
+  })()
 
   const confirmDanger = pending?.kind === 'removeWorktree'
+    || pending?.kind === 'deleteTag'
+    || pending?.kind === 'dropStash'
 
   return (
     <>
@@ -177,14 +220,14 @@ export default function Sidebar() {
             const items = [
               ...(local
                 ? [
-                    ...(!local.isHead ? [{ label: `Switch to '${localName}'`, onClick: () => setPending({ kind: 'checkout', branch: localName }) }] : []),
-                    ...(local.isHead ? [{ label: `Pull into '${localName}'`, onClick: () => setPending({ kind: 'pullIntoLocal', remote: b.remote, localBranch: localName }) }] : []),
+                    ...(!local.isHead ? [{ label: `Switch to '${localName}'`, onClick: () => setPending({ kind: 'checkout' as const, branch: localName }) }] : []),
+                    ...(local.isHead ? [{ label: `Pull into '${localName}'`, onClick: () => setPending({ kind: 'pullIntoLocal' as const, remote: b.remote, localBranch: localName }) }] : []),
                   ]
                 : [
-                    { label: `Checkout '${localName}' locally`, onClick: () => setPending({ kind: 'checkoutRemote', remoteBranch: b.name, localBranch: localName }) },
+                    { label: `Checkout '${localName}' locally`, onClick: () => setPending({ kind: 'checkoutRemote' as const, remoteBranch: b.name, localBranch: localName }) },
                   ]
               ),
-              ...(currentBranch && currentBranch !== localName ? [{ label: `Pull into '${currentBranch}'`, onClick: () => setPending({ kind: 'pullIntoCurrent', remote: b.remote, branch: localName, currentBranch }) }] : []),
+              ...(currentBranch && currentBranch !== localName ? [{ label: `Pull into '${currentBranch}'`, onClick: () => setPending({ kind: 'pullIntoCurrent' as const, remote: b.remote, branch: localName, currentBranch }) }] : []),
             ]
             return (
               <ContextMenu key={b.name} items={items}>
@@ -201,17 +244,58 @@ export default function Sidebar() {
 
         <Section
           title="Tags"
-          icon={<Tag size={13} />}
+          icon={<TagIcon size={13} />}
           expanded={expanded.tags}
           onToggle={() => toggle('tags')}
-        />
+        >
+          {tags?.map((t: Tag) => (
+            <ContextMenu
+              key={t.name}
+              items={[
+                { label: 'Checkout tag', onClick: () => setPending({ kind: 'checkoutTag', tag: t.name }) },
+                { type: 'separator' },
+                { label: 'Delete tag', destructive: true, onClick: () => setPending({ kind: 'deleteTag', tag: t.name }) },
+              ]}
+            >
+              <div>
+                <SidebarItem
+                  label={t.name}
+                  onClick={() => setPending({ kind: 'checkoutTag', tag: t.name })}
+                />
+              </div>
+            </ContextMenu>
+          ))}
+        </Section>
 
         <Section
           title="Stashes"
           icon={<Archive size={13} />}
           expanded={expanded.stashes}
           onToggle={() => toggle('stashes')}
-        />
+        >
+          {stashes && stashes.length === 0 && (
+            <div style={{ height: 24, display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: 11, color: 'var(--text-ter)' }}>
+              No stashes
+            </div>
+          )}
+          {stashes?.map((s: StashEntry) => (
+            <ContextMenu
+              key={s.index}
+              items={[
+                { label: 'View diff', onClick: () => setOpenStash(s) },
+                { type: 'separator' },
+                { label: 'Drop stash', destructive: true, onClick: () => setPending({ kind: 'dropStash', entry: s }) },
+              ]}
+            >
+              <div>
+                <SidebarItem
+                  label={s.message}
+                  onClick={() => setOpenStash(s)}
+                />
+              </div>
+            </ContextMenu>
+          ))}
+        </Section>
 
         <Section
           title="Worktrees"
@@ -309,6 +393,10 @@ export default function Sidebar() {
 
       {showNewWorktreeDialog && (
         <NewWorktreeDialog onClose={() => setShowNewWorktreeDialog(false)} />
+      )}
+
+      {openStash && (
+        <StashDiffView entry={openStash} onClose={() => setOpenStash(null)} />
       )}
     </>
   )

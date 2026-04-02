@@ -9,15 +9,27 @@ export function AddWorktree(arg1:string,arg2:string):Promise<void>;
 
 export function AmendCommit(arg1:string):Promise<void>;
 
+export function ApplyStash(arg1:number):Promise<void>;
+
+export function ApplyStashFile(arg1:number,arg2:string):Promise<void>;
+
+export function ApplyStashHunk(arg1:string):Promise<void>;
+
 export function CheckoutBranch(arg1:string):Promise<void>;
 
 export function CheckoutRemoteBranch(arg1:string):Promise<void>;
 
+export function CheckoutTag(arg1:string):Promise<void>;
+
 export function CreateCommit(arg1:string):Promise<string>;
+
+export function DeleteTag(arg1:string):Promise<void>;
 
 export function DiscardFile(arg1:string):Promise<void>;
 
 export function DiscardHunk(arg1:string):Promise<void>;
+
+export function DropStash(arg1:number):Promise<void>;
 
 export function Fetch(arg1:string):Promise<void>;
 
@@ -37,17 +49,25 @@ export function GetLicenseStatus():Promise<license.LicenseStatus>;
 
 export function GetRecentRepos():Promise<Array<string>>;
 
+export function GetStashDiff(arg1:number):Promise<Array<git.DiffFile>>;
+
 export function GetStatus():Promise<git.RepoStatus>;
 
 export function GetUntrackedFileDiff(arg1:string):Promise<git.DiffFile>;
 
 export function ListBranches():Promise<git.BranchList>;
 
+export function ListStashes():Promise<Array<git.StashEntry>>;
+
+export function ListTags():Promise<Array<git.Tag>>;
+
 export function ListWorktrees():Promise<Array<git.WorktreeInfo>>;
 
 export function OpenInFinder(arg1:string):Promise<void>;
 
 export function OpenRepository(arg1:string):Promise<string>;
+
+export function PopStash(arg1:number):Promise<void>;
 
 export function Pull(arg1:string,arg2:string):Promise<void>;
 

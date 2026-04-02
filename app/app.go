@@ -338,6 +338,108 @@ func (a *App) PullIntoLocalBranch(remote, localBranch string) error {
 	return nil
 }
 
+// --- Tags ---
+
+func (a *App) ListTags() ([]gitpkg.Tag, error) {
+	if a.repo == nil {
+		return nil, gitpkg.ErrNotARepo
+	}
+	return a.repo.ListTags()
+}
+
+func (a *App) CheckoutTag(tag string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.CheckoutTag(tag); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+func (a *App) DeleteTag(tag string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.DeleteTag(tag); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+// --- Stashes ---
+
+func (a *App) GetStashDiff(index int) ([]gitpkg.DiffFile, error) {
+	if a.repo == nil {
+		return nil, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetStashDiff(index)
+}
+
+func (a *App) ApplyStashHunk(patch string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.ApplyStashHunk(patch); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+func (a *App) ApplyStashFile(index int, filePath string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.ApplyStashFile(index, filePath); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+func (a *App) ListStashes() ([]gitpkg.StashEntry, error) {
+	if a.repo == nil {
+		return nil, gitpkg.ErrNotARepo
+	}
+	return a.repo.ListStashes()
+}
+
+func (a *App) ApplyStash(index int) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.ApplyStash(index); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+func (a *App) PopStash(index int) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.PopStash(index); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+func (a *App) DropStash(index int) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.DropStash(index); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
 // --- Worktrees ---
 
 func (a *App) ListWorktrees() ([]gitpkg.WorktreeInfo, error) {

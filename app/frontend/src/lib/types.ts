@@ -75,6 +75,20 @@ export interface BranchList {
   remotes: Branch[]
 }
 
+export interface Tag {
+  name: string
+  hash: string
+  date: string
+  message: string
+}
+
+export interface StashEntry {
+  index: number
+  message: string
+  hash: string
+  date: string
+}
+
 export interface WorktreeInfo {
   path: string
   branch: string

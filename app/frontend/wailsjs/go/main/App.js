@@ -14,6 +14,18 @@ export function AmendCommit(arg1) {
   return window['go']['main']['App']['AmendCommit'](arg1);
 }
 
+export function ApplyStash(arg1) {
+  return window['go']['main']['App']['ApplyStash'](arg1);
+}
+
+export function ApplyStashFile(arg1, arg2) {
+  return window['go']['main']['App']['ApplyStashFile'](arg1, arg2);
+}
+
+export function ApplyStashHunk(arg1) {
+  return window['go']['main']['App']['ApplyStashHunk'](arg1);
+}
+
 export function CheckoutBranch(arg1) {
   return window['go']['main']['App']['CheckoutBranch'](arg1);
 }
@@ -22,8 +34,16 @@ export function CheckoutRemoteBranch(arg1) {
   return window['go']['main']['App']['CheckoutRemoteBranch'](arg1);
 }
 
+export function CheckoutTag(arg1) {
+  return window['go']['main']['App']['CheckoutTag'](arg1);
+}
+
 export function CreateCommit(arg1) {
   return window['go']['main']['App']['CreateCommit'](arg1);
+}
+
+export function DeleteTag(arg1) {
+  return window['go']['main']['App']['DeleteTag'](arg1);
 }
 
 export function DiscardFile(arg1) {
@@ -32,6 +52,10 @@ export function DiscardFile(arg1) {
 
 export function DiscardHunk(arg1) {
   return window['go']['main']['App']['DiscardHunk'](arg1);
+}
+
+export function DropStash(arg1) {
+  return window['go']['main']['App']['DropStash'](arg1);
 }
 
 export function Fetch(arg1) {
@@ -70,6 +94,10 @@ export function GetRecentRepos() {
   return window['go']['main']['App']['GetRecentRepos']();
 }
 
+export function GetStashDiff(arg1) {
+  return window['go']['main']['App']['GetStashDiff'](arg1);
+}
+
 export function GetStatus() {
   return window['go']['main']['App']['GetStatus']();
 }
@@ -82,6 +110,14 @@ export function ListBranches() {
   return window['go']['main']['App']['ListBranches']();
 }
 
+export function ListStashes() {
+  return window['go']['main']['App']['ListStashes']();
+}
+
+export function ListTags() {
+  return window['go']['main']['App']['ListTags']();
+}
+
 export function ListWorktrees() {
   return window['go']['main']['App']['ListWorktrees']();
 }
@@ -92,6 +128,10 @@ export function OpenInFinder(arg1) {
 
 export function OpenRepository(arg1) {
   return window['go']['main']['App']['OpenRepository'](arg1);
+}
+
+export function PopStash(arg1) {
+  return window['go']['main']['App']['PopStash'](arg1);
 }
 
 export function Pull(arg1, arg2) {

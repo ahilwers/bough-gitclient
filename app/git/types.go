@@ -94,6 +94,7 @@ type Tag struct {
 type StashEntry struct {
 	Index   int       `json:"index"`
 	Message string    `json:"message"`
+	Hash    string    `json:"hash"`
 	Date    time.Time `json:"date"`
 }
 

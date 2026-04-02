@@ -6,13 +6,23 @@ import { buildHunkPatch } from '@/lib/diffUtils'
 import { parseGitError } from '@/lib/format'
 import type { DiffHunk, DiffLine } from '@/lib/types'
 
+export interface HunkAction {
+  label: string
+  color: string
+  hoverBg: string
+  onClick: () => void
+  isPending?: boolean
+}
+
 interface HunkBlockProps {
   hunk: DiffHunk
   filePath: string
   staged: boolean
+  /** When provided, replaces the default Stage/Unstage/Discard buttons. */
+  actions?: HunkAction[]
 }
 
-export function HunkBlock({ hunk, filePath, staged }: HunkBlockProps) {
+export function HunkBlock({ hunk, filePath, staged, actions }: HunkBlockProps) {
   const queryClient = useQueryClient()
   const { showFlash } = useGitStore()
   const [expanded, setExpanded] = useState(true)
@@ -69,32 +79,45 @@ export function HunkBlock({ hunk, filePath, staged }: HunkBlockProps) {
           style={{ display: 'flex', gap: 4, opacity: headerHovered ? 1 : 0, transition: 'opacity 0.1s' }}
           onClick={e => e.stopPropagation()}
         >
-          {!staged && (
+          {actions ? actions.map((a, i) => (
             <HunkButton
-              label="↑ Stage"
-              color="var(--success)"
-              hoverBg="var(--success-soft)"
-              onClick={() => stageHunkMutation.mutate()}
-              disabled={isPending}
+              key={i}
+              label={a.label}
+              color={a.color}
+              hoverBg={a.hoverBg}
+              onClick={a.onClick}
+              disabled={a.isPending ?? false}
             />
-          )}
-          {staged && (
-            <HunkButton
-              label="↓ Unstage"
-              color="var(--acc)"
-              hoverBg="var(--acc-soft)"
-              onClick={() => unstageHunkMutation.mutate()}
-              disabled={isPending}
-            />
-          )}
-          {!staged && (
-            <HunkButton
-              label="✕ Discard"
-              color="var(--danger)"
-              hoverBg="var(--danger-soft)"
-              onClick={() => discardHunkMutation.mutate()}
-              disabled={isPending}
-            />
+          )) : (
+            <>
+              {!staged && (
+                <HunkButton
+                  label="↑ Stage"
+                  color="var(--success)"
+                  hoverBg="var(--success-soft)"
+                  onClick={() => stageHunkMutation.mutate()}
+                  disabled={isPending}
+                />
+              )}
+              {staged && (
+                <HunkButton
+                  label="↓ Unstage"
+                  color="var(--acc)"
+                  hoverBg="var(--acc-soft)"
+                  onClick={() => unstageHunkMutation.mutate()}
+                  disabled={isPending}
+                />
+              )}
+              {!staged && (
+                <HunkButton
+                  label="✕ Discard"
+                  color="var(--danger)"
+                  hoverBg="var(--danger-soft)"
+                  onClick={() => discardHunkMutation.mutate()}
+                  disabled={isPending}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
