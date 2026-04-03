@@ -10,6 +10,7 @@ import { useGitStore } from '@/stores/gitStore'
 import { ContextMenu } from '@/components/shared/ContextMenu'
 import { NewWorktreeDialog } from '@/components/WorktreeManager/NewWorktreeDialog'
 import { NewBranchDialog } from '@/components/BranchManager/NewBranchDialog'
+import { MergeConfirmDialog } from '@/components/BranchManager/MergeConfirmDialog'
 import { StashDiffView } from '@/components/StashView/StashDiffView'
 import { OpenInFinder } from '@wailsjs/go/main/App'
 import { parseGitError } from '@/lib/format'
@@ -35,6 +36,8 @@ export default function Sidebar() {
   })
   const [showNewWorktreeDialog, setShowNewWorktreeDialog] = useState(false)
   const [showNewBranchDialog, setShowNewBranchDialog] = useState(false)
+  const [mergingBranch, setMergingBranch] = useState<string | null>(null)
+  const [dragOverHead, setDragOverHead] = useState(false)
   const [pending, setPending] = useState<PendingConfirm | null>(null)
   const [openStash, setOpenStash] = useState<StashEntry | null>(null)
 
@@ -200,14 +203,58 @@ export default function Sidebar() {
           onToggle={() => toggle('branches')}
           onAdd={() => setShowNewBranchDialog(true)}
         >
-          {branches?.local?.map(b => (
-            <SidebarItem
-              key={b.name}
-              label={b.name}
-              isActive={b.isHead}
-              onClick={b.isHead ? undefined : () => setPending({ kind: 'checkout', branch: b.name })}
-            />
-          ))}
+          {branches?.local?.map(b => {
+            const contextItems = b.isHead
+              ? []
+              : [
+                  { label: `Merge '${b.name}' into '${currentBranch}'`, onClick: () => setMergingBranch(b.name) },
+                  { type: 'separator' as const },
+                  { label: `Switch to '${b.name}'`, onClick: () => setPending({ kind: 'checkout', branch: b.name }) },
+                ]
+
+            const item = (
+              <BranchItem
+                key={b.name}
+                label={b.name}
+                isActive={b.isHead}
+                isDragTarget={b.isHead && dragOverHead}
+                draggable={!b.isHead}
+                onDragStart={!b.isHead ? (e) => {
+                  e.dataTransfer.setData('branch', b.name)
+                  e.dataTransfer.effectAllowed = 'move'
+                  // Custom drag image with "Merge" label
+                  const ghost = document.createElement('div')
+                  ghost.textContent = `Merge ${b.name}`
+                  Object.assign(ghost.style, {
+                    position: 'absolute', top: '-999px',
+                    background: 'var(--bg-panel)', color: 'var(--text-pri)',
+                    padding: '4px 8px', borderRadius: '6px', fontSize: '12px',
+                    border: '1px solid var(--border)', whiteSpace: 'nowrap',
+                    pointerEvents: 'none',
+                  })
+                  document.body.appendChild(ghost)
+                  e.dataTransfer.setDragImage(ghost, 0, 10)
+                  setTimeout(() => document.body.removeChild(ghost), 0)
+                } : undefined}
+                onDragOver={b.isHead ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverHead(true) } : undefined}
+                onDragLeave={b.isHead ? () => setDragOverHead(false) : undefined}
+                onDrop={b.isHead ? (e) => {
+                  e.preventDefault()
+                  setDragOverHead(false)
+                  const from = e.dataTransfer.getData('branch')
+                  if (from && from !== b.name) setMergingBranch(from)
+                } : undefined}
+                onClick={b.isHead ? undefined : () => setPending({ kind: 'checkout', branch: b.name })}
+              />
+            )
+
+            if (contextItems.length === 0) return item
+            return (
+              <ContextMenu key={b.name} items={contextItems}>
+                <div>{item}</div>
+              </ContextMenu>
+            )
+          })}
         </Section>
 
         <Section
@@ -397,6 +444,14 @@ export default function Sidebar() {
         <NewBranchDialog onClose={() => setShowNewBranchDialog(false)} />
       )}
 
+      {mergingBranch && currentBranch && (
+        <MergeConfirmDialog
+          fromBranch={mergingBranch}
+          intoBranch={currentBranch}
+          onClose={() => setMergingBranch(null)}
+        />
+      )}
+
       {showNewWorktreeDialog && (
         <NewWorktreeDialog onClose={() => setShowNewWorktreeDialog(false)} />
       )}
@@ -467,6 +522,55 @@ function Section({ title, icon, expanded, onToggle, onAdd, children }: SectionPr
           {children}
         </div>
       )}
+    </div>
+  )
+}
+
+interface BranchItemProps {
+  label: string
+  isActive?: boolean
+  isDragTarget?: boolean
+  draggable?: boolean
+  onClick?: () => void
+  onDragStart?: (e: React.DragEvent<HTMLDivElement>) => void
+  onDragOver?: (e: React.DragEvent<HTMLDivElement>) => void
+  onDragLeave?: () => void
+  onDrop?: (e: React.DragEvent<HTMLDivElement>) => void
+}
+
+function BranchItem({ label, isActive, isDragTarget, draggable, onClick, onDragStart, onDragOver, onDragLeave, onDrop }: BranchItemProps) {
+  return (
+    <div
+      draggable={draggable}
+      onClick={onClick}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      style={{
+        height: 24,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        padding: '0 8px',
+        fontSize: 12,
+        color: isActive ? 'var(--text-acc)' : 'var(--text-sec)',
+        fontWeight: isActive ? 600 : 400,
+        cursor: onClick ? 'pointer' : draggable ? 'grab' : 'default',
+        borderRadius: 'var(--r-sm)',
+        background: isDragTarget ? 'color-mix(in srgb, var(--acc) 15%, transparent)' : 'transparent',
+        outline: isDragTarget ? '1px dashed var(--acc)' : 'none',
+        transition: 'background 0.1s, outline 0.1s',
+      }}
+      title={label}
+    >
+      <span style={{
+        width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+        background: isActive ? 'var(--acc)' : 'transparent',
+      }} />
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+        {label}
+      </span>
     </div>
   )
 }
