@@ -10,6 +10,12 @@ import (
 
 const watcherDebounce = 400 * time.Millisecond
 
+// indexQuietWindow is how long after a status/staging call we suppress index
+// events. git status refreshes the stat cache in .git/index on every run; this
+// window breaks the resulting feedback loop while still letting external
+// "git add" calls through.
+const indexQuietWindow = 2 * time.Second
+
 // Watcher monitors one or more repository paths and fires a callback
 // when the .git directory changes (new commits, branch switches, etc.).
 type Watcher struct {
@@ -21,6 +27,11 @@ type Watcher struct {
 	debounceMu sync.Mutex
 	timer      *time.Timer
 	pending    string
+
+	// lastStatusCall tracks when we last ran git status so index events that
+	// arrive within indexQuietWindow are suppressed (feedback-loop guard).
+	lastStatusMu   sync.Mutex
+	lastStatusCall time.Time
 }
 
 func NewWatcher() (*Watcher, error) {
@@ -52,6 +63,21 @@ func (w *Watcher) OnChange(fn func(path string)) {
 	w.callbacks = append(w.callbacks, fn)
 }
 
+// MarkStatusCall records the current time so that index events arriving
+// within indexQuietWindow are suppressed. Call this immediately before
+// running git status or any staging operation.
+func (w *Watcher) MarkStatusCall() {
+	w.lastStatusMu.Lock()
+	w.lastStatusCall = time.Now()
+	w.lastStatusMu.Unlock()
+}
+
+func (w *Watcher) isIndexQuiet() bool {
+	w.lastStatusMu.Lock()
+	defer w.lastStatusMu.Unlock()
+	return time.Since(w.lastStatusCall) < indexQuietWindow
+}
+
 func (w *Watcher) loop() {
 	for {
 		select {
@@ -59,15 +85,17 @@ func (w *Watcher) loop() {
 			if !ok {
 				return
 			}
-			// Only react to files that signal meaningful git state changes.
-			// "index" is intentionally excluded: git status refreshes the stat
-			// cache in .git/index on every run, which would create a feedback
-			// loop (status → index write → watcher fires → status → ...).
-			// Staging changes from our own UI are covered by query invalidation
-			// in the mutation callbacks, so the watcher only needs to handle
-			// external state changes (new commits, branch switches, remote ops).
 			base := filepath.Base(event.Name)
-			if base != "HEAD" && base != "COMMIT_EDITMSG" && base != "packed-refs" {
+			switch base {
+			case "HEAD", "COMMIT_EDITMSG", "packed-refs":
+				// Git ref changes — always fire immediately.
+			case "index":
+				// Staging-area changes: fire only when the write was not caused
+				// by our own status call (feedback-loop guard).
+				if w.isIndexQuiet() {
+					continue
+				}
+			default:
 				continue
 			}
 			repoPath := filepath.Dir(filepath.Dir(event.Name))

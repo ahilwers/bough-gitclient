@@ -37,6 +37,12 @@ func (r *Repository) ListBranches() (BranchList, error) {
 		return nil
 	})
 
+	// On a freshly-initialised repo there are no commits yet, so refs/heads/*
+	// is empty. Add the unborn branch so the sidebar always shows something.
+	if len(bl.Local) == 0 && currentBranch != "" && currentBranch != "HEAD" {
+		bl.Local = append(bl.Local, Branch{Name: currentBranch, IsHead: true})
+	}
+
 	// Remote-tracking branches (refs/remotes/*), skip HEAD tracking refs
 	refs, err := r.repo.References()
 	if err != nil {

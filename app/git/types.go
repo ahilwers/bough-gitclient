@@ -107,6 +107,13 @@ type WorktreeInfo struct {
 	IsDirty bool   `json:"isDirty"`
 }
 
+// Remote is a configured git remote.
+type Remote struct {
+	Name     string `json:"name"`
+	FetchURL string `json:"fetchURL"`
+	PushURL  string `json:"pushURL"`
+}
+
 // BranchList groups local and remote branches for the sidebar.
 type BranchList struct {
 	Local   []Branch `json:"local"`

@@ -5,6 +5,8 @@ import {git} from '../models';
 
 export function ActivateLicense(arg1:string):Promise<license.LicenseStatus>;
 
+export function AddRemote(arg1:string,arg2:string):Promise<void>;
+
 export function AddWorktree(arg1:string,arg2:string):Promise<void>;
 
 export function AmendCommit(arg1:string):Promise<void>;
@@ -57,6 +59,8 @@ export function GetUntrackedFileDiff(arg1:string):Promise<git.DiffFile>;
 
 export function ListBranches():Promise<git.BranchList>;
 
+export function ListRemotes():Promise<Array<git.Remote>>;
+
 export function ListStashes():Promise<Array<git.StashEntry>>;
 
 export function ListTags():Promise<Array<git.Tag>>;
@@ -75,9 +79,15 @@ export function PullIntoLocalBranch(arg1:string,arg2:string):Promise<void>;
 
 export function Push(arg1:string,arg2:string,arg3:boolean):Promise<void>;
 
+export function RemoveRemote(arg1:string):Promise<void>;
+
 export function RemoveWorktree(arg1:string):Promise<void>;
 
+export function RenameRemote(arg1:string,arg2:string):Promise<void>;
+
 export function SaveWindowSize(arg1:number,arg2:number):Promise<void>;
+
+export function SelectAndInitRepository():Promise<string>;
 
 export function SelectRepository():Promise<string>;
 
@@ -96,3 +106,5 @@ export function UnstageFile(arg1:string):Promise<void>;
 export function UnstageFiles(arg1:Array<string>):Promise<void>;
 
 export function UnstageHunk(arg1:string):Promise<void>;
+
+export function UpdateRemote(arg1:string,arg2:string):Promise<void>;
