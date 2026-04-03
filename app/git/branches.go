@@ -75,6 +75,12 @@ func (r *Repository) CreateBranch(name, from string, checkoutAfter bool) error {
 	return err
 }
 
+// MergeBranch merges the given branch into the current branch using the git CLI.
+func (r *Repository) MergeBranch(from string) error {
+	_, err := CLI(r.Path, "merge", from)
+	return err
+}
+
 // CheckoutBranch switches the working tree to the named local branch using the
 // git CLI so that hooks and credential helpers run as expected.
 func (r *Repository) CheckoutBranch(branch string) error {

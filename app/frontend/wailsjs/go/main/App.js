@@ -134,6 +134,10 @@ export function ListWorktrees() {
   return window['go']['main']['App']['ListWorktrees']();
 }
 
+export function MergeBranch(arg1) {
+  return window['go']['main']['App']['MergeBranch'](arg1);
+}
+
 export function OpenInFinder(arg1) {
   return window['go']['main']['App']['OpenInFinder'](arg1);
 }

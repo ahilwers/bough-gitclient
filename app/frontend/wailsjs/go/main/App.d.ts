@@ -69,6 +69,8 @@ export function ListTags():Promise<Array<git.Tag>>;
 
 export function ListWorktrees():Promise<Array<git.WorktreeInfo>>;
 
+export function MergeBranch(arg1:string):Promise<void>;
+
 export function OpenInFinder(arg1:string):Promise<void>;
 
 export function OpenRepository(arg1:string):Promise<string>;
