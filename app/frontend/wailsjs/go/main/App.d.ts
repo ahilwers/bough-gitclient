@@ -3,6 +3,8 @@
 import {license} from '../models';
 import {git} from '../models';
 
+export function AbortMerge():Promise<void>;
+
 export function ActivateLicense(arg1:string):Promise<license.LicenseStatus>;
 
 export function AddRemote(arg1:string,arg2:string):Promise<void>;
@@ -19,9 +21,13 @@ export function ApplyStashHunk(arg1:string):Promise<void>;
 
 export function CheckoutBranch(arg1:string):Promise<void>;
 
+export function CheckoutOurs(arg1:string):Promise<void>;
+
 export function CheckoutRemoteBranch(arg1:string):Promise<void>;
 
 export function CheckoutTag(arg1:string):Promise<void>;
+
+export function CheckoutTheirs(arg1:string):Promise<void>;
 
 export function CreateBranch(arg1:string,arg2:string,arg3:boolean):Promise<void>;
 
@@ -46,6 +52,8 @@ export function GetCommits(arg1:number,arg2:boolean):Promise<Array<git.CommitNod
 export function GetFileAtCommit(arg1:string,arg2:string):Promise<string>;
 
 export function GetFileAtCommitParent(arg1:string,arg2:string):Promise<string>;
+
+export function GetFileContent(arg1:string):Promise<string>;
 
 export function GetFileDiff(arg1:string,arg2:boolean):Promise<git.DiffFile>;
 
@@ -72,6 +80,8 @@ export function ListWorktrees():Promise<Array<git.WorktreeInfo>>;
 export function MergeBranch(arg1:string):Promise<void>;
 
 export function OpenInFinder(arg1:string):Promise<void>;
+
+export function OpenMergeToolForFile(arg1:string):Promise<void>;
 
 export function OpenRepository(arg1:string):Promise<string>;
 

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { StageFile, UnstageFile, DiscardFile } from '@wailsjs/go/main/App'
+import { StageFile, UnstageFile, DiscardFile, AbortMerge } from '@wailsjs/go/main/App'
 import { FileStatusList } from './FileStatusList'
 import { ChunkDiffPanel } from './ChunkDiffPanel'
 import { CommitBox } from './CommitBox'
+import { useStatus } from '@/hooks/useStatus'
 import { useGitStore } from '@/stores/gitStore'
 import { parseGitError } from '@/lib/format'
 import type { FileStatus } from '@/lib/types'
@@ -13,6 +14,8 @@ export default function ChangesView() {
   const [selectedStaged, setSelectedStaged] = useState(false)
   const { showFlash } = useGitStore()
   const queryClient = useQueryClient()
+  const { data: status } = useStatus()
+  const mergeState = status?.mergeState
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['status'] })
@@ -72,33 +75,84 @@ export default function ChangesView() {
     queryClient.invalidateQueries({ queryKey: ['diff'] })
   }
 
-  return (
-    <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: 'var(--bg-content)' }}>
-      {/* File status list (240px, left) */}
-      <FileStatusList
-        selectedFile={selectedFile?.path ?? null}
-        selectedStaged={selectedStaged}
-        onSelectFile={handleSelectFile}
-      />
+  const abortMutation = useMutation({
+    mutationFn: () => AbortMerge(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['status'] })
+      queryClient.invalidateQueries({ queryKey: ['commits'] })
+      showFlash('Merge aborted', 'info')
+    },
+    onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
+  })
 
-      {/* Diff panel + commit box (flex:1, right) */}
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-        {selectedFile ? (
-          <>
-            <ChunkDiffPanel filePath={selectedFile.path} staged={selectedStaged} fileStatus={selectedFile} />
-            <CommitBox />
-          </>
-        ) : (
-          <>
-            <div style={{
-              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--text-ter)', fontSize: 12,
-            }}>
-              Select a file to view changes
-            </div>
-            <CommitBox />
-          </>
-        )}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', background: 'var(--bg-content)' }}>
+      {/* Merge-in-progress banner */}
+      {mergeState && (
+        <div style={{
+          flexShrink: 0,
+          padding: '7px 14px',
+          background: mergeState.conflictCount > 0
+            ? 'color-mix(in srgb, var(--danger) 12%, var(--bg-panel))'
+            : 'color-mix(in srgb, var(--warn) 12%, var(--bg-panel))',
+          borderBottom: '1px solid var(--border-sub)',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span style={{
+            fontSize: 11, fontWeight: 700,
+            color: mergeState.conflictCount > 0 ? 'var(--danger)' : 'var(--warn)',
+            letterSpacing: '0.04em',
+          }}>
+            MERGING
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--text-sec)', flex: 1 }}>
+            {mergeState.conflictCount > 0
+              ? `${mergeState.conflictCount} conflict${mergeState.conflictCount > 1 ? 's' : ''} remaining in merge with '${mergeState.mergingBranch}'`
+              : `All conflicts resolved — commit to finish merging '${mergeState.mergingBranch}'`
+            }
+          </span>
+          <button
+            onClick={() => abortMutation.mutate()}
+            disabled={abortMutation.isPending}
+            style={{
+              padding: '4px 10px', borderRadius: 5, border: '1px solid var(--border)',
+              background: 'transparent', color: 'var(--text-sec)', fontSize: 11,
+              cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            Abort Merge
+          </button>
+        </div>
+      )}
+
+      {/* Main content row */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* File status list (240px, left) */}
+        <FileStatusList
+          selectedFile={selectedFile?.path ?? null}
+          selectedStaged={selectedStaged}
+          onSelectFile={handleSelectFile}
+        />
+
+        {/* Diff panel + commit box (flex:1, right) */}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+          {selectedFile ? (
+            <>
+              <ChunkDiffPanel filePath={selectedFile.path} staged={selectedStaged} fileStatus={selectedFile} />
+              <CommitBox />
+            </>
+          ) : (
+            <>
+              <div style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-ter)', fontSize: 12,
+              }}>
+                Select a file to view changes
+              </div>
+              <CommitBox />
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

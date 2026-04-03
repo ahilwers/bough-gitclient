@@ -344,6 +344,59 @@ func (a *App) MergeBranch(from string) error {
 	return nil
 }
 
+func (a *App) AbortMerge() error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.AbortMerge(); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+func (a *App) CheckoutOurs(filePath string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.CheckoutOurs(filePath); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+func (a *App) CheckoutTheirs(filePath string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.CheckoutTheirs(filePath); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+func (a *App) OpenMergeToolForFile(filePath string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	// Run the tool in a goroutine so the IPC call returns immediately.
+	// When the tool exits, emit repo:changed so the UI refreshes.
+	go func() {
+		_ = a.repo.OpenMergeToolForFile(filePath)
+		wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	}()
+	return nil
+}
+
+func (a *App) GetFileContent(filePath string) (string, error) {
+	if a.repo == nil {
+		return "", gitpkg.ErrNotARepo
+	}
+	return a.repo.GetFileContent(filePath)
+}
+
 func (a *App) CheckoutBranch(branch string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo

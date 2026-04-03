@@ -97,12 +97,18 @@ export interface WorktreeInfo {
   isDirty: boolean
 }
 
+export interface MergeState {
+  mergingBranch: string
+  conflictCount: number
+}
+
 export interface RepoStatus {
   branch: string
   ahead: number
   behind: number
   files: FileStatus[]
   hasConflicts: boolean
+  mergeState?: MergeState
 }
 
 export interface Remote {

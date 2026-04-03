@@ -6,6 +6,12 @@ import { useGitStore } from '@/stores/gitStore'
 import { parseGitError } from '@/lib/format'
 import type { FileStatus } from '@/lib/types'
 
+function isConflicted(f: FileStatus): boolean {
+  return f.staged === 'U' || f.unstaged === 'U' ||
+    (f.staged === 'A' && f.unstaged === 'A') ||
+    (f.staged === 'D' && f.unstaged === 'D')
+}
+
 interface FileStatusListProps {
   selectedFile: string | null
   selectedStaged: boolean
@@ -48,8 +54,9 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile }: F
 
   const files = status?.files ?? []
   // untracked: staged === "?", unstaged === "" (after repository.go normalisation)
-  const unstagedFiles = files.filter(f => f.unstaged !== '' || f.staged === '?')
-  const stagedFiles = files.filter(f => f.staged !== '' && f.staged !== '?')
+  const conflictedFiles = files.filter(isConflicted)
+  const unstagedFiles = files.filter(f => !isConflicted(f) && (f.unstaged !== '' || f.staged === '?'))
+  const stagedFiles = files.filter(f => !isConflicted(f) && f.staged !== '' && f.staged !== '?')
 
   return (
     <div style={{
@@ -59,6 +66,28 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile }: F
       display: 'flex', flexDirection: 'column',
       overflow: 'hidden',
     }}>
+      {/* Conflicts section — only visible during merge conflicts */}
+      {conflictedFiles.length > 0 && (
+        <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--border-sub)' }}>
+          <SectionHeader
+            title="Conflicts"
+            count={conflictedFiles.length}
+            accentBg="color-mix(in srgb, var(--danger) 10%, var(--bg-sidebar))"
+          />
+          <div>
+            {conflictedFiles.map(file => (
+              <FileRow
+                key={file.path}
+                file={file}
+                statusCode="!"
+                selected={file.path === selectedFile && !selectedStaged}
+                onSelect={() => onSelectFile(file, false)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Unstaged section */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, borderBottom: '1px solid var(--border-sub)' }}>
         <SectionHeader
@@ -125,8 +154,8 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile }: F
 interface SectionHeaderProps {
   title: string
   count: number
-  actionLabel: string
-  onAction: () => void
+  actionLabel?: string
+  onAction?: () => void
   accentBg: string
 }
 
@@ -142,7 +171,7 @@ function SectionHeader({ title, count, actionLabel, onAction, accentBg }: Sectio
         {title}
         <span style={{ color: 'var(--text-ter)', marginLeft: 4 }}>({count})</span>
       </span>
-      {count > 0 && (
+      {count > 0 && actionLabel && onAction && (
         <button
           onClick={onAction}
           style={{
@@ -162,16 +191,17 @@ interface FileRowProps {
   statusCode: string
   selected: boolean
   onSelect: () => void
-  actionIcon: string
-  actionTitle: string
-  onAction: () => void
+  actionIcon?: string
+  actionTitle?: string
+  onAction?: () => void
 }
 
 function FileRow({ file, statusCode, selected, onSelect, actionIcon, actionTitle, onAction }: FileRowProps) {
   const [hovered, setHovered] = useState(false)
 
-  const label = statusCode === 'A' ? 'A' : statusCode === 'D' ? 'D' : statusCode === '?' ? '?' : 'M'
-  const badgeColor = label === 'A' ? 'var(--success)' : label === 'D' ? 'var(--danger)' : 'var(--warn)'
+  const isConflict = statusCode === '!'
+  const label = isConflict ? '!' : statusCode === 'A' ? 'A' : statusCode === 'D' ? 'D' : statusCode === '?' ? '?' : 'M'
+  const badgeColor = isConflict ? 'var(--danger)' : label === 'A' ? 'var(--success)' : label === 'D' ? 'var(--danger)' : 'var(--warn)'
 
   return (
     <div
@@ -212,19 +242,21 @@ function FileRow({ file, statusCode, selected, onSelect, actionIcon, actionTitle
       </div>
 
       {/* Stage/unstage button — visible on hover */}
-      <button
-        onClick={e => { e.stopPropagation(); onAction() }}
-        title={actionTitle}
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          width: 20, height: 20, borderRadius: 3, flexShrink: 0,
-          fontSize: 13, fontWeight: 700, lineHeight: 1, color: 'var(--text-sec)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          opacity: hovered ? 1 : 0, transition: 'opacity 0.1s',
-        }}
-      >
-        {actionIcon}
-      </button>
+      {onAction && (
+        <button
+          onClick={e => { e.stopPropagation(); onAction() }}
+          title={actionTitle}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            width: 20, height: 20, borderRadius: 3, flexShrink: 0,
+            fontSize: 13, fontWeight: 700, lineHeight: 1, color: 'var(--text-sec)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            opacity: hovered ? 1 : 0, transition: 'opacity 0.1s',
+          }}
+        >
+          {actionIcon}
+        </button>
+      )}
     </div>
   )
 }

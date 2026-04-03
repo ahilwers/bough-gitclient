@@ -260,6 +260,20 @@ export namespace git {
 	    }
 	}
 	
+	export class MergeState {
+	    mergingBranch: string;
+	    conflictCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new MergeState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.mergingBranch = source["mergingBranch"];
+	        this.conflictCount = source["conflictCount"];
+	    }
+	}
 	
 	export class Remote {
 	    name: string;
@@ -283,6 +297,7 @@ export namespace git {
 	    behind: number;
 	    files: FileStatus[];
 	    hasConflicts: boolean;
+	    mergeState?: MergeState;
 	
 	    static createFrom(source: any = {}) {
 	        return new RepoStatus(source);
@@ -295,6 +310,7 @@ export namespace git {
 	        this.behind = source["behind"];
 	        this.files = this.convertValues(source["files"], FileStatus);
 	        this.hasConflicts = source["hasConflicts"];
+	        this.mergeState = this.convertValues(source["mergeState"], MergeState);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

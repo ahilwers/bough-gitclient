@@ -13,6 +13,7 @@ import { NewBranchDialog } from '@/components/BranchManager/NewBranchDialog'
 import { MergeConfirmDialog } from '@/components/BranchManager/MergeConfirmDialog'
 import { StashDiffView } from '@/components/StashView/StashDiffView'
 import { OpenInFinder } from '@wailsjs/go/main/App'
+import { useStatus } from '@/hooks/useStatus'
 import { parseGitError } from '@/lib/format'
 import type { WorktreeInfo, Branch, Tag, StashEntry } from '@/lib/types'
 
@@ -46,6 +47,7 @@ export default function Sidebar() {
   const { data: tags, checkoutMutation: tagCheckoutMutation, deleteMutation: tagDeleteMutation } = useTags()
   const { data: stashes, dropMutation } = useStashes()
   const { activeWorktree, showFlash } = useGitStore()
+  const { data: status } = useStatus()
 
   const toggle = (key: keyof typeof expanded) =>
     setExpanded(s => ({ ...s, [key]: !s[key] }))
@@ -203,6 +205,23 @@ export default function Sidebar() {
           onToggle={() => toggle('branches')}
           onAdd={() => setShowNewBranchDialog(true)}
         >
+          {status?.mergeState && (
+            <div style={{
+              margin: '4px 8px 2px',
+              padding: '3px 8px',
+              borderRadius: 4,
+              background: status.mergeState.conflictCount > 0
+                ? 'color-mix(in srgb, var(--danger) 15%, transparent)'
+                : 'color-mix(in srgb, var(--warn) 15%, transparent)',
+              border: `1px solid ${status.mergeState.conflictCount > 0 ? 'var(--danger)' : 'var(--warn)'}`,
+              fontSize: 10, fontWeight: 700,
+              color: status.mergeState.conflictCount > 0 ? 'var(--danger)' : 'var(--warn)',
+              letterSpacing: '0.04em',
+            }}>
+              MERGING {status.mergeState.mergingBranch}
+              {status.mergeState.conflictCount > 0 && ` · ${status.mergeState.conflictCount} conflict${status.mergeState.conflictCount > 1 ? 's' : ''}`}
+            </div>
+          )}
           {branches?.local?.map(b => {
             const contextItems = b.isHead
               ? []

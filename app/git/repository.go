@@ -116,7 +116,10 @@ func (r *Repository) Status() (RepoStatus, error) {
 		if unstaged == " " {
 			unstaged = ""
 		}
-		if staged == "U" || unstaged == "U" {
+		// Conflict states: UU, AA, DD, AU, UA, DU, UD
+		if staged == "U" || unstaged == "U" ||
+			(staged == "A" && unstaged == "A") ||
+			(staged == "D" && unstaged == "D") {
 			hasConflicts = true
 		}
 
@@ -132,11 +135,28 @@ func (r *Repository) Status() (RepoStatus, error) {
 	// git status --porcelain collapses new directories to a single "?? dir/" entry.
 	files = expandUntrackedDirs(r.Path, files)
 
+	// Count conflicts and detect merge state.
+	conflictCount := 0
+	for _, f := range files {
+		if isConflictedFile(f) {
+			conflictCount++
+		}
+	}
+	mergeState := r.DetectMergeState(conflictCount)
+
 	return RepoStatus{
 		Branch:       branch,
 		Files:        files,
 		HasConflicts: hasConflicts,
+		MergeState:   mergeState,
 	}, nil
+}
+
+// isConflictedFile reports whether f has unresolved merge conflicts.
+func isConflictedFile(f FileStatus) bool {
+	return f.Staged == "U" || f.Unstaged == "U" ||
+		(f.Staged == "A" && f.Unstaged == "A") ||
+		(f.Staged == "D" && f.Unstaged == "D")
 }
 
 // expandUntrackedDirs replaces untracked directory entries (path ending with "/")
