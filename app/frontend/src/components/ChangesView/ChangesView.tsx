@@ -67,6 +67,9 @@ export default function ChangesView() {
   function handleSelectFile(file: FileStatus, staged: boolean) {
     setSelectedFile(file)
     setSelectedStaged(staged)
+    // Always invalidate so re-clicking the same file (same React state reference)
+    // still triggers a fresh diff fetch via the active query subscription.
+    queryClient.invalidateQueries({ queryKey: ['diff'] })
   }
 
   return (

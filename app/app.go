@@ -125,6 +125,9 @@ func (a *App) GetStatus() (gitpkg.RepoStatus, error) {
 	if a.repo == nil {
 		return gitpkg.RepoStatus{}, gitpkg.ErrNotARepo
 	}
+	// Mark the call so the watcher suppresses the index write that git status
+	// itself produces (prevents the status → index-change → status feedback loop).
+	a.watcher.MarkStatusCall()
 	return a.repo.Status()
 }
 
@@ -151,6 +154,7 @@ func (a *App) StageFiles(filePaths []string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
+	a.watcher.MarkStatusCall()
 	return a.repo.StageFiles(filePaths)
 }
 
@@ -161,6 +165,7 @@ func (a *App) UnstageFiles(filePaths []string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
+	a.watcher.MarkStatusCall()
 	return a.repo.UnstageFiles(filePaths)
 }
 
@@ -171,6 +176,7 @@ func (a *App) StageFile(filePath string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
+	a.watcher.MarkStatusCall()
 	return a.repo.StageFile(filePath)
 }
 
@@ -181,6 +187,7 @@ func (a *App) UnstageFile(filePath string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
+	a.watcher.MarkStatusCall()
 	return a.repo.UnstageFile(filePath)
 }
 
@@ -191,6 +198,7 @@ func (a *App) StageHunk(patch string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
+	a.watcher.MarkStatusCall()
 	return a.repo.StageHunkViaApply(patch)
 }
 
@@ -201,6 +209,7 @@ func (a *App) UnstageHunk(patch string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
+	a.watcher.MarkStatusCall()
 	return a.repo.UnstageHunkViaApply(patch)
 }
 
@@ -211,6 +220,7 @@ func (a *App) DiscardFile(filePath string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
+	a.watcher.MarkStatusCall()
 	return a.repo.DiscardFile(filePath)
 }
 
@@ -221,6 +231,7 @@ func (a *App) DiscardHunk(patch string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
+	a.watcher.MarkStatusCall()
 	return a.repo.DiscardHunk(patch)
 }
 
@@ -566,4 +577,71 @@ func (a *App) SelectRepository() (string, error) {
 		return "", err
 	}
 	return a.OpenRepository(path)
+}
+
+// SelectAndInitRepository opens a native folder-picker dialog, initialises a
+// new git repository in the chosen directory, and opens it as the active repo.
+// Returns the resolved repository path on success, or an empty string if the
+// dialog was cancelled.
+func (a *App) SelectAndInitRepository() (string, error) {
+	path, err := wailsruntime.OpenDirectoryDialog(a.ctx, wailsruntime.OpenDialogOptions{
+		Title:                "Select Folder for New Repository",
+		CanCreateDirectories: true,
+	})
+	if err != nil || path == "" {
+		return "", err
+	}
+	if _, err := gitpkg.CLI(path, "init", "-b", "main"); err != nil {
+		return "", err
+	}
+	return a.OpenRepository(path)
+}
+
+// --- Remote management ---
+
+func (a *App) ListRemotes() ([]gitpkg.Remote, error) {
+	if a.repo == nil {
+		return nil, gitpkg.ErrNotARepo
+	}
+	return a.repo.ListRemotes()
+}
+
+func (a *App) AddRemote(name, url string) error {
+	if err := a.requireLicense(); err != nil {
+		return err
+	}
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	return a.repo.AddRemote(name, url)
+}
+
+func (a *App) UpdateRemote(name, url string) error {
+	if err := a.requireLicense(); err != nil {
+		return err
+	}
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	return a.repo.UpdateRemote(name, url)
+}
+
+func (a *App) RenameRemote(oldName, newName string) error {
+	if err := a.requireLicense(); err != nil {
+		return err
+	}
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	return a.repo.RenameRemote(oldName, newName)
+}
+
+func (a *App) RemoveRemote(name string) error {
+	if err := a.requireLicense(); err != nil {
+		return err
+	}
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	return a.repo.RemoveRemote(name)
 }

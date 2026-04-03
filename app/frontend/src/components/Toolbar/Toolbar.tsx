@@ -1,15 +1,18 @@
-import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon, FolderOpen } from 'lucide-react'
+import { useState } from 'react'
+import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon, FolderOpen, FolderPlus, Globe } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useGitStore } from '@/stores/gitStore'
 import { useStatus } from '@/hooks/useStatus'
-import { SelectRepository, OpenRepository, Fetch, Pull, Push } from '@wailsjs/go/main/App'
+import { SelectRepository, OpenRepository, Fetch, Pull, Push, SelectAndInitRepository } from '@wailsjs/go/main/App'
 import { parseGitError } from '@/lib/format'
 import { useQueryClient } from '@tanstack/react-query'
+import { ManageRemotesDialog } from '@/components/RemoteManager/ManageRemotesDialog'
 
 export default function Toolbar() {
   const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash, theme, toggleTheme, licenseStatus, setLicenseDialogOpen } = useGitStore()
   const queryClient = useQueryClient()
   const { data: status } = useStatus()
+  const [remoteDialogOpen, setRemoteDialogOpen] = useState(false)
 
   const changesCount = (status?.files?.length ?? 0)
   const repoName = activeRepo ? activeRepo.split('/').pop() : 'No Repository'
@@ -32,6 +35,19 @@ export default function Toolbar() {
       if (path) {
         setActiveRepo(path)
         queryClient.invalidateQueries()
+      }
+    } catch (err) {
+      showFlash(parseGitError(err), 'danger')
+    }
+  }
+
+  const handleNewRepo = async () => {
+    try {
+      const path = await SelectAndInitRepository()
+      if (path) {
+        setActiveRepo(path)
+        queryClient.invalidateQueries()
+        showFlash('Repository created', 'success')
       }
     } catch (err) {
       showFlash(parseGitError(err), 'danger')
@@ -106,6 +122,20 @@ export default function Toolbar() {
             sideOffset={4}
           >
             <DropdownMenu.Item
+              onSelect={handleNewRepo}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '7px 12px', fontSize: 12, cursor: 'pointer', color: 'var(--text-pri)',
+                outline: 'none',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-content)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+            >
+              <FolderPlus size={13} style={{ flexShrink: 0, color: 'var(--text-ter)' }} />
+              New Repository…
+            </DropdownMenu.Item>
+
+            <DropdownMenu.Item
               onSelect={handleSelectRepo}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8,
@@ -118,6 +148,25 @@ export default function Toolbar() {
               <FolderOpen size={13} style={{ flexShrink: 0, color: 'var(--text-ter)' }} />
               Open Repository…
             </DropdownMenu.Item>
+
+            {activeRepo && (
+              <>
+                <DropdownMenu.Separator style={{ height: 1, background: 'var(--border-sub)', margin: '4px 0' }} />
+                <DropdownMenu.Item
+                  onSelect={() => setRemoteDialogOpen(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '7px 12px', fontSize: 12, cursor: 'pointer', color: 'var(--text-pri)',
+                    outline: 'none',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-content)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                >
+                  <Globe size={13} style={{ flexShrink: 0, color: 'var(--text-ter)' }} />
+                  Manage Remotes…
+                </DropdownMenu.Item>
+              </>
+            )}
 
             {recentRepos.length > 0 && (
               <>
@@ -206,6 +255,8 @@ export default function Toolbar() {
           </>
         )}
       </div>
+
+      {remoteDialogOpen && <ManageRemotesDialog onClose={() => setRemoteDialogOpen(false)} />}
     </div>
   )
 }

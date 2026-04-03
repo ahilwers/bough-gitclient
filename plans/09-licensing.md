@@ -718,61 +718,147 @@ func Revoked(kg *keygen.KeyGen, db *store.DB) http.HandlerFunc {
 
 ### 11.6 Email Sending (`licenseserver/mailer/mailer.go`)
 
-Uses [Resend](https://resend.com) — simple REST API, free tier covers ~3,000 emails/month.
+Uses the Go standard library (`net/smtp`) together with the own mail server. No third-party email service is required. Authentication is done via SMTP AUTH (PLAIN over TLS). Both submission port 587 (STARTTLS) and port 465 (implicit TLS / SMTPS) are supported — controlled by the `SMTP_TLS` environment variable.
+
+#### Environment variables
+
+| Variable | Example | Description |
+|---|---|---|
+| `SMTP_HOST` | `mail.example.com` | SMTP server hostname |
+| `SMTP_PORT` | `587` | Port — `587` for STARTTLS, `465` for implicit TLS |
+| `SMTP_TLS` | `starttls` | `starttls` (port 587) or `tls` (port 465) |
+| `SMTP_USERNAME` | `license@boughapp.com` | SMTP auth username |
+| `SMTP_PASSWORD` | `…` | SMTP auth password (set as secret, never committed) |
+| `FROM_EMAIL` | `Bough <license@boughapp.com>` | RFC 5322 From header |
 
 ```go
 package mailer
 
 import (
-    "bytes"
-    "encoding/json"
+    "crypto/tls"
     "fmt"
-    "net/http"
+    "net"
+    "net/smtp"
+    "strings"
 )
 
-type Mailer struct {
-    apiKey   string
-    fromAddr string
+type Config struct {
+    Host     string // SMTP_HOST
+    Port     string // SMTP_PORT
+    TLSMode  string // "starttls" | "tls"
+    Username string // SMTP_USERNAME
+    Password string // SMTP_PASSWORD
+    FromAddr string // FROM_EMAIL
 }
 
-func New(apiKey, fromAddr string) *Mailer {
-    return &Mailer{apiKey: apiKey, fromAddr: fromAddr}
-}
+type Mailer struct{ cfg Config }
+
+func New(cfg Config) *Mailer { return &Mailer{cfg: cfg} }
 
 func (m *Mailer) SendLicenseKey(toEmail, licenseKey string) error {
-    body := map[string]any{
-        "from":    m.fromAddr,
-        "to":      []string{toEmail},
-        "subject": "Your Bough License Key",
-        "html": fmt.Sprintf(`
-<h2>Thank you for purchasing Bough!</h2>
-<p>Here is your license key:</p>
-<pre style="font-size:18px;letter-spacing:2px;padding:16px;background:#f5f5f5;border-radius:8px">%s</pre>
-<p>To activate:</p>
-<ol>
-  <li>Open Bough</li>
-  <li>Go to <strong>Bough → License</strong></li>
-  <li>Paste your key and click <strong>Activate</strong></li>
-</ol>
-<p>Your license covers 2 machines. You can use it on your work and personal computer.</p>
-<p>If you need help, reply to this email.</p>
-`, licenseKey),
+    subject := "Your Bough License Key"
+    body := buildLicenseEmail(toEmail, licenseKey)
+    return m.send(toEmail, subject, body)
+}
+
+func (m *Mailer) send(to, subject, htmlBody string) error {
+    msg := buildMIME(m.cfg.FromAddr, to, subject, htmlBody)
+    auth := smtp.PlainAuth("", m.cfg.Username, m.cfg.Password, m.cfg.Host)
+    addr := net.JoinHostPort(m.cfg.Host, m.cfg.Port)
+
+    switch m.cfg.TLSMode {
+    case "tls":
+        // Implicit TLS (port 465 / SMTPS)
+        tlsCfg := &tls.Config{ServerName: m.cfg.Host}
+        conn, err := tls.Dial("tcp", addr, tlsCfg)
+        if err != nil {
+            return fmt.Errorf("smtp tls dial: %w", err)
+        }
+        defer conn.Close()
+        client, err := smtp.NewClient(conn, m.cfg.Host)
+        if err != nil {
+            return fmt.Errorf("smtp client: %w", err)
+        }
+        defer client.Quit()
+        if err := client.Auth(auth); err != nil {
+            return fmt.Errorf("smtp auth: %w", err)
+        }
+        return sendViaClient(client, m.cfg.FromAddr, to, msg)
+
+    default: // "starttls" — port 587
+        return smtp.SendMail(addr, auth, m.cfg.FromAddr, []string{to}, msg)
     }
+}
 
-    data, _ := json.Marshal(body)
-    req, _ := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewReader(data))
-    req.Header.Set("Authorization", "Bearer "+m.apiKey)
-    req.Header.Set("Content-Type", "application/json")
-
-    resp, err := http.DefaultClient.Do(req)
+func sendViaClient(c *smtp.Client, from, to string, msg []byte) error {
+    if err := c.Mail(from); err != nil {
+        return err
+    }
+    if err := c.Rcpt(to); err != nil {
+        return err
+    }
+    wc, err := c.Data()
     if err != nil {
-        return fmt.Errorf("resend request: %w", err)
+        return err
     }
-    defer resp.Body.Close()
-    if resp.StatusCode >= 300 {
-        return fmt.Errorf("resend status %d", resp.StatusCode)
+    _, err = wc.Write(msg)
+    wc.Close()
+    return err
+}
+
+func buildMIME(from, to, subject, htmlBody string) []byte {
+    var sb strings.Builder
+    sb.WriteString("From: " + from + "\r\n")
+    sb.WriteString("To: " + to + "\r\n")
+    sb.WriteString("Subject: " + subject + "\r\n")
+    sb.WriteString("MIME-Version: 1.0\r\n")
+    sb.WriteString("Content-Type: text/html; charset=UTF-8\r\n")
+    sb.WriteString("\r\n")
+    sb.WriteString(htmlBody)
+    return []byte(sb.String())
+}
+
+func buildLicenseEmail(toEmail, licenseKey string) string {
+    return fmt.Sprintf(`<!DOCTYPE html>
+<html>
+<body style="font-family:system-ui,sans-serif;max-width:560px;margin:40px auto;color:#111">
+  <h2>Thank you for purchasing Bough!</h2>
+  <p>Here is your license key:</p>
+  <pre style="font-size:18px;letter-spacing:2px;padding:16px;background:#f5f5f5;border-radius:8px;word-break:break-all">%s</pre>
+  <p><strong>To activate:</strong></p>
+  <ol>
+    <li>Open Bough</li>
+    <li>Go to <strong>Bough → License</strong></li>
+    <li>Paste your key and click <strong>Activate</strong></li>
+  </ol>
+  <p>Your license covers 2 machines (e.g. work and personal).</p>
+  <p>Questions? Just reply to this email.</p>
+</body>
+</html>`, licenseKey)
+}
+```
+
+**Wiring into `main.go`** — replace the Resend constructor call:
+
+```go
+ml := mailer.New(mailer.Config{
+    Host:     mustEnv("SMTP_HOST"),
+    Port:     getEnvOrDefault("SMTP_PORT", "587"),
+    TLSMode:  getEnvOrDefault("SMTP_TLS", "starttls"),
+    Username: mustEnv("SMTP_USERNAME"),
+    Password: mustEnv("SMTP_PASSWORD"),
+    FromAddr: mustEnv("FROM_EMAIL"),
+})
+```
+
+Add helper to `main.go`:
+
+```go
+func getEnvOrDefault(key, def string) string {
+    if v := os.Getenv(key); v != "" {
+        return v
     }
-    return nil
+    return def
 }
 ```
 
@@ -1014,71 +1100,157 @@ Stripe's chargeback window is 120 days for standard card payments. Bough waits 1
 
 ### 11.10 Deployment (`licenseserver/`)
 
-**Fly.io** is the recommended host (€2–3/month, simple CLI deployment, automatic TLS).
+The license server runs on your own infrastructure as a Docker container behind a reverse proxy (Caddy or nginx) that handles TLS termination. The SQLite database is stored on a named Docker volume so it survives container restarts and image updates.
 
-`licenseserver/fly.toml`:
-```toml
-app = "bough-licenseserver"
-primary_region = "fra"  # Frankfurt
+#### Architecture
 
-[build]
-  dockerfile = "Dockerfile"
-
-[http_service]
-  internal_port = 8080
-  force_https = true
-
-[env]
-  PORT = "8080"
-
-# Secrets (set via `fly secrets set KEY=value` — never committed to repo):
-# PRIVATE_KEY_HEX, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY, FROM_EMAIL
+```
+Internet
+  │  HTTPS :443
+  ▼
+┌─────────────────┐
+│  Caddy / nginx  │  ← TLS termination, Let's Encrypt cert
+└────────┬────────┘
+         │ HTTP :8080
+         ▼
+┌─────────────────┐
+│  licenseserver  │  ← Go binary in Docker container
+└────────┬────────┘
+         │
+    [bough-data volume]
+         │
+    bough-licenses.db   ← SQLite, persisted across deploys
 ```
 
-`licenseserver/Dockerfile`:
+---
+
+#### `licenseserver/Dockerfile`
+
 ```dockerfile
 FROM golang:1.23-alpine AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go build -o licenseserver .
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o licenseserver .
 
 FROM alpine:3.20
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /data
 COPY --from=builder /app/licenseserver /usr/local/bin/licenseserver
-VOLUME ["/data"]   # SQLite database persists here
+VOLUME ["/data"]
 EXPOSE 8080
 CMD ["licenseserver"]
 ```
 
-Initial setup:
-```bash
-# Generate Ed25519 key pair (once only — store private.key securely, NEVER commit it)
-openssl genpkey -algorithm ed25519 -out private.key
-openssl pkey -in private.key -pubout -outform DER | tail -c 32 | xxd -p -c 32 > private.hex
-openssl pkey -in private.key -pubout -outform DER | tail -c 32 > app/license/public.key
+---
 
-# Deploy
-cd licenseserver
-fly launch
-fly secrets set \
-  PRIVATE_KEY_HEX=$(cat ../private.hex) \
-  STRIPE_WEBHOOK_SECRET=whsec_... \
-  RESEND_API_KEY=re_... \
-  FROM_EMAIL="Bough <license@boughapp.com>"
-fly deploy
+#### `licenseserver/docker-compose.yml`
 
-# Register the webhook URL in Stripe Dashboard:
-# https://bough-licenseserver.fly.dev/webhook
-# Events: checkout.session.completed, charge.refunded,
-#         charge.dispute.created, charge.dispute.closed
+```yaml
+services:
+  licenseserver:
+    image: ghcr.io/<your-github-org>/bough-licenseserver:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"   # only exposed to localhost; Caddy proxies in
+    volumes:
+      - bough-data:/data
+    environment:
+      PORT: "8080"
+      # All secrets are injected via a .env file (see .env.example below).
+      # Never commit the actual .env file.
+      PRIVATE_KEY_HEX: ${PRIVATE_KEY_HEX}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_TLS: ${SMTP_TLS:-starttls}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      FROM_EMAIL: ${FROM_EMAIL}
+
+volumes:
+  bough-data:
+```
+
+#### `licenseserver/.env.example`
+
+```dotenv
+# Ed25519 private key seed (hex-encoded 32 bytes). Generate once, store in password manager.
+PRIVATE_KEY_HEX=
+
+# Stripe webhook signing secret (from Stripe Dashboard → Webhooks)
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# SMTP — your own mail server
+SMTP_HOST=mail.example.com
+SMTP_PORT=587
+SMTP_TLS=starttls        # "starttls" (587) or "tls" (465)
+SMTP_USERNAME=license@boughapp.com
+SMTP_PASSWORD=
+
+# RFC 5322 From header
+FROM_EMAIL=Bough <license@boughapp.com>
 ```
 
 ---
 
-## 12. GitHub Actions: License Server Deploy (`.github/workflows/licenseserver.yml`)
+#### Caddy reverse proxy (`/etc/caddy/Caddyfile`)
+
+```caddyfile
+license.boughapp.com {
+    reverse_proxy localhost:8080
+    # Caddy automatically provisions and renews a Let's Encrypt certificate.
+}
+```
+
+---
+
+#### Initial server setup (run once on the host)
+
+```bash
+# 1. Generate Ed25519 key pair — run locally, never on the server
+openssl genpkey -algorithm ed25519 -out private.key
+# Extract 32-byte seed as hex (this is PRIVATE_KEY_HEX):
+openssl pkey -in private.key -pubout -outform DER | tail -c 32 | xxd -p -c 32
+
+# Extract public key for embedding in the app binary:
+openssl pkey -in private.key -pubout -outform DER | tail -c 32 > app/license/public.key
+# Commit only public.key — private.key stays in your password manager only.
+
+# 2. On the server: clone repo and create .env
+git clone https://github.com/<you>/bough /opt/bough
+cp /opt/bough/licenseserver/.env.example /opt/bough/licenseserver/.env
+# Fill in /opt/bough/licenseserver/.env with real values (editor of your choice)
+
+# 3. Start the service
+cd /opt/bough/licenseserver
+docker compose up -d
+
+# 4. Register the Stripe webhook in the Stripe Dashboard:
+# URL:    https://license.boughapp.com/webhook
+# Events: checkout.session.completed
+#         charge.refunded
+#         charge.dispute.created
+#         charge.dispute.closed
+```
+
+---
+
+#### Keeping the server updated
+
+On each push to `main` (paths `licenseserver/**`), GitHub Actions builds and pushes a new Docker image to `ghcr.io`. A deploy job then SSHes into the server and runs `docker compose pull && docker compose up -d` — the container restarts with the new image, the SQLite volume is unaffected.
+
+See section 12 for the full workflow.
+
+---
+
+## 12. GitHub Actions: License Server CI/CD (`.github/workflows/licenseserver.yml`)
+
+The pipeline has two jobs that run sequentially on every push to `main` that touches `licenseserver/**`:
+
+1. **build-and-push** — builds the Docker image and pushes it to GitHub Container Registry (`ghcr.io`).
+2. **deploy** — SSHes into your server and does a zero-downtime rolling restart via `docker compose`.
 
 ```yaml
 name: Deploy License Server
@@ -1088,16 +1260,73 @@ on:
     branches: [main]
     paths: [licenseserver/**]
 
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/bough-licenseserver
+
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only
-        working-directory: licenseserver
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: licenseserver
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}      # your server's IP or hostname
+          username: ${{ secrets.DEPLOY_USER }}  # e.g. "deploy" (non-root)
+          key: ${{ secrets.DEPLOY_SSH_KEY }}    # private SSH key (matching authorized_keys on server)
+          script: |
+            cd /opt/bough/licenseserver
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
+```
+
+**Required GitHub secrets:**
+
+| Secret | Value |
+|---|---|
+| `DEPLOY_HOST` | IP or hostname of your server |
+| `DEPLOY_USER` | SSH username (e.g. `deploy`) |
+| `DEPLOY_SSH_KEY` | Private SSH key for that user |
+
+**One-time server preparation:**
+
+```bash
+# Create a limited deploy user (cannot sudo, can only run docker compose)
+adduser --disabled-password deploy
+usermod -aG docker deploy
+
+# Install your public SSH key
+mkdir -p /home/deploy/.ssh
+echo "<your-ci-public-key>" >> /home/deploy/.ssh/authorized_keys
+chmod 700 /home/deploy/.ssh && chmod 600 /home/deploy/.ssh/authorized_keys
+
+# Allow the deploy user to reach the compose file
+chown -R deploy:deploy /opt/bough/licenseserver
 ```
 
 The app release pipeline (`.github/workflows/release.yml`) remains unchanged — the two pipelines are fully independent.
@@ -1123,10 +1352,10 @@ The app release pipeline (`.github/workflows/release.yml`) remains unchanged —
 - [ ] `handler/webhook.go` — `checkout.session.completed`, `charge.refunded`, `charge.dispute.*`
 - [ ] `handler/revoked.go` — signed revocation list endpoint
 - [ ] `keygen/keygen.go` — Ed25519 sign + revocation list signing
-- [ ] `mailer/mailer.go` — Resend API integration + license email template
+- [ ] `mailer/mailer.go` — SMTP integration (net/smtp, STARTTLS + implicit TLS) + license email template
 - [ ] `store/db.go` — SQLite: issued keys, revocations
-- [ ] `Dockerfile` + `fly.toml`
-- [ ] `.github/workflows/licenseserver.yml`
+- [ ] `Dockerfile` + `docker-compose.yml` + `.env.example`
+- [ ] `.github/workflows/licenseserver.yml` (build → ghcr.io, deploy via SSH)
 
 **Automated tests (see `10-testing.md` for full test code):**
 - [ ] `app/license/license_test.go` — `Validate`, `GetStatus`, `MaybeCheckRevocation` (mocked HTTP server)
@@ -1139,9 +1368,14 @@ The app release pipeline (`.github/workflows/release.yml`) remains unchanged —
 **Infrastructure:**
 - [ ] Ed25519 key pair generated, `private.key` stored in password manager
 - [ ] `public.key` committed to `app/license/`
-- [ ] Fly.io app created, secrets set
+- [ ] Server prepared: deploy user created, Docker installed, SSH key added
+- [ ] `/opt/bough/licenseserver/.env` created from `.env.example` with real secrets
+- [ ] Caddy (or nginx) configured to proxy `license.boughapp.com → localhost:8080` with TLS
+- [ ] Docker Compose started on server (`docker compose up -d`)
+- [ ] GitHub secrets set: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`
+- [ ] GitHub Container Registry package visibility set to internal or public
 - [ ] Stripe webhook registered for all 4 event types
-- [ ] Resend domain verified (for `@boughapp.com` sender)
+- [ ] SMTP credentials verified (send a test mail from the server)
 - [ ] End-to-end test: Stripe test payment → email received → key validates in app
 - [ ] Revocation test: revoke a test key → set system clock to day 131 → app enters read-only on next startup
 - [ ] Offline test: block network at day 131 → app stays active, retries on next online startup

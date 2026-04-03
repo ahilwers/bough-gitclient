@@ -261,6 +261,22 @@ export namespace git {
 	}
 	
 	
+	export class Remote {
+	    name: string;
+	    fetchURL: string;
+	    pushURL: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Remote(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.fetchURL = source["fetchURL"];
+	        this.pushURL = source["pushURL"];
+	    }
+	}
 	export class RepoStatus {
 	    branch: string;
 	    ahead: number;

@@ -10,7 +10,9 @@ export function useStatus() {
   const query = useQuery({
     queryKey: ['status'],
     queryFn: async () => (await GetStatus()) as RepoStatus,
-    staleTime: 10_000,
+    staleTime: 1_000,
+    refetchInterval: 3_000,
+    refetchIntervalInBackground: false,
   })
 
   useEffect(() => {

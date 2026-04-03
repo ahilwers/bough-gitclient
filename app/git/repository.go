@@ -55,9 +55,15 @@ func (r *Repository) SwitchPath(newPath string) {
 // CurrentBranch returns the name of the currently checked-out branch,
 // or "HEAD" if in detached HEAD state.
 // Uses CLI so the result is correct for linked worktrees.
+// Falls back to symbolic-ref on empty repos (no commits yet).
 func (r *Repository) CurrentBranch() (string, error) {
 	out, err := CLI(r.Path, "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
+		// rev-parse fails on a newly-initialised repo with no commits.
+		// symbolic-ref still works in that case.
+		if out2, err2 := CLI(r.Path, "symbolic-ref", "--short", "HEAD"); err2 == nil {
+			return strings.TrimSpace(out2), nil
+		}
 		return "", err
 	}
 	branch := strings.TrimSpace(out)

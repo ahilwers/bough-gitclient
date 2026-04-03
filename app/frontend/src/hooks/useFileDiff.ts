@@ -16,7 +16,9 @@ export function useFileDiff(filePath: string | null, staged: boolean, isUntracke
       return (await GetFileDiff(filePath!, staged)) as DiffFile
     },
     enabled: filePath !== null,
-    staleTime: 5_000,
+    staleTime: 1_000,
+    refetchInterval: 3_000,
+    refetchIntervalInBackground: false,
   })
 
   useEffect(() => {

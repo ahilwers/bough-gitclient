@@ -6,6 +6,10 @@ export function ActivateLicense(arg1) {
   return window['go']['main']['App']['ActivateLicense'](arg1);
 }
 
+export function AddRemote(arg1, arg2) {
+  return window['go']['main']['App']['AddRemote'](arg1, arg2);
+}
+
 export function AddWorktree(arg1, arg2) {
   return window['go']['main']['App']['AddWorktree'](arg1, arg2);
 }
@@ -110,6 +114,10 @@ export function ListBranches() {
   return window['go']['main']['App']['ListBranches']();
 }
 
+export function ListRemotes() {
+  return window['go']['main']['App']['ListRemotes']();
+}
+
 export function ListStashes() {
   return window['go']['main']['App']['ListStashes']();
 }
@@ -146,12 +154,24 @@ export function Push(arg1, arg2, arg3) {
   return window['go']['main']['App']['Push'](arg1, arg2, arg3);
 }
 
+export function RemoveRemote(arg1) {
+  return window['go']['main']['App']['RemoveRemote'](arg1);
+}
+
 export function RemoveWorktree(arg1) {
   return window['go']['main']['App']['RemoveWorktree'](arg1);
 }
 
+export function RenameRemote(arg1, arg2) {
+  return window['go']['main']['App']['RenameRemote'](arg1, arg2);
+}
+
 export function SaveWindowSize(arg1, arg2) {
   return window['go']['main']['App']['SaveWindowSize'](arg1, arg2);
+}
+
+export function SelectAndInitRepository() {
+  return window['go']['main']['App']['SelectAndInitRepository']();
 }
 
 export function SelectRepository() {
@@ -188,4 +208,8 @@ export function UnstageFiles(arg1) {
 
 export function UnstageHunk(arg1) {
   return window['go']['main']['App']['UnstageHunk'](arg1);
+}
+
+export function UpdateRemote(arg1, arg2) {
+  return window['go']['main']['App']['UpdateRemote'](arg1, arg2);
 }

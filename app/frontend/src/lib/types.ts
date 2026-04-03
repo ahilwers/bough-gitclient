@@ -104,3 +104,9 @@ export interface RepoStatus {
   files: FileStatus[]
   hasConflicts: boolean
 }
+
+export interface Remote {
+  name: string
+  fetchURL: string
+  pushURL: string
+}
