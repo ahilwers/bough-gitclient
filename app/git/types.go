@@ -120,11 +120,18 @@ type BranchList struct {
 	Remotes []Branch `json:"remotes"`
 }
 
+// MergeState is set when a merge is in progress (.git/MERGE_HEAD exists).
+type MergeState struct {
+	MergingBranch string `json:"mergingBranch"` // branch being merged in
+	ConflictCount int    `json:"conflictCount"`  // remaining conflicted files
+}
+
 // RepoStatus summarises the current state of a repository.
 type RepoStatus struct {
-	Branch       string       `json:"branch"`
-	Ahead        int          `json:"ahead"`
-	Behind       int          `json:"behind"`
+	Branch       string      `json:"branch"`
+	Ahead        int         `json:"ahead"`
+	Behind       int         `json:"behind"`
 	Files        []FileStatus `json:"files"`
-	HasConflicts bool         `json:"hasConflicts"`
+	HasConflicts bool        `json:"hasConflicts"`
+	MergeState   *MergeState `json:"mergeState,omitempty"`
 }

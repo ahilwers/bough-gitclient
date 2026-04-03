@@ -1,6 +1,13 @@
 import { useFileDiff } from '@/hooks/useFileDiff'
 import { HunkBlock } from './HunkBlock'
+import { ConflictResolutionPanel } from './ConflictResolutionPanel'
 import type { FileStatus } from '@/lib/types'
+
+function isConflicted(f: FileStatus): boolean {
+  return f.staged === 'U' || f.unstaged === 'U' ||
+    (f.staged === 'A' && f.unstaged === 'A') ||
+    (f.staged === 'D' && f.unstaged === 'D')
+}
 
 interface ChunkDiffPanelProps {
   filePath: string
@@ -9,6 +16,27 @@ interface ChunkDiffPanelProps {
 }
 
 export function ChunkDiffPanel({ filePath, staged, fileStatus }: ChunkDiffPanelProps) {
+  if (isConflicted(fileStatus)) {
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{
+          flexShrink: 0, padding: '8px 14px',
+          borderBottom: '1px solid var(--border-sub)',
+          background: 'var(--bg-panel)',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <code style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-pri)' }}>
+            {filePath}
+          </code>
+          <span style={{ fontSize: 10, color: 'var(--danger)', fontWeight: 600, padding: '1px 6px', background: 'color-mix(in srgb, var(--danger) 15%, transparent)', borderRadius: 3 }}>
+            CONFLICT
+          </span>
+        </div>
+        <ConflictResolutionPanel filePath={filePath} />
+      </div>
+    )
+  }
+
   // Untracked file — git diff returns nothing; use --no-index instead
   const isUntracked = fileStatus.staged === '?' && fileStatus.unstaged === ''
 
