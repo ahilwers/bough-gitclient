@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ListBranches, CheckoutBranch, CheckoutRemoteBranch, PullIntoLocalBranch, Pull } from '@wailsjs/go/main/App'
+import { ListBranches, CheckoutBranch, CheckoutRemoteBranch, PullIntoLocalBranch, Pull, CreateBranch } from '@wailsjs/go/main/App'
 import { EventsOn } from '@wailsjs/runtime/runtime'
 import type { BranchList } from '@/lib/types'
 
@@ -48,5 +48,11 @@ export function useBranches() {
     onSuccess: invalidateAll,
   })
 
-  return { ...query, checkoutMutation, checkoutRemoteMutation, pullIntoLocalMutation, pullIntoCurrentMutation }
+  const createMutation = useMutation({
+    mutationFn: ({ name, from, checkoutAfter }: { name: string; from: string; checkoutAfter: boolean }) =>
+      CreateBranch(name, from, checkoutAfter),
+    onSuccess: invalidateAll,
+  })
+
+  return { ...query, checkoutMutation, checkoutRemoteMutation, pullIntoLocalMutation, pullIntoCurrentMutation, createMutation }
 }

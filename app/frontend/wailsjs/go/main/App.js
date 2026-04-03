@@ -42,6 +42,10 @@ export function CheckoutTag(arg1) {
   return window['go']['main']['App']['CheckoutTag'](arg1);
 }
 
+export function CreateBranch(arg1, arg2, arg3) {
+  return window['go']['main']['App']['CreateBranch'](arg1, arg2, arg3);
+}
+
 export function CreateCommit(arg1) {
   return window['go']['main']['App']['CreateCommit'](arg1);
 }
