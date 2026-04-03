@@ -85,7 +85,7 @@ func parseGitLog(output string) []rawCommit {
 			continue
 		}
 
-		var parents []string
+		parents := []string{}
 		if p := strings.TrimSpace(fields[1]); p != "" {
 			parents = strings.Fields(p)
 		}

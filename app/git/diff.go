@@ -34,13 +34,16 @@ func (r *Repository) GetCommitDiff(hash string) ([]DiffFile, error) {
 		return nil, err
 	}
 
-	var changes object.Changes
 	if parentTree == nil {
-		// Initial commit: diff against empty tree
-		changes, err = object.DiffTree(nil, currentTree)
-	} else {
-		changes, err = parentTree.Diff(currentTree)
+		// Initial commit: every file is a brand-new addition.
+		// object.DiffTree / (*Tree).Diff both require a fully initialised tree
+		// with a backing storer; passing nil or an empty &object.Tree{} panics
+		// in go-git v5 because the internal walker dereferences the storer.
+		// Walk the tree directly instead to avoid any panic.
+		return diffInitialCommit(currentTree)
 	}
+
+	changes, err := parentTree.Diff(currentTree)
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +192,41 @@ func parseHunkHeader(line string) DiffHunk {
 	hunk.NewStart = newStart
 	hunk.NewLines = newLines
 	return hunk
+}
+
+// diffInitialCommit builds a DiffFile slice for the root commit by walking
+// the tree directly. Every file is treated as a new addition (no parent).
+// This avoids object.DiffTree / (*Tree).Diff which both panic when given a
+// tree without a backing storer (go-git v5 limitation).
+func diffInitialCommit(tree *object.Tree) ([]DiffFile, error) {
+	var result []DiffFile
+	err := tree.Files().ForEach(func(f *object.File) error {
+		isBinary, _ := f.IsBinary()
+		df := DiffFile{Path: f.Name, Binary: isBinary}
+		if !isBinary {
+			content, err := f.Contents()
+			if err != nil {
+				return nil // skip unreadable files gracefully
+			}
+			lines := strings.Split(strings.TrimRight(content, "\n"), "\n")
+			hunk := DiffHunk{
+				Header:   fmt.Sprintf("@@ -0,0 +1,%d @@", len(lines)),
+				NewStart: 1,
+				NewLines: len(lines),
+			}
+			for i, line := range lines {
+				hunk.Lines = append(hunk.Lines, DiffLine{
+					Type:    "add",
+					Content: line,
+					NewNo:   i + 1,
+				})
+			}
+			df.Hunks = []DiffHunk{hunk}
+		}
+		result = append(result, df)
+		return nil
+	})
+	return result, err
 }
 
 func changesFromObjectDiff(changes object.Changes) ([]DiffFile, error) {
