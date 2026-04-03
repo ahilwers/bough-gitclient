@@ -316,6 +316,20 @@ func (a *App) ListBranches() (gitpkg.BranchList, error) {
 	return a.repo.ListBranches()
 }
 
+func (a *App) CreateBranch(name, from string, checkoutAfter bool) error {
+	if err := a.requireLicense(); err != nil {
+		return err
+	}
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.CreateBranch(name, from, checkoutAfter); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
 func (a *App) CheckoutBranch(branch string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo

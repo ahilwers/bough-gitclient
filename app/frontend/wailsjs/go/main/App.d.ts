@@ -23,6 +23,8 @@ export function CheckoutRemoteBranch(arg1:string):Promise<void>;
 
 export function CheckoutTag(arg1:string):Promise<void>;
 
+export function CreateBranch(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
 export function CreateCommit(arg1:string):Promise<string>;
 
 export function DeleteTag(arg1:string):Promise<void>;

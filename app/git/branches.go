@@ -64,6 +64,17 @@ func (r *Repository) ListBranches() (BranchList, error) {
 	return bl, nil
 }
 
+// CreateBranch creates a new branch from the given source branch.
+// When checkoutAfter is true the working tree is switched to the new branch.
+func (r *Repository) CreateBranch(name, from string, checkoutAfter bool) error {
+	if checkoutAfter {
+		_, err := CLI(r.Path, "checkout", "-b", name, from)
+		return err
+	}
+	_, err := CLI(r.Path, "branch", name, from)
+	return err
+}
+
 // CheckoutBranch switches the working tree to the named local branch using the
 // git CLI so that hooks and credential helpers run as expected.
 func (r *Repository) CheckoutBranch(branch string) error {

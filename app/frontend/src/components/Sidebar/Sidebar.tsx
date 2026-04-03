@@ -9,6 +9,7 @@ import { useStashes } from '@/hooks/useStashes'
 import { useGitStore } from '@/stores/gitStore'
 import { ContextMenu } from '@/components/shared/ContextMenu'
 import { NewWorktreeDialog } from '@/components/WorktreeManager/NewWorktreeDialog'
+import { NewBranchDialog } from '@/components/BranchManager/NewBranchDialog'
 import { StashDiffView } from '@/components/StashView/StashDiffView'
 import { OpenInFinder } from '@wailsjs/go/main/App'
 import { parseGitError } from '@/lib/format'
@@ -33,6 +34,7 @@ export default function Sidebar() {
     worktrees: true,
   })
   const [showNewWorktreeDialog, setShowNewWorktreeDialog] = useState(false)
+  const [showNewBranchDialog, setShowNewBranchDialog] = useState(false)
   const [pending, setPending] = useState<PendingConfirm | null>(null)
   const [openStash, setOpenStash] = useState<StashEntry | null>(null)
 
@@ -196,7 +198,7 @@ export default function Sidebar() {
           icon={<GitBranch size={13} />}
           expanded={expanded.branches}
           onToggle={() => toggle('branches')}
-          onAdd={() => {}}
+          onAdd={() => setShowNewBranchDialog(true)}
         >
           {branches?.local?.map(b => (
             <SidebarItem
@@ -390,6 +392,10 @@ export default function Sidebar() {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {showNewBranchDialog && (
+        <NewBranchDialog onClose={() => setShowNewBranchDialog(false)} />
+      )}
 
       {showNewWorktreeDialog && (
         <NewWorktreeDialog onClose={() => setShowNewWorktreeDialog(false)} />
