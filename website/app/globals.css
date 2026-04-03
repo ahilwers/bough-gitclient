@@ -1,0 +1,207 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #07070f;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(79, 142, 247, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 142, 247, 0.5);
+}
+
+/* Selection styling */
+::selection {
+  background-color: rgba(79, 142, 247, 0.3);
+  color: #ffffff;
+}
+
+/* Smooth gradient background with grid */
+.bg-gradient {
+  position: relative;
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(79, 142, 247, 0.1) 0%,
+      rgba(79, 142, 247, 0.02) 25%,
+      transparent 50%
+    ),
+    #07070f;
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(79, 142, 247, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 142, 247, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Glow effects */
+.glow-blue {
+  box-shadow: 0 0 30px rgba(79, 142, 247, 0.2);
+}
+
+.glow-blue-lg {
+  box-shadow: 0 0 80px rgba(79, 142, 247, 0.15);
+}
+
+.glow-purple {
+  box-shadow: 0 0 30px rgba(167, 139, 250, 0.2);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #4f8ef7 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply px-6 py-3 rounded-lg font-semibold bg-accent-blue text-white transition-all duration-200;
+  box-shadow: 0 4px 15px rgba(79, 142, 247, 0.3);
+}
+
+.btn-primary:hover {
+  @apply bg-blue-600;
+  box-shadow: 0 6px 25px rgba(79, 142, 247, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(79, 142, 247, 0.3);
+}
+
+.btn-secondary {
+  @apply px-6 py-3 rounded-lg font-semibold border border-border-subtle text-white transition-all duration-200;
+  background: rgba(79, 142, 247, 0.05);
+}
+
+.btn-secondary:hover {
+  @apply border-accent-blue;
+  background: rgba(79, 142, 247, 0.15);
+}
+
+.btn-secondary:active {
+  background: rgba(79, 142, 247, 0.1);
+}
+
+/* Card styles */
+.card {
+  @apply rounded-xl p-6 bg-bg-card border border-border-subtle transition-all duration-300;
+}
+
+.card:hover {
+  @apply border-accent-blue;
+  box-shadow: 0 0 30px rgba(79, 142, 247, 0.1);
+}
+
+/* Section padding */
+.section {
+  @apply py-20 px-4 md:px-8;
+}
+
+.section-container {
+  @apply max-w-6xl mx-auto;
+}
+
+/* Smooth gradients */
+.gradient-to-blue {
+  background: linear-gradient(135deg, rgba(79, 142, 247, 0.1), transparent);
+}
+
+.gradient-to-purple {
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.1), transparent);
+}
+
+/* Animated border */
+@keyframes borderGlow {
+  0%, 100% {
+    border-color: rgba(79, 142, 247, 0.1);
+    box-shadow: 0 0 20px rgba(79, 142, 247, 0.05);
+  }
+  50% {
+    border-color: rgba(79, 142, 247, 0.3);
+    box-shadow: 0 0 30px rgba(79, 142, 247, 0.15);
+  }
+}
+
+.border-glow {
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+/* Heading styles */
+h1 {
+  @apply text-4xl md:text-5xl lg:text-6xl font-bold leading-tight;
+}
+
+h2 {
+  @apply text-3xl md:text-4xl font-bold;
+}
+
+h3 {
+  @apply text-2xl md:text-3xl font-bold;
+}
+
+/* Link styles */
+a {
+  @apply transition-colors duration-200;
+}
+
+a:hover {
+  @apply text-accent-blue;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible,
+a:focus-visible {
+  @apply outline-2 outline-offset-2;
+  outline-color: #4f8ef7;
+}
+
+/* Responsive typography */
+@media (max-width: 768px) {
+  h1 {
+    @apply text-3xl;
+  }
+
+  h2 {
+    @apply text-2xl;
+  }
+
+  h3 {
+    @apply text-xl;
+  }
+}
