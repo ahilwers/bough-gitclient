@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CreateCommit, AmendCommit } from '@wailsjs/go/main/App'
+import { useStatus } from '@/hooks/useStatus'
 import { useGitStore } from '@/stores/gitStore'
 import { parseGitError } from '@/lib/format'
 
@@ -9,6 +10,18 @@ export function CommitBox() {
   const { showFlash } = useGitStore()
   const [message, setMessage] = useState('')
   const [amend, setAmend] = useState(false)
+  const { data: status } = useStatus()
+  const mergeMessage = status?.mergeState?.mergeMessage
+
+  // Pre-fill message from MERGE_MSG when entering merge state.
+  // Only sets once (on transition); never overwrites what the user typed.
+  const prevMergeMessage = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    if (mergeMessage && mergeMessage !== prevMergeMessage.current) {
+      setMessage(mergeMessage)
+    }
+    prevMergeMessage.current = mergeMessage
+  }, [mergeMessage])
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['status'] })

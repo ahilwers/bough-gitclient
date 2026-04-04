@@ -17,9 +17,16 @@ func (r *Repository) DetectMergeState(conflictCount int) *MergeState {
 	}
 	hash := strings.TrimSpace(string(data))
 	branch := r.hashToFriendlyName(hash)
+
+	mergeMsg := ""
+	if msgData, err := os.ReadFile(filepath.Join(r.Path, ".git", "MERGE_MSG")); err == nil {
+		mergeMsg = strings.TrimRight(string(msgData), "\n")
+	}
+
 	return &MergeState{
 		MergingBranch: branch,
 		ConflictCount: conflictCount,
+		MergeMessage:  mergeMsg,
 	}
 }
 
@@ -128,7 +135,7 @@ func (r *Repository) GetMergeCommits() ([]CommitNode, error) {
 	mergeHeadPath := filepath.Join(r.Path, ".git", "MERGE_HEAD")
 	data, err := os.ReadFile(mergeHeadPath)
 	if err != nil {
-		return nil, nil // no merge in progress
+		return []CommitNode{}, nil // no merge in progress
 	}
 	mergeHash := strings.TrimSpace(string(data))
 
@@ -138,7 +145,7 @@ func (r *Repository) GetMergeCommits() ([]CommitNode, error) {
 	)
 	if err != nil {
 		// HEAD may not exist yet (initial merge into empty repo) — return empty
-		return nil, nil
+		return []CommitNode{}, nil
 	}
 
 	rawCommits := parseGitLog(out)

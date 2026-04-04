@@ -16,7 +16,7 @@ export function useMergeCommits(enabled: boolean) {
 
   return useQuery({
     queryKey: ['mergeCommits'],
-    queryFn: async () => (await GetMergeCommits()) as CommitNode[],
+    queryFn: async () => ((await GetMergeCommits()) ?? []) as CommitNode[],
     enabled,
     staleTime: 5_000,
   })

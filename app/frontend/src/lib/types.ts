@@ -100,6 +100,7 @@ export interface WorktreeInfo {
 export interface MergeState {
   mergingBranch: string
   conflictCount: number
+  mergeMessage: string
 }
 
 export interface RepoStatus {

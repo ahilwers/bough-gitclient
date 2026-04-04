@@ -124,6 +124,7 @@ type BranchList struct {
 type MergeState struct {
 	MergingBranch string `json:"mergingBranch"` // branch being merged in
 	ConflictCount int    `json:"conflictCount"`  // remaining conflicted files
+	MergeMessage  string `json:"mergeMessage"`   // pre-composed commit message from .git/MERGE_MSG
 }
 
 // RepoStatus summarises the current state of a repository.
