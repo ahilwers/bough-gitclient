@@ -263,6 +263,7 @@ export namespace git {
 	export class MergeState {
 	    mergingBranch: string;
 	    conflictCount: number;
+	    mergeMessage: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new MergeState(source);
@@ -272,6 +273,7 @@ export namespace git {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.mergingBranch = source["mergingBranch"];
 	        this.conflictCount = source["conflictCount"];
+	        this.mergeMessage = source["mergeMessage"];
 	    }
 	}
 	

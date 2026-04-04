@@ -97,6 +97,7 @@ export default function ChangesView() {
   const abortMutation = useMutation({
     mutationFn: () => AbortMerge(),
     onSuccess: () => {
+      setSelectedFile(null)
       queryClient.invalidateQueries({ queryKey: ['status'] })
       queryClient.invalidateQueries({ queryKey: ['commits'] })
       showFlash('Merge aborted', 'info')
