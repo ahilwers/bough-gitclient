@@ -397,6 +397,24 @@ func (a *App) GetFileContent(filePath string) (string, error) {
 	return a.repo.GetFileContent(filePath)
 }
 
+func (a *App) AcceptBoth(filePath string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.AcceptBoth(filePath); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+func (a *App) GetMergeCommits() ([]gitpkg.CommitNode, error) {
+	if a.repo == nil {
+		return nil, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetMergeCommits()
+}
+
 func (a *App) CheckoutBranch(branch string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo

@@ -5,6 +5,8 @@ import {git} from '../models';
 
 export function AbortMerge():Promise<void>;
 
+export function AcceptBoth(arg1:string):Promise<void>;
+
 export function ActivateLicense(arg1:string):Promise<license.LicenseStatus>;
 
 export function AddRemote(arg1:string,arg2:string):Promise<void>;
@@ -58,6 +60,8 @@ export function GetFileContent(arg1:string):Promise<string>;
 export function GetFileDiff(arg1:string,arg2:boolean):Promise<git.DiffFile>;
 
 export function GetLicenseStatus():Promise<license.LicenseStatus>;
+
+export function GetMergeCommits():Promise<Array<git.CommitNode>>;
 
 export function GetRecentRepos():Promise<Array<string>>;
 
