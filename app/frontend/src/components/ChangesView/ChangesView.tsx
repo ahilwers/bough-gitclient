@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { StageFile, UnstageFile, DiscardFile, AbortMerge } from '@wailsjs/go/main/App'
 import { FileStatusList } from './FileStatusList'
@@ -74,6 +74,25 @@ export default function ChangesView() {
     // still triggers a fresh diff fetch via the active query subscription.
     queryClient.invalidateQueries({ queryKey: ['diff'] })
   }
+
+  // Auto-select first conflicted file when conflicts are detected
+  const prevHasConflicts = useRef(false)
+  useEffect(() => {
+    const hasConflicts = status?.hasConflicts ?? false
+    if (hasConflicts && !prevHasConflicts.current) {
+      const isConflicted = (f: { staged: string; unstaged: string }) =>
+        f.staged === 'U' || f.unstaged === 'U' ||
+        (f.staged === 'A' && f.unstaged === 'A') ||
+        (f.staged === 'D' && f.unstaged === 'D')
+      const first = status?.files?.find(isConflicted)
+      if (first) {
+        setSelectedFile(first)
+        setSelectedStaged(false)
+        queryClient.invalidateQueries({ queryKey: ['fileContent', first.path] })
+      }
+    }
+    prevHasConflicts.current = hasConflicts
+  }, [status?.hasConflicts]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const abortMutation = useMutation({
     mutationFn: () => AbortMerge(),

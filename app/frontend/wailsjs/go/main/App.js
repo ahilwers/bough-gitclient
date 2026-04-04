@@ -6,6 +6,10 @@ export function AbortMerge() {
   return window['go']['main']['App']['AbortMerge']();
 }
 
+export function AcceptBoth(arg1) {
+  return window['go']['main']['App']['AcceptBoth'](arg1);
+}
+
 export function ActivateLicense(arg1) {
   return window['go']['main']['App']['ActivateLicense'](arg1);
 }
@@ -112,6 +116,10 @@ export function GetFileDiff(arg1, arg2) {
 
 export function GetLicenseStatus() {
   return window['go']['main']['App']['GetLicenseStatus']();
+}
+
+export function GetMergeCommits() {
+  return window['go']['main']['App']['GetMergeCommits']();
 }
 
 export function GetRecentRepos() {

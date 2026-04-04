@@ -46,7 +46,7 @@ export default function Sidebar() {
   const { data: worktrees, removeMutation, switchMutation } = useWorktrees()
   const { data: tags, checkoutMutation: tagCheckoutMutation, deleteMutation: tagDeleteMutation } = useTags()
   const { data: stashes, dropMutation } = useStashes()
-  const { activeWorktree, showFlash } = useGitStore()
+  const { activeWorktree, showFlash, setActiveView } = useGitStore()
   const { data: status } = useStatus()
 
   const toggle = (key: keyof typeof expanded) =>
@@ -206,18 +206,22 @@ export default function Sidebar() {
           onAdd={() => setShowNewBranchDialog(true)}
         >
           {status?.mergeState && (
-            <div style={{
-              margin: '4px 8px 2px',
-              padding: '3px 8px',
-              borderRadius: 4,
-              background: status.mergeState.conflictCount > 0
-                ? 'color-mix(in srgb, var(--danger) 15%, transparent)'
-                : 'color-mix(in srgb, var(--warn) 15%, transparent)',
-              border: `1px solid ${status.mergeState.conflictCount > 0 ? 'var(--danger)' : 'var(--warn)'}`,
-              fontSize: 10, fontWeight: 700,
-              color: status.mergeState.conflictCount > 0 ? 'var(--danger)' : 'var(--warn)',
-              letterSpacing: '0.04em',
-            }}>
+            <div
+              onClick={() => setActiveView('changes')}
+              style={{
+                margin: '4px 8px 2px',
+                padding: '3px 8px',
+                borderRadius: 4,
+                background: status.mergeState.conflictCount > 0
+                  ? 'color-mix(in srgb, var(--danger) 15%, transparent)'
+                  : 'color-mix(in srgb, var(--warn) 15%, transparent)',
+                border: `1px solid ${status.mergeState.conflictCount > 0 ? 'var(--danger)' : 'var(--warn)'}`,
+                fontSize: 10, fontWeight: 700,
+                color: status.mergeState.conflictCount > 0 ? 'var(--danger)' : 'var(--warn)',
+                letterSpacing: '0.04em',
+                cursor: 'pointer',
+              }}
+            >
               MERGING {status.mergeState.mergingBranch}
               {status.mergeState.conflictCount > 0 && ` · ${status.mergeState.conflictCount} conflict${status.mergeState.conflictCount > 1 ? 's' : ''}`}
             </div>
