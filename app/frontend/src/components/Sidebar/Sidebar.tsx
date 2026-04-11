@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { ChevronRight, GitBranch, Globe, Tag as TagIcon, Archive, Layers } from 'lucide-react'
+import { ChevronRight, GitBranch, Globe, Tag as TagIcon, Archive, Layers, Search, X } from 'lucide-react'
 import { Plus } from 'lucide-react'
 import { useBranches } from '@/hooks/useBranches'
 import { useWorktrees } from '@/hooks/useWorktrees'
@@ -38,6 +38,9 @@ export default function Sidebar() {
   const [showNewWorktreeDialog, setShowNewWorktreeDialog] = useState(false)
   const [showNewBranchDialog, setShowNewBranchDialog] = useState(false)
   const [mergingBranch, setMergingBranch] = useState<string | null>(null)
+  const [localFilter, setLocalFilter] = useState('')
+  const [remoteFilter, setRemoteFilter] = useState('')
+  const [tagFilter, setTagFilter] = useState('')
   const [dragOverHead, setDragOverHead] = useState(false)
   const [pending, setPending] = useState<PendingConfirm | null>(null)
   const [openStash, setOpenStash] = useState<StashEntry | null>(null)
@@ -49,8 +52,15 @@ export default function Sidebar() {
   const { activeWorktree, showFlash, setActiveView } = useGitStore()
   const { data: status } = useStatus()
 
-  const toggle = (key: keyof typeof expanded) =>
-    setExpanded(s => ({ ...s, [key]: !s[key] }))
+  const toggle = (key: keyof typeof expanded) => {
+    setExpanded(s => {
+      const next = { ...s, [key]: !s[key] }
+      if (!next.branches) setLocalFilter('')
+      if (!next.remotes)  setRemoteFilter('')
+      if (!next.tags)     setTagFilter('')
+      return next
+    })
+  }
 
   const currentBranch = branches?.local?.find(b => b.isHead)?.name ?? ''
 
@@ -185,6 +195,29 @@ export default function Sidebar() {
     || pending?.kind === 'deleteTag'
     || pending?.kind === 'dropStash'
 
+  const DISPLAY_CAP = 200
+
+  const localAll = branches?.local ?? []
+  const localFiltered = localFilter
+    ? localAll.filter(b => b.name.toLowerCase().includes(localFilter.toLowerCase()))
+    : localAll
+  const localCapped = !localFilter && localFiltered.length > DISPLAY_CAP
+  const localVisible = localCapped ? localFiltered.slice(0, DISPLAY_CAP) : localFiltered
+
+  const remoteAll = branches?.remotes ?? []
+  const remoteFiltered = remoteFilter
+    ? remoteAll.filter(b => b.name.toLowerCase().includes(remoteFilter.toLowerCase()))
+    : remoteAll
+  const remoteCapped = !remoteFilter && remoteFiltered.length > DISPLAY_CAP
+  const remoteVisible = remoteCapped ? remoteFiltered.slice(0, DISPLAY_CAP) : remoteFiltered
+
+  const tagAll = tags ?? []
+  const tagFiltered = tagFilter
+    ? tagAll.filter((t: Tag) => t.name.toLowerCase().includes(tagFilter.toLowerCase()))
+    : tagAll
+  const tagCapped = !tagFilter && tagFiltered.length > DISPLAY_CAP
+  const tagVisible = tagCapped ? tagFiltered.slice(0, DISPLAY_CAP) : tagFiltered
+
   return (
     <>
       <aside
@@ -204,6 +237,9 @@ export default function Sidebar() {
           expanded={expanded.branches}
           onToggle={() => toggle('branches')}
           onAdd={() => setShowNewBranchDialog(true)}
+          filterContent={
+            <FilterInput value={localFilter} onChange={setLocalFilter} placeholder="Filter branches…" />
+          }
         >
           {status?.mergeState && (
             <div
@@ -226,7 +262,7 @@ export default function Sidebar() {
               {status.mergeState.conflictCount > 0 && ` · ${status.mergeState.conflictCount} conflict${status.mergeState.conflictCount > 1 ? 's' : ''}`}
             </div>
           )}
-          {branches?.local?.map(b => {
+          {localVisible.map(b => {
             const contextItems = b.isHead
               ? []
               : [
@@ -278,6 +314,9 @@ export default function Sidebar() {
               </ContextMenu>
             )
           })}
+          {localCapped && <ListHint text={`Showing ${DISPLAY_CAP} of ${localAll.length} — type to filter`} />}
+          {localFilter && localVisible.length === 0 && <NoMatchHint filter={localFilter} />}
+          {localFilter && localVisible.length > 0 && <ListHint text={`${localVisible.length} of ${localAll.length} branches`} />}
         </Section>
 
         <Section
@@ -285,8 +324,11 @@ export default function Sidebar() {
           icon={<Globe size={13} />}
           expanded={expanded.remotes}
           onToggle={() => toggle('remotes')}
+          filterContent={
+            <FilterInput value={remoteFilter} onChange={setRemoteFilter} placeholder="Filter remotes…" />
+          }
         >
-          {branches?.remotes?.map(b => {
+          {remoteVisible.map(b => {
             const localName = localNameFor(b)
             const local = branches?.local?.find(l => l.name === localName)
             const items = [
@@ -312,6 +354,9 @@ export default function Sidebar() {
               </ContextMenu>
             )
           })}
+          {remoteCapped && <ListHint text={`Showing ${DISPLAY_CAP} of ${remoteAll.length} — type to filter`} />}
+          {remoteFilter && remoteVisible.length === 0 && <NoMatchHint filter={remoteFilter} />}
+          {remoteFilter && remoteVisible.length > 0 && <ListHint text={`${remoteVisible.length} of ${remoteAll.length} remotes`} />}
         </Section>
 
         <Section
@@ -319,8 +364,11 @@ export default function Sidebar() {
           icon={<TagIcon size={13} />}
           expanded={expanded.tags}
           onToggle={() => toggle('tags')}
+          filterContent={
+            <FilterInput value={tagFilter} onChange={setTagFilter} placeholder="Filter tags…" />
+          }
         >
-          {tags?.map((t: Tag) => (
+          {tagVisible.map((t: Tag) => (
             <ContextMenu
               key={t.name}
               items={[
@@ -337,6 +385,9 @@ export default function Sidebar() {
               </div>
             </ContextMenu>
           ))}
+          {tagCapped && <ListHint text={`Showing ${DISPLAY_CAP} of ${tagAll.length} — type to filter`} />}
+          {tagFilter && tagVisible.length === 0 && <NoMatchHint filter={tagFilter} />}
+          {tagFilter && tagVisible.length > 0 && <ListHint text={`${tagVisible.length} of ${tagAll.length} tags`} />}
         </Section>
 
         <Section
@@ -492,10 +543,11 @@ interface SectionProps {
   expanded: boolean
   onToggle: () => void
   onAdd?: () => void
+  filterContent?: React.ReactNode
   children?: React.ReactNode
 }
 
-function Section({ title, icon, expanded, onToggle, onAdd, children }: SectionProps) {
+function Section({ title, icon, expanded, onToggle, onAdd, filterContent, children }: SectionProps) {
   return (
     <div>
       <button
@@ -540,10 +592,11 @@ function Section({ title, icon, expanded, onToggle, onAdd, children }: SectionPr
         )}
       </button>
 
-      {expanded && children && (
-        <div style={{ paddingLeft: 8 }}>
-          {children}
-        </div>
+      {expanded && (
+        <>
+          {filterContent && <div>{filterContent}</div>}
+          {children && <div style={{ paddingLeft: 8 }}>{children}</div>}
+        </>
       )}
     </div>
   )
@@ -626,6 +679,73 @@ function SidebarItem({ label, isActive, onClick }: { label: string; isActive?: b
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
         {label}
       </span>
+    </div>
+  )
+}
+
+interface FilterInputProps {
+  value: string
+  onChange: (v: string) => void
+  placeholder: string
+}
+
+function FilterInput({ value, onChange, placeholder }: FilterInputProps) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 4,
+      margin: '2px 6px 4px',
+      padding: '0 6px',
+      height: 24,
+      borderRadius: 'var(--r-sm)',
+      background: 'var(--bg-input)',
+      border: '1px solid var(--border-sub)',
+    }}>
+      <Search size={10} style={{ flexShrink: 0, color: 'var(--text-ter)' }} />
+      <input
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Escape') onChange('') }}
+        placeholder={placeholder}
+        style={{
+          flex: 1, border: 'none', outline: 'none', background: 'transparent',
+          color: 'var(--text-pri)', fontSize: 11,
+          fontFamily: 'inherit',
+        }}
+      />
+      {value && (
+        <button
+          onClick={() => onChange('')}
+          style={{
+            display: 'flex', alignItems: 'center', padding: 0, border: 'none',
+            background: 'transparent', cursor: 'pointer', color: 'var(--text-ter)',
+            flexShrink: 0,
+          }}
+        >
+          <X size={10} />
+        </button>
+      )}
+    </div>
+  )
+}
+
+function ListHint({ text }: { text: string }) {
+  return (
+    <div style={{
+      padding: '2px 8px 4px',
+      fontSize: 10, color: 'var(--text-ter)', fontStyle: 'italic',
+    }}>
+      {text}
+    </div>
+  )
+}
+
+function NoMatchHint({ filter }: { filter: string }) {
+  return (
+    <div style={{
+      padding: '2px 8px 4px',
+      fontSize: 10, color: 'var(--text-ter)',
+    }}>
+      No results for '{filter}'
     </div>
   )
 }
