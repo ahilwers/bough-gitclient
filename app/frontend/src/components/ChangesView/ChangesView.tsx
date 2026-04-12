@@ -102,6 +102,64 @@ export default function ChangesView() {
     prevHasConflicts.current = hasConflicts
   }, [status?.hasConflicts]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // When the selected file disappears from its section (staged/unstaged/discarded),
+  // automatically select the next sibling — or the previous one if there is no next.
+  const prevEntriesRef = useRef<Array<{ file: FileStatus; staged: boolean }>>([])
+  useEffect(() => {
+    const files = status?.files ?? []
+
+    function fileIsConflicted(f: FileStatus) {
+      return f.staged === 'U' || f.unstaged === 'U' ||
+        (f.staged === 'A' && f.unstaged === 'A') ||
+        (f.staged === 'D' && f.unstaged === 'D')
+    }
+    function buildEntries(fs: FileStatus[]) {
+      return [
+        ...fs.filter(fileIsConflicted).map(f => ({ file: f, staged: false })),
+        ...fs.filter(f => !fileIsConflicted(f) && (f.unstaged !== '' || f.staged === '?')).map(f => ({ file: f, staged: false })),
+        ...fs.filter(f => !fileIsConflicted(f) && f.staged !== '' && f.staged !== '?').map(f => ({ file: f, staged: true })),
+      ]
+    }
+
+    const newEntries = buildEntries(files)
+    const oldEntries = prevEntriesRef.current
+    prevEntriesRef.current = newEntries
+
+    if (!selectedFile || oldEntries.length === 0) return
+
+    // Check if the selected file is still present in its section
+    const stillPresent = newEntries.some(
+      e => e.file.path === selectedFile.path && e.staged === selectedStaged
+    )
+    if (stillPresent) return
+
+    // Find where it was in the old list
+    const oldIdx = oldEntries.findIndex(
+      e => e.file.path === selectedFile.path && e.staged === selectedStaged
+    )
+    if (oldIdx === -1) return
+
+    // Search forward then backward for the nearest sibling in the same section
+    const wasStaged = oldEntries[oldIdx].staged
+    let next: { file: FileStatus; staged: boolean } | null = null
+
+    for (let i = oldIdx; i < newEntries.length; i++) {
+      if (newEntries[i].staged === wasStaged) { next = newEntries[i]; break }
+    }
+    if (!next) {
+      for (let i = Math.min(oldIdx - 1, newEntries.length - 1); i >= 0; i--) {
+        if (newEntries[i].staged === wasStaged) { next = newEntries[i]; break }
+      }
+    }
+
+    if (next) {
+      setSelectedFile(next.file)
+      setSelectedStaged(next.staged)
+    } else {
+      setSelectedFile(null)
+    }
+  }, [status?.files]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const abortMutation = useMutation({
     mutationFn: () => AbortMerge(),
     onSuccess: () => {
