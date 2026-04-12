@@ -154,6 +154,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
         const cur = allEntries[currentIdx]
         if (cur && !cur.staged && !isConflicted(cur.file)) {
           stageFileMutation.mutate(cur.file.path)
+          containerRef.current?.focus()
         }
         break
       }
@@ -161,7 +162,10 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
       case 'U': {
         e.preventDefault()
         const cur = allEntries[currentIdx]
-        if (cur && cur.staged) unstageFileMutation.mutate(cur.file.path)
+        if (cur && cur.staged) {
+          unstageFileMutation.mutate(cur.file.path)
+          containerRef.current?.focus()
+        }
         break
       }
       case 'd':
