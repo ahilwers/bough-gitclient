@@ -415,6 +415,30 @@ func (a *App) GetMergeCommits() ([]gitpkg.CommitNode, error) {
 	return a.repo.GetMergeCommits()
 }
 
+func (a *App) CherryPickCommits(hashes []string) error {
+	if err := a.requireLicense(); err != nil {
+		return err
+	}
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	err := a.repo.CherryPickCommits(hashes)
+	// Always emit repo:changed — even a conflicted pick modifies the working tree and index.
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return err
+}
+
+func (a *App) AbortCherryPick() error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.AbortCherryPick(); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
 func (a *App) CheckoutBranch(branch string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo

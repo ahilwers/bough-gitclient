@@ -1,8 +1,11 @@
 import { useRef, useCallback, useState, useEffect, useMemo } from 'react'
 import { useGitStore } from '@/stores/gitStore'
 import { useCommits } from '@/hooks/useCommits'
+import { useCherryPick } from '@/hooks/useCherryPick'
+import { useStatus } from '@/hooks/useStatus'
 import { CommitRow } from './CommitRow'
 import { GraphCanvas, ROW_HEIGHT } from './GraphCanvas'
+import type { CommitNode } from '@/lib/types'
 
 const COL_WIDTH = 14
 const OFFSET_X = 12
@@ -22,15 +25,25 @@ interface CommitListProps {
 }
 
 export function CommitList({ limit = 500, all = true, searchQuery = '' }: CommitListProps) {
-  const { selectedCommit, setSelectedCommit } = useGitStore()
+  const {
+    selectedCommit, setSelectedCommit,
+    selectedCommits, setSelectedCommits,
+    setIsDraggingCommits,
+  } = useGitStore()
   const outerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
   const [cols, setCols] = useState<ColState>({ graph: null, author: 130, date: 90 })
+  // anchor index for shift-click range selection
+  const anchorIdx = useRef<number>(-1)
 
   const { data: allCommits = [] } = useCommits(limit, all)
+  const { data: status } = useStatus()
+  const { cherryPickMutation } = useCherryPick()
+
+  const currentBranch = status?.branch ?? ''
 
   // Client-side search filter
   const commits = useMemo(() => {
@@ -79,6 +92,34 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
 
   const handleMouseLeave = useCallback(() => setHoveredIdx(null), [])
 
+  // Multi-select click handler
+  const handleRowClick = useCallback((hash: string, event: React.MouseEvent) => {
+    const idx = commits.findIndex(c => c.hash === hash)
+    if (idx === -1) return
+
+    if (event.shiftKey && anchorIdx.current >= 0) {
+      // Range selection
+      const lo = Math.min(anchorIdx.current, idx)
+      const hi = Math.max(anchorIdx.current, idx)
+      const range = commits.slice(lo, hi + 1).map(c => c.hash)
+      setSelectedCommits(range)
+      setSelectedCommit(hash)
+    } else if (event.metaKey || event.ctrlKey) {
+      // Toggle individual commit in selection
+      const next = selectedCommits.includes(hash)
+        ? selectedCommits.filter(h => h !== hash)
+        : [...selectedCommits, hash]
+      setSelectedCommits(next)
+      setSelectedCommit(hash)
+      anchorIdx.current = idx
+    } else {
+      // Single select — clear multi-selection
+      setSelectedCommits([hash])
+      setSelectedCommit(hash)
+      anchorIdx.current = idx
+    }
+  }, [commits, selectedCommits, setSelectedCommit, setSelectedCommits])
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     const currentIdx = commits.findIndex(c => c.hash === selectedCommit)
     let nextIdx = currentIdx
@@ -89,10 +130,21 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
     } else if (e.key === 'ArrowUp' || e.key === 'k') {
       nextIdx = Math.max(currentIdx - 1, 0)
       e.preventDefault()
+    } else if (e.key === 'Escape') {
+      setSelectedCommits([])
+      return
     }
 
     if (nextIdx !== currentIdx && commits[nextIdx]) {
       setSelectedCommit(commits[nextIdx].hash)
+      if (!e.shiftKey) {
+        setSelectedCommits([commits[nextIdx].hash])
+        anchorIdx.current = nextIdx
+      } else if (anchorIdx.current >= 0) {
+        const lo = Math.min(anchorIdx.current, nextIdx)
+        const hi = Math.max(anchorIdx.current, nextIdx)
+        setSelectedCommits(commits.slice(lo, hi + 1).map(c => c.hash))
+      }
       const container = scrollRef.current
       if (container) {
         const targetTop = nextIdx * ROW_HEIGHT
@@ -105,7 +157,7 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
         }
       }
     }
-  }, [commits, selectedCommit, setSelectedCommit, containerSize.height])
+  }, [commits, selectedCommit, setSelectedCommit, setSelectedCommits, containerSize.height])
 
   // Column drag-resize
   const startDrag = useCallback((col: 'graph' | 'author' | 'date', startX: number, startWidth: number) => {
@@ -120,6 +172,26 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
   }, [])
+
+  const handleCherryPick = useCallback((hashes: string[], combinedMessage: string) => {
+    cherryPickMutation.mutate({ hashes, combinedMessage })
+  }, [cherryPickMutation])
+
+  const handleDragStart = useCallback((_commit: CommitNode) => {
+    setIsDraggingCommits(true)
+  }, [setIsDraggingCommits])
+
+  const handleDragEnd = useCallback(() => {
+    setIsDraggingCommits(false)
+  }, [setIsDraggingCommits])
+
+  // Compute messages for currently selected commits (for multi-pick context menu)
+  const selectedCommitMessages = useMemo(() => {
+    return selectedCommits.map(h => {
+      const c = commits.find(x => x.hash === h)
+      return c?.fullMessage ?? ''
+    })
+  }, [selectedCommits, commits])
 
   // Virtualized window: only render visible rows ± 5 buffer
   const startIdx = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - 5)
@@ -143,6 +215,19 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
         )}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 11, color: 'var(--text-ter)' }}>
           Summary
+          {selectedCommits.length > 1 && (
+            <span style={{
+              marginLeft: 8,
+              padding: '1px 6px',
+              borderRadius: 10,
+              background: 'color-mix(in srgb, var(--acc) 20%, transparent)',
+              color: 'var(--acc)',
+              fontSize: 10,
+              fontWeight: 600,
+            }}>
+              {selectedCommits.length} selected
+            </span>
+          )}
         </div>
         <div style={{ width: cols.author, position: 'relative', flexShrink: 0, display: 'flex', alignItems: 'center', paddingLeft: 8, fontSize: 11, color: 'var(--text-ter)' }}>
           Author
@@ -179,6 +264,7 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
           tabIndex={0}
           role="listbox"
           aria-label="Commit history"
+          aria-multiselectable="true"
           className="focus:outline-none"
         >
           <div style={{ height: commits.length * ROW_HEIGHT, position: 'relative' }}>
@@ -187,11 +273,18 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
                 key={commit.hash}
                 commit={commit}
                 isSelected={commit.hash === selectedCommit}
+                isMultiSelected={selectedCommits.includes(commit.hash)}
                 graphWidth={isSearching ? 0 : graphWidth}
                 authorWidth={cols.author}
                 dateWidth={cols.date}
                 style={{ position: 'absolute', top: (startIdx + i) * ROW_HEIGHT, left: 0, right: 0 }}
-                onClick={setSelectedCommit}
+                onClick={handleRowClick}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onCherryPick={handleCherryPick}
+                selectedCommits={selectedCommits}
+                selectedCommitMessages={selectedCommitMessages}
+                currentBranch={currentBranch}
               />
             ))}
           </div>

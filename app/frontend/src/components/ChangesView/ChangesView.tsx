@@ -6,16 +6,24 @@ import { ChunkDiffPanel } from './ChunkDiffPanel'
 import { CommitBox } from './CommitBox'
 import { useStatus } from '@/hooks/useStatus'
 import { useGitStore } from '@/stores/gitStore'
+import { useCherryPick } from '@/hooks/useCherryPick'
 import { parseGitError } from '@/lib/format'
 import type { FileStatus } from '@/lib/types'
 
 export default function ChangesView() {
   const [selectedFile, setSelectedFile] = useState<FileStatus | null>(null)
   const [selectedStaged, setSelectedStaged] = useState(false)
-  const { showFlash } = useGitStore()
+  const { showFlash, cherryPickConflictActive } = useGitStore()
   const queryClient = useQueryClient()
   const { data: status } = useStatus()
   const mergeState = status?.mergeState
+  const cherryPickState = status?.cherryPickState
+  // Show cherry-pick banner: CHERRY_PICK_HEAD detected, Zustand flag set,
+  // or conflicts exist with no merge in progress.
+  const showCherryPickBanner = !!cherryPickState
+    || cherryPickConflictActive
+    || (!mergeState && !!status?.hasConflicts)
+  const { abortMutation: abortCherryPickMutation } = useCherryPick()
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['status'] })
@@ -141,6 +149,48 @@ export default function ChangesView() {
             }}
           >
             Abort Merge
+          </button>
+        </div>
+      )}
+
+      {/* Cherry-pick conflict banner */}
+      {showCherryPickBanner && (
+        <div style={{
+          flexShrink: 0,
+          padding: '7px 14px',
+          background: status?.hasConflicts
+            ? 'color-mix(in srgb, var(--danger) 12%, var(--bg-panel))'
+            : 'color-mix(in srgb, var(--success) 12%, var(--bg-panel))',
+          borderBottom: '1px solid var(--border-sub)',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span style={{
+            fontSize: 11, fontWeight: 700,
+            color: status?.hasConflicts ? 'var(--danger)' : 'var(--success)',
+            letterSpacing: '0.04em',
+          }}>
+            CHERRY-PICK
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--text-sec)', flex: 1 }}>
+            {status?.hasConflicts
+              ? cherryPickState
+                ? `${cherryPickState.conflictCount} conflict${cherryPickState.conflictCount !== 1 ? 's' : ''} — resolve and commit to finish cherry-pick`
+                : 'Conflicts detected — resolve and commit to finish cherry-pick'
+              : 'All conflicts resolved — commit to finish cherry-pick'
+            }
+          </span>
+          <button
+            onClick={() => abortCherryPickMutation.mutate(undefined, {
+              onSuccess: () => setSelectedFile(null),
+            })}
+            disabled={abortCherryPickMutation.isPending}
+            style={{
+              padding: '4px 10px', borderRadius: 5, border: '1px solid var(--border)',
+              background: 'transparent', color: 'var(--text-sec)', fontSize: 11,
+              cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            Abort Cherry-pick
           </button>
         </div>
       )}

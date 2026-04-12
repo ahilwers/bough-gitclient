@@ -127,12 +127,20 @@ type MergeState struct {
 	MergeMessage  string `json:"mergeMessage"`   // pre-composed commit message from .git/MERGE_MSG
 }
 
+// CherryPickState is set when a cherry-pick is halted by conflicts
+// (.git/CHERRY_PICK_HEAD exists). Not set for conflict-free --no-commit picks.
+type CherryPickState struct {
+	ConflictCount int    `json:"conflictCount"` // remaining conflicted files
+	PickedMessage string `json:"pickedMessage"` // commit message of the halted cherry-pick
+}
+
 // RepoStatus summarises the current state of a repository.
 type RepoStatus struct {
-	Branch       string      `json:"branch"`
-	Ahead        int         `json:"ahead"`
-	Behind       int         `json:"behind"`
-	Files        []FileStatus `json:"files"`
-	HasConflicts bool        `json:"hasConflicts"`
-	MergeState   *MergeState `json:"mergeState,omitempty"`
+	Branch          string           `json:"branch"`
+	Ahead           int              `json:"ahead"`
+	Behind          int              `json:"behind"`
+	Files           []FileStatus     `json:"files"`
+	HasConflicts    bool             `json:"hasConflicts"`
+	MergeState      *MergeState      `json:"mergeState,omitempty"`
+	CherryPickState *CherryPickState `json:"cherryPickState,omitempty"`
 }

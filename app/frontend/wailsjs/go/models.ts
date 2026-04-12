@@ -54,6 +54,20 @@ export namespace git {
 		    return a;
 		}
 	}
+	export class CherryPickState {
+	    conflictCount: number;
+	    pickedMessage: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CherryPickState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.conflictCount = source["conflictCount"];
+	        this.pickedMessage = source["pickedMessage"];
+	    }
+	}
 	export class GraphLine {
 	    fromCol: number;
 	    toCol: number;
@@ -300,6 +314,7 @@ export namespace git {
 	    files: FileStatus[];
 	    hasConflicts: boolean;
 	    mergeState?: MergeState;
+	    cherryPickState?: CherryPickState;
 	
 	    static createFrom(source: any = {}) {
 	        return new RepoStatus(source);
@@ -313,6 +328,7 @@ export namespace git {
 	        this.files = this.convertValues(source["files"], FileStatus);
 	        this.hasConflicts = source["hasConflicts"];
 	        this.mergeState = this.convertValues(source["mergeState"], MergeState);
+	        this.cherryPickState = this.convertValues(source["cherryPickState"], CherryPickState);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

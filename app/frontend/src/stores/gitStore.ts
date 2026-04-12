@@ -44,6 +44,22 @@ interface GitStore {
   setSelectedCommit: (hash: string | null) => void
   setSelectedFile: (path: string | null) => void
 
+  // Multi-selection for cherry-pick (commit list)
+  selectedCommits: string[]
+  setSelectedCommits: (hashes: string[]) => void
+
+  // Drag state: true while commit row(s) are being dragged
+  isDraggingCommits: boolean
+  setIsDraggingCommits: (v: boolean) => void
+
+  // Pending cherry-pick message pre-fill for CommitBox (no-conflict case)
+  pendingCherryPickMessage: string | null
+  setPendingCherryPickMessage: (msg: string | null) => void
+
+  // Set when a cherry-pick was halted by conflicts (fallback if CHERRY_PICK_HEAD not detected)
+  cherryPickConflictActive: boolean
+  setCherryPickConflictActive: (v: boolean) => void
+
   // Licensing
   licenseStatus: LicenseStatus | null
   setLicenseStatus: (s: LicenseStatus | null) => void
@@ -81,6 +97,10 @@ const initialState = {
   activeWorktree: null,
   selectedCommit: null,
   selectedFile: null,
+  selectedCommits: [] as string[],
+  isDraggingCommits: false,
+  pendingCherryPickMessage: null as string | null,
+  cherryPickConflictActive: false,
   licenseStatus: null as LicenseStatus | null,
   licenseDialogOpen: false,
 }
@@ -116,6 +136,11 @@ export const useGitStore = create<GitStore>()(
 
       setSelectedCommit: (hash) => set({ selectedCommit: hash, selectedFile: null }),
       setSelectedFile: (path) => set({ selectedFile: path }),
+
+      setSelectedCommits: (hashes) => set({ selectedCommits: hashes }),
+      setIsDraggingCommits: (v) => set({ isDraggingCommits: v }),
+      setPendingCherryPickMessage: (msg) => set({ pendingCherryPickMessage: msg }),
+      setCherryPickConflictActive: (v) => set({ cherryPickConflictActive: v }),
 
       setLicenseStatus: (licenseStatus) => set({ licenseStatus }),
       setLicenseDialogOpen: (licenseDialogOpen) => set({ licenseDialogOpen }),

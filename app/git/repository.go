@@ -2,6 +2,7 @@ package git
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -143,12 +144,17 @@ func (r *Repository) Status() (RepoStatus, error) {
 		}
 	}
 	mergeState := r.DetectMergeState(conflictCount)
+	var cherryPickState *CherryPickState
+	if mergeState == nil {
+		cherryPickState = r.DetectCherryPickState(conflictCount)
+	}
 
 	return RepoStatus{
-		Branch:       branch,
-		Files:        files,
-		HasConflicts: hasConflicts,
-		MergeState:   mergeState,
+		Branch:          branch,
+		Files:           files,
+		HasConflicts:    hasConflicts,
+		MergeState:      mergeState,
+		CherryPickState: cherryPickState,
 	}, nil
 }
 
@@ -196,4 +202,23 @@ func listUntrackedInDir(repoPath, dir string) []FileStatus {
 // Head returns the current HEAD hash.
 func (r *Repository) Head() (*plumbing.Reference, error) {
 	return r.repo.Head()
+}
+
+// gitDir returns the path to the actual git directory, resolving the gitfile
+// indirection used by linked worktrees.
+func (r *Repository) gitDir() string {
+	candidate := filepath.Join(r.Path, ".git")
+	data, err := os.ReadFile(candidate)
+	if err != nil {
+		// candidate is a directory (normal case for main worktrees)
+		return candidate
+	}
+	// candidate is a gitfile: "gitdir: /path/to/actual/git/dir\n"
+	line := strings.TrimSpace(string(data))
+	line = strings.TrimPrefix(line, "gitdir:")
+	line = strings.TrimSpace(line)
+	if filepath.IsAbs(line) {
+		return line
+	}
+	return filepath.Join(r.Path, line)
 }
