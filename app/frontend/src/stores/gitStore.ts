@@ -68,6 +68,10 @@ interface GitStore {
   helpDialogOpen: boolean
   setHelpDialogOpen: (open: boolean) => void
 
+  // Long-running operation indicator (null = idle, string = label shown in progress bar)
+  loadingOperation: string | null
+  setLoadingOperation: (op: string | null) => void
+
   // Flash notifications
   flash: { message: string; type: 'success' | 'danger' | 'info' } | null
   showFlash: (message: string, type?: 'success' | 'danger' | 'info', durationMs?: number) => void
@@ -106,6 +110,7 @@ const initialState = {
   licenseStatus: null as LicenseStatus | null,
   licenseDialogOpen: false,
   helpDialogOpen: false,
+  loadingOperation: null as string | null,
 }
 
 export const useGitStore = create<GitStore>()(
@@ -148,6 +153,7 @@ export const useGitStore = create<GitStore>()(
       setLicenseStatus: (licenseStatus) => set({ licenseStatus }),
       setLicenseDialogOpen: (licenseDialogOpen) => set({ licenseDialogOpen }),
       setHelpDialogOpen: (helpDialogOpen) => set({ helpDialogOpen }),
+      setLoadingOperation: (loadingOperation) => set({ loadingOperation }),
 
       showFlash: (message, type = 'success', durationMs) => {
         set({ flash: { message, type } })

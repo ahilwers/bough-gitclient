@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon, FolderOpen, FolderPlus, Globe, HelpCircle } from 'lucide-react'
+import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon, FolderOpen, FolderPlus, Globe, HelpCircle, Loader2 } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useGitStore } from '@/stores/gitStore'
 import { useStatus } from '@/hooks/useStatus'
@@ -10,10 +10,13 @@ import { ManageRemotesDialog } from '@/components/RemoteManager/ManageRemotesDia
 import { KeyboardShortcutsDialog } from '@/components/Help/KeyboardShortcutsDialog'
 
 export default function Toolbar() {
-  const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash, theme, toggleTheme, licenseStatus, setLicenseDialogOpen, setHelpDialogOpen } = useGitStore()
+  const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash, theme, toggleTheme, licenseStatus, setLicenseDialogOpen, setHelpDialogOpen, setLoadingOperation } = useGitStore()
   const queryClient = useQueryClient()
   const { data: status } = useStatus()
   const [remoteDialogOpen, setRemoteDialogOpen] = useState(false)
+  const [fetchLoading, setFetchLoading] = useState(false)
+  const [pullLoading, setPullLoading] = useState(false)
+  const [pushLoading, setPushLoading] = useState(false)
 
   // Global '?' shortcut to open help
   useEffect(() => {
@@ -70,32 +73,47 @@ export default function Toolbar() {
   }
 
   const handleFetch = async () => {
+    setFetchLoading(true)
+    setLoadingOperation('Fetching…')
     try {
       await Fetch('')
       showFlash('Fetched successfully')
       queryClient.invalidateQueries()
     } catch (err) {
       showFlash(parseGitError(err), 'danger')
+    } finally {
+      setFetchLoading(false)
+      setLoadingOperation(null)
     }
   }
 
   const handlePull = async () => {
+    setPullLoading(true)
+    setLoadingOperation('Pulling…')
     try {
       await Pull('', '')
       showFlash('Pulled successfully')
       queryClient.invalidateQueries()
     } catch (err) {
       showFlash(parseGitError(err), 'danger')
+    } finally {
+      setPullLoading(false)
+      setLoadingOperation(null)
     }
   }
 
   const handlePush = async () => {
+    setPushLoading(true)
+    setLoadingOperation('Pushing…')
     try {
       await Push('', '', false)
       showFlash('Pushed successfully')
       queryClient.invalidateQueries()
     } catch (err) {
       showFlash(parseGitError(err), 'danger')
+    } finally {
+      setPushLoading(false)
+      setLoadingOperation(null)
     }
   }
 
@@ -221,15 +239,25 @@ export default function Toolbar() {
         onClick={() => setActiveView('changes')}
       />
 
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
+      {/* Spacer / loading label */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {(fetchLoading || pullLoading || pushLoading) && (
+          <span style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            fontSize: 11, color: 'var(--text-ter)',
+          }}>
+            <Loader2 size={12} className="spin" style={{ color: 'var(--acc)' }} />
+            {fetchLoading ? 'Fetching…' : pullLoading ? 'Pulling…' : 'Pushing…'}
+          </span>
+        )}
+      </div>
 
       {/* Action buttons */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 4px' }} />
-        <IconButton icon={<RefreshCw size={14} />} label="Fetch" onClick={handleFetch} />
-        <IconButton icon={<ArrowDown size={14} />} label="Pull" onClick={handlePull} />
-        <IconButton icon={<ArrowUp size={14} />} label="Push" onClick={handlePush} />
+        <IconButton icon={fetchLoading ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />} label="Fetch" onClick={handleFetch} disabled={fetchLoading || pullLoading || pushLoading} />
+        <IconButton icon={pullLoading ? <Loader2 size={14} className="spin" /> : <ArrowDown size={14} />} label="Pull" onClick={handlePull} disabled={fetchLoading || pullLoading || pushLoading} />
+        <IconButton icon={pushLoading ? <Loader2 size={14} className="spin" /> : <ArrowUp size={14} />} label="Push" onClick={handlePush} disabled={fetchLoading || pullLoading || pushLoading} />
         <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
         <IconButton icon={<GitBranch size={14} />} label="Branch" />
         <IconButton icon={<Layers size={14} />} label="Stash" />
@@ -375,14 +403,16 @@ interface IconButtonProps {
   icon: React.ReactNode
   label: string
   onClick?: () => void
+  disabled?: boolean
 }
 
-function IconButton({ icon, label, onClick }: IconButtonProps) {
+function IconButton({ icon, label, onClick, disabled }: IconButtonProps) {
   return (
     <button
       onClick={onClick}
       title={label}
       aria-label={label}
+      disabled={disabled}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -392,8 +422,9 @@ function IconButton({ icon, label, onClick }: IconButtonProps) {
         borderRadius: 'var(--r-sm)',
         border: 'none',
         background: 'transparent',
-        color: 'var(--text-pri)',
-        cursor: 'pointer',
+        color: disabled ? 'var(--text-ter)' : 'var(--text-pri)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.6 : 1,
       }}
     >
       {icon}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Loader2 } from 'lucide-react'
 import { StageFile, UnstageFile, DiscardFile, AbortMerge } from '@wailsjs/go/main/App'
 import { FileStatusList } from './FileStatusList'
 import { ChunkDiffPanel } from './ChunkDiffPanel'
@@ -217,9 +218,11 @@ export default function ChangesView() {
             style={{
               padding: '4px 10px', borderRadius: 5, border: '1px solid var(--border)',
               background: 'transparent', color: 'var(--text-sec)', fontSize: 11,
-              cursor: 'pointer', flexShrink: 0,
+              cursor: abortMutation.isPending ? 'not-allowed' : 'pointer', flexShrink: 0,
+              display: 'flex', alignItems: 'center', gap: 5,
             }}
           >
+            {abortMutation.isPending && <Loader2 size={11} className="spin" />}
             Abort Merge
           </button>
         </div>
@@ -259,9 +262,11 @@ export default function ChangesView() {
             style={{
               padding: '4px 10px', borderRadius: 5, border: '1px solid var(--border)',
               background: 'transparent', color: 'var(--text-sec)', fontSize: 11,
-              cursor: 'pointer', flexShrink: 0,
+              cursor: abortCherryPickMutation.isPending ? 'not-allowed' : 'pointer', flexShrink: 0,
+              display: 'flex', alignItems: 'center', gap: 5,
             }}
           >
+            {abortCherryPickMutation.isPending && <Loader2 size={11} className="spin" />}
             Abort Cherry-pick
           </button>
         </div>
