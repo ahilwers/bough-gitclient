@@ -71,16 +71,29 @@ export function CommitBox() {
       e.preventDefault()
       if (!disabled) commitMutation.mutate(message)
     }
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      const el = document.querySelector<HTMLElement>('[data-panel="changes-filelist"]')
+      el?.focus()
+    }
+    if (e.key === 'Tab' && e.shiftKey) {
+      e.preventDefault()
+      const el = document.querySelector<HTMLElement>('[data-panel="changes-diff"]')
+      el?.focus()
+    }
   }
 
   return (
-    <div style={{
-      flexShrink: 0,
-      borderTop: '1px solid var(--border-sub)',
-      background: 'var(--bg-panel)',
-      padding: '10px 14px',
-      display: 'flex', flexDirection: 'column', gap: 8,
-    }}>
+    <div
+      data-panel="changes-commitbox"
+      style={{
+        flexShrink: 0,
+        borderTop: '1px solid var(--border-sub)',
+        background: 'var(--bg-panel)',
+        padding: '10px 14px',
+        display: 'flex', flexDirection: 'column', gap: 8,
+      }}
+    >
       <textarea
         value={message}
         onChange={e => setMessage(e.target.value)}

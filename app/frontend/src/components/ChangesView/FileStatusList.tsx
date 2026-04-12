@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { StageFile, StageFiles, UnstageFile, UnstageFiles } from '@wailsjs/go/main/App'
+import { StageFile, StageFiles, UnstageFile, UnstageFiles, DiscardFile } from '@wailsjs/go/main/App'
 import { useStatus } from '@/hooks/useStatus'
 import { useGitStore } from '@/stores/gitStore'
 import { parseGitError } from '@/lib/format'
+import { KeyHints } from '@/components/shared/KeyHints'
 import type { FileStatus } from '@/lib/types'
 
 function isConflicted(f: FileStatus): boolean {
@@ -12,21 +13,31 @@ function isConflicted(f: FileStatus): boolean {
     (f.staged === 'D' && f.unstaged === 'D')
 }
 
+// Helper: focus a named panel by data-panel attribute
+function focusPanel(name: string) {
+  const el = document.querySelector<HTMLElement>(`[data-panel="${name}"]`)
+  el?.focus()
+}
+
 interface FileStatusListProps {
   selectedFile: string | null
   selectedStaged: boolean
   onSelectFile: (file: FileStatus, staged: boolean) => void
+  /** Called when Tab is pressed to move focus to the diff panel */
+  nextPanel?: string
 }
 
-export function FileStatusList({ selectedFile, selectedStaged, onSelectFile }: FileStatusListProps) {
+export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nextPanel = 'changes-diff' }: FileStatusListProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [focused, setFocused] = useState(false)
   const queryClient = useQueryClient()
   const { showFlash } = useGitStore()
   const { data: status } = useStatus()
 
-  const invalidate = () => {
+  const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['status'] })
     queryClient.invalidateQueries({ queryKey: ['diff'] })
-  }
+  }, [queryClient])
 
   const stageFileMutation = useMutation({
     mutationFn: (path: string) => StageFile(path),
@@ -52,21 +63,119 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile }: F
     onError: (err: Error) => showFlash(`Failed to unstage all: ${parseGitError(err)}`, 'danger'),
   })
 
+  const discardFileMutation = useMutation({
+    mutationFn: (path: string) => DiscardFile(path),
+    onSuccess: invalidate,
+    onError: (err: Error) => showFlash(`Failed to discard: ${parseGitError(err)}`, 'danger'),
+  })
+
   const files = status?.files ?? []
-  // untracked: staged === "?", unstaged === "" (after repository.go normalisation)
   const conflictedFiles = files.filter(isConflicted)
   const unstagedFiles = files.filter(f => !isConflicted(f) && (f.unstaged !== '' || f.staged === '?'))
   const stagedFiles = files.filter(f => !isConflicted(f) && f.staged !== '' && f.staged !== '?')
 
+  // Flat ordered list for keyboard navigation
+  const allEntries: Array<{ file: FileStatus; staged: boolean }> = [
+    ...conflictedFiles.map(f => ({ file: f, staged: false })),
+    ...unstagedFiles.map(f => ({ file: f, staged: false })),
+    ...stagedFiles.map(f => ({ file: f, staged: true })),
+  ]
+
+  const currentIdx = allEntries.findIndex(
+    e => e.file.path === selectedFile && e.staged === selectedStaged
+  )
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // Don't intercept when a button inside is focused
+    if ((e.target as HTMLElement).tagName === 'BUTTON') return
+
+    switch (e.key) {
+      case 'ArrowDown':
+      case 'j': {
+        e.preventDefault()
+        const next = allEntries[Math.min(currentIdx + 1, allEntries.length - 1)]
+        if (next) onSelectFile(next.file, next.staged)
+        break
+      }
+      case 'ArrowUp':
+      case 'k': {
+        e.preventDefault()
+        const prev = allEntries[Math.max(currentIdx - 1, 0)]
+        if (prev) onSelectFile(prev.file, prev.staged)
+        break
+      }
+      case 's':
+      case 'S': {
+        e.preventDefault()
+        const cur = allEntries[currentIdx]
+        if (cur && !cur.staged && !isConflicted(cur.file)) {
+          stageFileMutation.mutate(cur.file.path)
+        }
+        break
+      }
+      case 'u':
+      case 'U': {
+        e.preventDefault()
+        const cur = allEntries[currentIdx]
+        if (cur && cur.staged) unstageFileMutation.mutate(cur.file.path)
+        break
+      }
+      case 'd':
+      case 'D': {
+        e.preventDefault()
+        const cur = allEntries[currentIdx]
+        if (cur && !cur.staged && cur.file.staged !== '?') {
+          discardFileMutation.mutate(cur.file.path)
+        }
+        break
+      }
+      case '[': {
+        e.preventDefault()
+        // Jump to first unstaged file (or first conflicted if any)
+        const firstUnstaged = allEntries.find(e => !e.staged)
+        if (firstUnstaged) onSelectFile(firstUnstaged.file, false)
+        break
+      }
+      case ']': {
+        e.preventDefault()
+        // Jump to first staged file
+        const firstStaged = allEntries.find(e => e.staged)
+        if (firstStaged) onSelectFile(firstStaged.file, true)
+        break
+      }
+      case 'ArrowRight':
+      case 'Enter':
+      case 'Tab': {
+        e.preventDefault()
+        if (e.shiftKey) break // Shift+Tab handled below
+        focusPanel(nextPanel)
+        break
+      }
+    }
+    // Shift+Tab — no previous panel, stay here
+  }, [allEntries, currentIdx, onSelectFile, nextPanel, stageFileMutation, unstageFileMutation, discardFileMutation])
+
   return (
-    <div style={{
-      width: 240, flexShrink: 0,
-      borderRight: '1px solid var(--border-sub)',
-      background: 'var(--bg-sidebar)',
-      display: 'flex', flexDirection: 'column',
-      overflow: 'hidden',
-    }}>
-      {/* Conflicts section — only visible during merge conflicts */}
+    <div
+      ref={containerRef}
+      data-panel="changes-filelist"
+      tabIndex={0}
+      onFocus={() => setFocused(true)}
+      onBlur={e => {
+        if (!containerRef.current?.contains(e.relatedTarget as Node)) setFocused(false)
+      }}
+      onKeyDown={handleKeyDown}
+      style={{
+        width: 240, flexShrink: 0,
+        borderRight: '1px solid var(--border-sub)',
+        background: 'var(--bg-sidebar)',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden',
+        outline: 'none',
+        boxShadow: focused ? 'inset 2px 0 0 var(--acc)' : 'none',
+      }}
+    >
+      {/* Conflicts section */}
       {conflictedFiles.length > 0 && (
         <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--border-sub)' }}>
           <SectionHeader
@@ -147,9 +256,23 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile }: F
           )}
         </div>
       </div>
+
+      {/* Keyboard hints — visible when focused */}
+      {focused && (
+        <KeyHints hints={[
+          { keys: ['↑', '↓'], label: 'Navigate' },
+          { keys: ['[', ']'], label: 'Section' },
+          { keys: ['Tab'], label: 'Diff' },
+          { keys: ['S'], label: 'Stage' },
+          { keys: ['U'], label: 'Unstage' },
+          { keys: ['D'], label: 'Discard' },
+        ]} />
+      )}
     </div>
   )
 }
+
+// ─── Section header ───────────────────────────────────────────────────────────
 
 interface SectionHeaderProps {
   title: string
@@ -186,6 +309,8 @@ function SectionHeader({ title, count, actionLabel, onAction, accentBg }: Sectio
   )
 }
 
+// ─── File row ─────────────────────────────────────────────────────────────────
+
 interface FileRowProps {
   file: FileStatus
   statusCode: string
@@ -217,7 +342,6 @@ function FileRow({ file, statusCode, selected, onSelect, actionIcon, actionTitle
         userSelect: 'none',
       }}
     >
-      {/* Status badge */}
       <span style={{
         width: 17, height: 17, borderRadius: 3, flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -226,7 +350,6 @@ function FileRow({ file, statusCode, selected, onSelect, actionIcon, actionTitle
         {label}
       </span>
 
-      {/* Filename */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
           fontSize: 11, fontFamily: 'monospace', color: 'var(--text-pri)',
@@ -241,7 +364,6 @@ function FileRow({ file, statusCode, selected, onSelect, actionIcon, actionTitle
         )}
       </div>
 
-      {/* Stage/unstage button — visible on hover */}
       {onAction && (
         <button
           onClick={e => { e.stopPropagation(); onAction() }}
