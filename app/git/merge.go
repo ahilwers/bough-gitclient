@@ -7,19 +7,21 @@ import (
 	"strings"
 )
 
-// DetectMergeState checks if .git/MERGE_HEAD exists and returns a MergeState.
+// DetectMergeState checks if MERGE_HEAD exists and returns a MergeState.
+// Uses git rev-parse for reliable detection across worktree layouts.
 // Returns nil if no merge is in progress.
 func (r *Repository) DetectMergeState(conflictCount int) *MergeState {
-	mergeHeadPath := filepath.Join(r.Path, ".git", "MERGE_HEAD")
-	data, err := os.ReadFile(mergeHeadPath)
+	out, err := CLI(r.Path, "rev-parse", "--verify", "MERGE_HEAD")
 	if err != nil {
 		return nil // no merge in progress
 	}
-	hash := strings.TrimSpace(string(data))
+	hash := strings.TrimSpace(out)
 	branch := r.hashToFriendlyName(hash)
 
+	// MERGE_MSG is still read from the gitdir file (git doesn't expose it via rev-parse).
+	gitDir := r.gitDir()
 	mergeMsg := ""
-	if msgData, err := os.ReadFile(filepath.Join(r.Path, ".git", "MERGE_MSG")); err == nil {
+	if msgData, err := os.ReadFile(filepath.Join(gitDir, "MERGE_MSG")); err == nil {
 		mergeMsg = strings.TrimRight(string(msgData), "\n")
 	}
 
@@ -132,12 +134,11 @@ func resolveConflictsBoth(content string) string {
 // GetMergeCommits returns commits that are in MERGE_HEAD but not in HEAD,
 // i.e. the commits that would be merged in.
 func (r *Repository) GetMergeCommits() ([]CommitNode, error) {
-	mergeHeadPath := filepath.Join(r.Path, ".git", "MERGE_HEAD")
-	data, err := os.ReadFile(mergeHeadPath)
+	headOut, err := CLI(r.Path, "rev-parse", "--verify", "MERGE_HEAD")
 	if err != nil {
 		return []CommitNode{}, nil // no merge in progress
 	}
-	mergeHash := strings.TrimSpace(string(data))
+	mergeHash := strings.TrimSpace(headOut)
 
 	out, err := CLI(r.Path, "log",
 		fmt.Sprintf("--format=%s", logFormat),

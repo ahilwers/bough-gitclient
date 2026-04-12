@@ -103,6 +103,11 @@ export interface MergeState {
   mergeMessage: string
 }
 
+export interface CherryPickState {
+  conflictCount: number
+  pickedMessage: string
+}
+
 export interface RepoStatus {
   branch: string
   ahead: number
@@ -110,6 +115,7 @@ export interface RepoStatus {
   files: FileStatus[]
   hasConflicts: boolean
   mergeState?: MergeState
+  cherryPickState?: CherryPickState
 }
 
 export interface Remote {

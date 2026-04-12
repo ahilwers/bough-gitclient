@@ -14,6 +14,7 @@ import { MergeConfirmDialog } from '@/components/BranchManager/MergeConfirmDialo
 import { StashDiffView } from '@/components/StashView/StashDiffView'
 import { OpenInFinder } from '@wailsjs/go/main/App'
 import { useStatus } from '@/hooks/useStatus'
+import { useCherryPick } from '@/hooks/useCherryPick'
 import { parseGitError } from '@/lib/format'
 import type { WorktreeInfo, Branch, Tag, StashEntry } from '@/lib/types'
 
@@ -49,8 +50,9 @@ export default function Sidebar() {
   const { data: worktrees, removeMutation, switchMutation } = useWorktrees()
   const { data: tags, checkoutMutation: tagCheckoutMutation, deleteMutation: tagDeleteMutation } = useTags()
   const { data: stashes, dropMutation } = useStashes()
-  const { activeWorktree, showFlash, setActiveView } = useGitStore()
+  const { activeWorktree, showFlash, setActiveView, isDraggingCommits, cherryPickConflictActive } = useGitStore()
   const { data: status } = useStatus()
+  const { cherryPickMutation } = useCherryPick()
 
   const toggle = (key: keyof typeof expanded) => {
     setExpanded(s => {
@@ -262,6 +264,27 @@ export default function Sidebar() {
               {status.mergeState.conflictCount > 0 && ` · ${status.mergeState.conflictCount} conflict${status.mergeState.conflictCount > 1 ? 's' : ''}`}
             </div>
           )}
+          {(status?.cherryPickState || cherryPickConflictActive || (!status?.mergeState && status?.hasConflicts)) && (
+            <div
+              onClick={() => setActiveView('changes')}
+              style={{
+                margin: '4px 8px 2px',
+                padding: '3px 8px',
+                borderRadius: 4,
+                background: status?.hasConflicts
+                  ? 'color-mix(in srgb, var(--danger) 15%, transparent)'
+                  : 'color-mix(in srgb, var(--success) 15%, transparent)',
+                border: `1px solid ${status?.hasConflicts ? 'var(--danger)' : 'var(--success)'}`,
+                fontSize: 10, fontWeight: 700,
+                color: status?.hasConflicts ? 'var(--danger)' : 'var(--success)',
+                letterSpacing: '0.04em',
+                cursor: 'pointer',
+              }}
+            >
+              CHERRY-PICK
+              {(status?.cherryPickState?.conflictCount ?? 0) > 0 && ` · ${status!.cherryPickState!.conflictCount} conflict${status!.cherryPickState!.conflictCount > 1 ? 's' : ''}`}
+            </div>
+          )}
           {localVisible.map(b => {
             const contextItems = b.isHead
               ? []
@@ -277,6 +300,7 @@ export default function Sidebar() {
                 label={b.name}
                 isActive={b.isHead}
                 isDragTarget={b.isHead && dragOverHead}
+                isCherryPickTarget={b.isHead && isDraggingCommits && !dragOverHead}
                 draggable={!b.isHead}
                 onDragStart={!b.isHead ? (e) => {
                   e.dataTransfer.setData('branch', b.name)
@@ -295,11 +319,31 @@ export default function Sidebar() {
                   e.dataTransfer.setDragImage(ghost, 0, 10)
                   setTimeout(() => document.body.removeChild(ghost), 0)
                 } : undefined}
-                onDragOver={b.isHead ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverHead(true) } : undefined}
+                onDragOver={b.isHead ? (e) => {
+                  e.preventDefault()
+                  // Accept both branch drags (merge) and commit drags (cherry-pick)
+                  e.dataTransfer.dropEffect = e.dataTransfer.getData('commits') ? 'copy' : 'move'
+                  setDragOverHead(true)
+                } : undefined}
                 onDragLeave={b.isHead ? () => setDragOverHead(false) : undefined}
                 onDrop={b.isHead ? (e) => {
                   e.preventDefault()
                   setDragOverHead(false)
+                  // Cherry-pick: commit(s) dropped onto HEAD branch
+                  const commitsData = e.dataTransfer.getData('commits')
+                  if (commitsData) {
+                    try {
+                      const { hashes, messages } = JSON.parse(commitsData) as { hashes: string[]; messages: string[] }
+                      if (hashes.length > 0) {
+                        const combinedMessage = messages.join('\n\n---\n\n')
+                        cherryPickMutation.mutate({ hashes, combinedMessage })
+                      }
+                    } catch {
+                      showFlash('Cherry-pick failed: invalid drag data', 'danger')
+                    }
+                    return
+                  }
+                  // Merge: branch dropped onto HEAD branch
                   const from = e.dataTransfer.getData('branch')
                   if (from && from !== b.name) setMergingBranch(from)
                 } : undefined}
@@ -606,6 +650,7 @@ interface BranchItemProps {
   label: string
   isActive?: boolean
   isDragTarget?: boolean
+  isCherryPickTarget?: boolean
   draggable?: boolean
   onClick?: () => void
   onDragStart?: (e: React.DragEvent<HTMLDivElement>) => void
@@ -614,7 +659,17 @@ interface BranchItemProps {
   onDrop?: (e: React.DragEvent<HTMLDivElement>) => void
 }
 
-function BranchItem({ label, isActive, isDragTarget, draggable, onClick, onDragStart, onDragOver, onDragLeave, onDrop }: BranchItemProps) {
+function BranchItem({ label, isActive, isDragTarget, isCherryPickTarget, draggable, onClick, onDragStart, onDragOver, onDragLeave, onDrop }: BranchItemProps) {
+  let bg = 'transparent'
+  let outline = 'none'
+  if (isDragTarget) {
+    bg = 'color-mix(in srgb, var(--acc) 15%, transparent)'
+    outline = '1px dashed var(--acc)'
+  } else if (isCherryPickTarget) {
+    bg = 'color-mix(in srgb, var(--success) 10%, transparent)'
+    outline = '1px dashed var(--success)'
+  }
+
   return (
     <div
       draggable={draggable}
@@ -634,8 +689,8 @@ function BranchItem({ label, isActive, isDragTarget, draggable, onClick, onDragS
         fontWeight: isActive ? 600 : 400,
         cursor: onClick ? 'pointer' : draggable ? 'grab' : 'default',
         borderRadius: 'var(--r-sm)',
-        background: isDragTarget ? 'color-mix(in srgb, var(--acc) 15%, transparent)' : 'transparent',
-        outline: isDragTarget ? '1px dashed var(--acc)' : 'none',
+        background: bg,
+        outline,
         transition: 'background 0.1s, outline 0.1s',
       }}
       title={label}

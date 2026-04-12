@@ -7,11 +7,12 @@ import { parseGitError } from '@/lib/format'
 
 export function CommitBox() {
   const queryClient = useQueryClient()
-  const { showFlash } = useGitStore()
+  const { showFlash, pendingCherryPickMessage, setPendingCherryPickMessage, setCherryPickConflictActive } = useGitStore()
   const [message, setMessage] = useState('')
   const [amend, setAmend] = useState(false)
   const { data: status } = useStatus()
   const mergeMessage = status?.mergeState?.mergeMessage
+  const cherryPickMessage = status?.cherryPickState?.pickedMessage
 
   // Pre-fill message from MERGE_MSG when entering merge state.
   // Only sets once (on transition); never overwrites what the user typed.
@@ -22,6 +23,24 @@ export function CommitBox() {
     }
     prevMergeMessage.current = mergeMessage
   }, [mergeMessage])
+
+  // Pre-fill from cherry-pick conflict state (CHERRY_PICK_HEAD present).
+  const prevCherryPickMessage = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    if (cherryPickMessage && cherryPickMessage !== prevCherryPickMessage.current) {
+      setMessage(cherryPickMessage)
+    }
+    prevCherryPickMessage.current = cherryPickMessage
+  }, [cherryPickMessage])
+
+  // Pre-fill from pending cherry-pick message (no-conflict case, stored in Zustand).
+  const prevPendingMessage = useRef<string | null>(null)
+  useEffect(() => {
+    if (pendingCherryPickMessage && pendingCherryPickMessage !== prevPendingMessage.current) {
+      setMessage(pendingCherryPickMessage)
+    }
+    prevPendingMessage.current = pendingCherryPickMessage
+  }, [pendingCherryPickMessage])
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['status'] })
@@ -37,6 +56,8 @@ export function CommitBox() {
     onSuccess: () => {
       setMessage('')
       setAmend(false)
+      setPendingCherryPickMessage(null)
+      setCherryPickConflictActive(false)
       invalidate()
       showFlash(amend ? 'Commit amended' : 'Changes committed')
     },

@@ -3,8 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { GetFileContent, CheckoutOurs, CheckoutTheirs, AcceptBoth, StageFile, OpenMergeToolForFile } from '@wailsjs/go/main/App'
 import { ChevronRight } from 'lucide-react'
 import { useMergeCommits } from '@/hooks/useMergeCommits'
+import { useCherryPick } from '@/hooks/useCherryPick'
 import { MergeCommitDetailDialog } from './MergeCommitDetailDialog'
 import { useGitStore } from '@/stores/gitStore'
+import { useStatus } from '@/hooks/useStatus'
 import { parseGitError } from '@/lib/format'
 import { formatRelativeDate } from '@/lib/format'
 import type { CommitNode } from '@/lib/types'
@@ -18,6 +20,14 @@ export function ConflictResolutionPanel({ filePath }: Props) {
   const { showFlash } = useGitStore()
   const [commitsExpanded, setCommitsExpanded] = useState(true)
   const [detailCommit, setDetailCommit] = useState<CommitNode | null>(null)
+  const { data: status } = useStatus()
+  const { cherryPickConflictActive } = useGitStore()
+  // Show abort cherry-pick if: CHERRY_PICK_HEAD detected, OR Zustand flag set,
+  // OR there are conflicts with no merge in progress (cherry-pick is the only other source).
+  const isCherryPick = !!status?.cherryPickState
+    || cherryPickConflictActive
+    || (!status?.mergeState && !!status?.hasConflicts)
+  const { abortMutation: abortCherryPickMutation } = useCherryPick()
 
   const { data: content, isLoading } = useQuery({
     queryKey: ['fileContent', filePath],
@@ -85,6 +95,16 @@ export function ConflictResolutionPanel({ filePath }: Props) {
         <div style={{ flex: 1 }} />
         <ActionButton label="External Tool" title="Open in git mergetool"               onClick={() => openToolMutation.mutate()}    disabled={openToolMutation.isPending} color="var(--text-sec)" subtle />
         <ActionButton label="Mark Resolved" title="Stage the file after manual editing" onClick={() => markResolvedMutation.mutate()} disabled={isPending} color="var(--text-pri)" subtle />
+        {isCherryPick && (
+          <ActionButton
+            label="Abort Cherry-pick"
+            title="Abort the cherry-pick and restore the pre-pick state"
+            onClick={() => abortCherryPickMutation.mutate()}
+            disabled={abortCherryPickMutation.isPending}
+            color="var(--danger)"
+            subtle
+          />
+        )}
       </div>
 
       {/* ── Incoming commits ── */}
