@@ -9,6 +9,7 @@ import Sidebar from '@/components/Sidebar/Sidebar'
 import HistoryView from '@/components/HistoryView/HistoryView'
 import ChangesView from '@/components/ChangesView/ChangesView'
 import FlashNotification from '@/components/shared/FlashNotification'
+import ProgressBar from '@/components/shared/ProgressBar'
 import CommandPalette from '@/components/shared/CommandPalette'
 import { LicenseDialog } from '@/components/shared/LicenseDialog'
 
@@ -96,6 +97,7 @@ export default function App() {
       </div>
 
       <CommandPalette />
+      <ProgressBar />
       <FlashNotification />
       {licenseDialogOpen && licenseStatus && (
         <LicenseDialog status={licenseStatus} />

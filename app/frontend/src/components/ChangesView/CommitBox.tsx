@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Loader2 } from 'lucide-react'
 import { CreateCommit, AmendCommit } from '@wailsjs/go/main/App'
 import { useStatus } from '@/hooks/useStatus'
 import { useGitStore } from '@/stores/gitStore'
@@ -136,9 +137,13 @@ export function CommitBox() {
             background: disabled ? 'var(--bg-badge)' : 'var(--acc)',
             color: disabled ? 'var(--text-ter)' : 'white',
             transition: 'background 0.1s',
+            display: 'flex', alignItems: 'center',
           }}
         >
-          {commitMutation.isPending ? 'Committing…' : amend ? 'Amend' : 'Commit'}
+          {commitMutation.isPending
+            ? <><Loader2 size={12} className="spin" style={{ marginRight: 5 }} />Committing…</>
+            : amend ? 'Amend' : 'Commit'
+          }
         </button>
       </div>
 
