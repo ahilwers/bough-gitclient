@@ -30,16 +30,35 @@ export function ChunkDiffPanel({ filePath, staged, fileStatus }: ChunkDiffPanelP
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.target as HTMLElement).tagName === 'BUTTON') return
     const scroll = scrollRef.current
+    const half = scroll ? scroll.clientHeight * 0.5 : 0
     switch (e.key) {
       case 'ArrowDown':
-      case 'j':
         e.preventDefault()
         scroll?.scrollBy({ top: 60 })
         break
       case 'ArrowUp':
-      case 'k':
         e.preventDefault()
         scroll?.scrollBy({ top: -60 })
+        break
+      case 'j':
+        if (e.ctrlKey) break // let Ctrl+j fall through
+        e.preventDefault()
+        scroll?.scrollBy({ top: 60 })
+        break
+      case 'k':
+        if (e.ctrlKey) break
+        e.preventDefault()
+        scroll?.scrollBy({ top: -60 })
+        break
+      case 'd':
+        if (!e.ctrlKey) break
+        e.preventDefault()
+        scroll?.scrollBy({ top: half })
+        break
+      case 'u':
+        if (!e.ctrlKey) break
+        e.preventDefault()
+        scroll?.scrollBy({ top: -half })
         break
       case 'PageDown':
         e.preventDefault()
@@ -48,6 +67,16 @@ export function ChunkDiffPanel({ filePath, staged, fileStatus }: ChunkDiffPanelP
       case 'PageUp':
         e.preventDefault()
         scroll?.scrollBy({ top: -scroll.clientHeight * 0.85 })
+        break
+      case 'h':
+        if (!e.ctrlKey) break
+        e.preventDefault()
+        focusPanel('changes-filelist')
+        break
+      case 'l':
+        if (!e.ctrlKey) break
+        e.preventDefault()
+        focusPanel('changes-commitbox')
         break
       case 'Tab':
         e.preventDefault()

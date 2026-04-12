@@ -66,10 +66,30 @@ func (r *Repository) UnstageHunkViaApply(hunkPatch string) error {
 }
 
 // DiscardFile discards all unstaged changes to a tracked file (irreversible).
-// Equivalent to `git restore -- <file>`. Has no effect on untracked files.
+// For tracked files: git restore. For files unknown to git (new, untracked):
+// falls back to deleting the file from disk.
 func (r *Repository) DiscardFile(filePath string) error {
 	_, err := CLI(r.Path, "restore", "--", filePath)
-	return err
+	if err != nil {
+		// File is not known to git — delete it directly.
+		return os.Remove(filepath.Join(r.Path, filePath))
+	}
+	return nil
+}
+
+// DiscardStagedFile reverts a staged file back to its HEAD state, discarding
+// both the staged changes and any unstaged changes in the working tree.
+// For files that exist in HEAD: git restore --staged --worktree.
+// For newly added files (not yet in HEAD): unstage via git rm --cached, then
+// delete from disk.
+func (r *Repository) DiscardStagedFile(filePath string) error {
+	_, err := CLI(r.Path, "restore", "--staged", "--worktree", "--", filePath)
+	if err != nil {
+		// File is not in HEAD (newly added) — remove from index and delete.
+		CLI(r.Path, "rm", "--cached", "--", filePath) //nolint:errcheck
+		return os.Remove(filepath.Join(r.Path, filePath))
+	}
+	return nil
 }
 
 // DiscardHunk discards a hunk from the working tree (irreversible).

@@ -86,6 +86,10 @@ export function DiscardHunk(arg1) {
   return window['go']['main']['App']['DiscardHunk'](arg1);
 }
 
+export function DiscardStagedFile(arg1) {
+  return window['go']['main']['App']['DiscardStagedFile'](arg1);
+}
+
 export function DropStash(arg1) {
   return window['go']['main']['App']['DropStash'](arg1);
 }
@@ -208,6 +212,10 @@ export function RemoveWorktree(arg1) {
 
 export function RenameRemote(arg1, arg2) {
   return window['go']['main']['App']['RenameRemote'](arg1, arg2);
+}
+
+export function RevealInFinder(arg1) {
+  return window['go']['main']['App']['RevealInFinder'](arg1);
 }
 
 export function SaveWindowSize(arg1, arg2) {

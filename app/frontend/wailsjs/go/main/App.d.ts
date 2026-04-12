@@ -45,6 +45,8 @@ export function DiscardFile(arg1:string):Promise<void>;
 
 export function DiscardHunk(arg1:string):Promise<void>;
 
+export function DiscardStagedFile(arg1:string):Promise<void>;
+
 export function DropStash(arg1:number):Promise<void>;
 
 export function Fetch(arg1:string):Promise<void>;
@@ -106,6 +108,8 @@ export function RemoveRemote(arg1:string):Promise<void>;
 export function RemoveWorktree(arg1:string):Promise<void>;
 
 export function RenameRemote(arg1:string,arg2:string):Promise<void>;
+
+export function RevealInFinder(arg1:string):Promise<void>;
 
 export function SaveWindowSize(arg1:number,arg2:number):Promise<void>;
 

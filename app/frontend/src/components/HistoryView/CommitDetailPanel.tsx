@@ -23,33 +23,51 @@ export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.target as HTMLElement).tagName === 'BUTTON') return
+    const scroll = scrollRef.current
+    const half = scroll ? scroll.clientHeight * 0.5 : 0
     switch (e.key) {
       case 'ArrowDown':
-      case 'j':
         e.preventDefault()
-        scrollRef.current?.scrollBy({ top: 60 })
+        scroll?.scrollBy({ top: 60 })
         break
       case 'ArrowUp':
-      case 'k':
         e.preventDefault()
-        scrollRef.current?.scrollBy({ top: -60 })
+        scroll?.scrollBy({ top: -60 })
+        break
+      case 'j':
+        if (e.ctrlKey) break
+        e.preventDefault()
+        scroll?.scrollBy({ top: 60 })
+        break
+      case 'k':
+        if (e.ctrlKey) break
+        e.preventDefault()
+        scroll?.scrollBy({ top: -60 })
+        break
+      case 'd':
+        if (!e.ctrlKey) break
+        e.preventDefault()
+        scroll?.scrollBy({ top: half })
+        break
+      case 'u':
+        if (!e.ctrlKey) break
+        e.preventDefault()
+        scroll?.scrollBy({ top: -half })
         break
       case 'PageDown':
         e.preventDefault()
-        scrollRef.current?.scrollBy({ top: (scrollRef.current?.clientHeight ?? 0) * 0.85 })
+        scroll?.scrollBy({ top: (scroll?.clientHeight ?? 0) * 0.85 })
         break
       case 'PageUp':
         e.preventDefault()
-        scrollRef.current?.scrollBy({ top: -(scrollRef.current?.clientHeight ?? 0) * 0.85 })
+        scroll?.scrollBy({ top: -(scroll?.clientHeight ?? 0) * 0.85 })
+        break
+      case 'h':
+        if (!e.ctrlKey) break
+        e.preventDefault()
+        document.querySelector<HTMLElement>('[data-panel="history-commits"]')?.focus()
         break
       case 'Tab':
-        e.preventDefault()
-        if (e.shiftKey) {
-          document.querySelector<HTMLElement>('[data-panel="history-commits"]')?.focus()
-        } else {
-          document.querySelector<HTMLElement>('[data-panel="history-commits"]')?.focus()
-        }
-        break
       case 'Escape':
         e.preventDefault()
         document.querySelector<HTMLElement>('[data-panel="history-commits"]')?.focus()
