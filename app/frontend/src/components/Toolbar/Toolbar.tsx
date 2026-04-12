@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon, FolderOpen, FolderPlus, Globe } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon, FolderOpen, FolderPlus, Globe, HelpCircle } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useGitStore } from '@/stores/gitStore'
 import { useStatus } from '@/hooks/useStatus'
@@ -7,12 +7,27 @@ import { SelectRepository, OpenRepository, Fetch, Pull, Push, SelectAndInitRepos
 import { parseGitError } from '@/lib/format'
 import { useQueryClient } from '@tanstack/react-query'
 import { ManageRemotesDialog } from '@/components/RemoteManager/ManageRemotesDialog'
+import { KeyboardShortcutsDialog } from '@/components/Help/KeyboardShortcutsDialog'
 
 export default function Toolbar() {
-  const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash, theme, toggleTheme, licenseStatus, setLicenseDialogOpen } = useGitStore()
+  const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash, theme, toggleTheme, licenseStatus, setLicenseDialogOpen, setHelpDialogOpen } = useGitStore()
   const queryClient = useQueryClient()
   const { data: status } = useStatus()
   const [remoteDialogOpen, setRemoteDialogOpen] = useState(false)
+
+  // Global '?' shortcut to open help
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey) {
+        const tag = (e.target as HTMLElement).tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return
+        e.preventDefault()
+        setHelpDialogOpen(true)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [setHelpDialogOpen])
 
   const changesCount = (status?.files?.length ?? 0)
   const repoName = activeRepo ? activeRepo.split('/').pop() : 'No Repository'
@@ -231,6 +246,11 @@ export default function Toolbar() {
           label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           onClick={toggleTheme}
         />
+        <IconButton
+          icon={<HelpCircle size={14} />}
+          label="Keyboard shortcuts (?)"
+          onClick={() => setHelpDialogOpen(true)}
+        />
         {licenseStatus?.state === 'trial' && (
           <>
             <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
@@ -257,6 +277,7 @@ export default function Toolbar() {
       </div>
 
       {remoteDialogOpen && <ManageRemotesDialog onClose={() => setRemoteDialogOpen(false)} />}
+      <KeyboardShortcutsDialog />
     </div>
   )
 }

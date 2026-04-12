@@ -65,6 +65,8 @@ interface GitStore {
   setLicenseStatus: (s: LicenseStatus | null) => void
   licenseDialogOpen: boolean
   setLicenseDialogOpen: (open: boolean) => void
+  helpDialogOpen: boolean
+  setHelpDialogOpen: (open: boolean) => void
 
   // Flash notifications
   flash: { message: string; type: 'success' | 'danger' | 'info' } | null
@@ -103,6 +105,7 @@ const initialState = {
   cherryPickConflictActive: false,
   licenseStatus: null as LicenseStatus | null,
   licenseDialogOpen: false,
+  helpDialogOpen: false,
 }
 
 export const useGitStore = create<GitStore>()(
@@ -144,6 +147,7 @@ export const useGitStore = create<GitStore>()(
 
       setLicenseStatus: (licenseStatus) => set({ licenseStatus }),
       setLicenseDialogOpen: (licenseDialogOpen) => set({ licenseDialogOpen }),
+      setHelpDialogOpen: (helpDialogOpen) => set({ helpDialogOpen }),
 
       showFlash: (message, type = 'success', durationMs) => {
         set({ flash: { message, type } })
