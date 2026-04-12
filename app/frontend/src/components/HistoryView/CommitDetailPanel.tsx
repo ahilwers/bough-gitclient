@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Copy, ChevronRight } from 'lucide-react'
 import { useGitStore } from '@/stores/gitStore'
 import { useCommits } from '@/hooks/useCommits'
 import { useCommitFiles } from '@/hooks/useCommitFiles'
 import { FileList } from './FileList'
 import { DiffViewer } from './DiffViewer'
+import { KeyHints } from '@/components/shared/KeyHints'
 import { formatRelativeDate } from '@/lib/format'
 
 interface CommitDetailPanelProps {
@@ -16,6 +17,45 @@ export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
   const [activeTab, setActiveTab] = useState<'files' | 'diff'>('files')
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if ((e.target as HTMLElement).tagName === 'BUTTON') return
+    switch (e.key) {
+      case 'ArrowDown':
+      case 'j':
+        e.preventDefault()
+        scrollRef.current?.scrollBy({ top: 60 })
+        break
+      case 'ArrowUp':
+      case 'k':
+        e.preventDefault()
+        scrollRef.current?.scrollBy({ top: -60 })
+        break
+      case 'PageDown':
+        e.preventDefault()
+        scrollRef.current?.scrollBy({ top: (scrollRef.current?.clientHeight ?? 0) * 0.85 })
+        break
+      case 'PageUp':
+        e.preventDefault()
+        scrollRef.current?.scrollBy({ top: -(scrollRef.current?.clientHeight ?? 0) * 0.85 })
+        break
+      case 'Tab':
+        e.preventDefault()
+        if (e.shiftKey) {
+          document.querySelector<HTMLElement>('[data-panel="history-commits"]')?.focus()
+        } else {
+          document.querySelector<HTMLElement>('[data-panel="history-commits"]')?.focus()
+        }
+        break
+      case 'Escape':
+        e.preventDefault()
+        document.querySelector<HTMLElement>('[data-panel="history-commits"]')?.focus()
+        break
+    }
+  }, [])
 
   // Find commit metadata from already-loaded list (no extra network call)
   const { data: commits = [] } = useCommits()
@@ -43,13 +83,23 @@ export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
   }
 
   return (
-    <div style={{
-      flex: 1,
-      borderLeft: '1px solid var(--border)',
-      background: 'var(--bg-panel)',
-      display: 'flex', flexDirection: 'column',
-      overflow: 'hidden',
-    }}>
+    <div
+      ref={containerRef}
+      data-panel="history-detail"
+      tabIndex={0}
+      onFocus={() => setFocused(true)}
+      onBlur={e => { if (!containerRef.current?.contains(e.relatedTarget as Node)) setFocused(false) }}
+      onKeyDown={handleKeyDown}
+      style={{
+        flex: 1,
+        borderLeft: '1px solid var(--border)',
+        background: 'var(--bg-panel)',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden',
+        outline: 'none',
+        boxShadow: focused ? 'inset 2px 0 0 var(--acc)' : 'none',
+      }}
+    >
       {/* Header */}
       <div style={{ flexShrink: 0, borderBottom: '1px solid var(--border-sub)', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {/* Hash + copy */}
@@ -128,7 +178,7 @@ export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflow: 'auto' }}>
         {activeTab === 'files' && (
           filesLoading
             ? <Loading />
@@ -144,6 +194,13 @@ export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
           </div>
         )}
       </div>
+
+      {focused && (
+        <KeyHints hints={[
+          { keys: ['↑', '↓'], label: 'Scroll' },
+          { keys: ['Tab', 'Esc'], label: 'Commits' },
+        ]} />
+      )}
     </div>
   )
 }

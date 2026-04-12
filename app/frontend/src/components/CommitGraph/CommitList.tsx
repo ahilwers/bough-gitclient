@@ -5,6 +5,7 @@ import { useCherryPick } from '@/hooks/useCherryPick'
 import { useStatus } from '@/hooks/useStatus'
 import { CommitRow } from './CommitRow'
 import { GraphCanvas, ROW_HEIGHT } from './GraphCanvas'
+import { KeyHints } from '@/components/shared/KeyHints'
 import type { CommitNode } from '@/lib/types'
 
 const COL_WIDTH = 14
@@ -36,6 +37,7 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
   const [cols, setCols] = useState<ColState>({ graph: null, author: 130, date: 90 })
+  const [focused, setFocused] = useState(false)
   // anchor index for shift-click range selection
   const anchorIdx = useRef<number>(-1)
 
@@ -130,6 +132,12 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
     } else if (e.key === 'ArrowUp' || e.key === 'k') {
       nextIdx = Math.max(currentIdx - 1, 0)
       e.preventDefault()
+    } else if (e.key === 'Tab') {
+      e.preventDefault()
+      if (e.shiftKey) return // no panel before commits
+      const el = document.querySelector<HTMLElement>('[data-panel="history-detail"]')
+      el?.focus()
+      return
     } else if (e.key === 'Escape') {
       setSelectedCommits([])
       return
@@ -256,16 +264,22 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
 
         <div
           ref={scrollRef}
-          style={{ position: 'absolute', inset: 0, overflowY: 'auto', overflowX: 'hidden' }}
+          data-panel="history-commits"
+          style={{
+            position: 'absolute', inset: 0, overflowY: 'auto', overflowX: 'hidden',
+            outline: 'none',
+            boxShadow: focused ? 'inset 2px 0 0 var(--acc)' : 'none',
+          }}
           onScroll={handleScroll}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           onKeyDown={handleKeyDown}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           tabIndex={0}
           role="listbox"
           aria-label="Commit history"
           aria-multiselectable="true"
-          className="focus:outline-none"
         >
           <div style={{ height: commits.length * ROW_HEIGHT, position: 'relative' }}>
             {commits.slice(startIdx, endIdx).map((commit, i) => (
@@ -289,7 +303,17 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
             ))}
           </div>
         </div>
+
       </div>
+
+      {focused && (
+        <KeyHints hints={[
+          { keys: ['↑', '↓'], label: 'Navigate' },
+          { keys: ['Tab'], label: 'Detail' },
+          { keys: ['⇧+Click'], label: 'Range' },
+          { keys: ['⌘+Click'], label: 'Multi' },
+        ]} />
+      )}
     </div>
   )
 }

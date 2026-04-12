@@ -1,12 +1,19 @@
+import { useRef, useState, useCallback } from 'react'
 import { useFileDiff } from '@/hooks/useFileDiff'
 import { HunkBlock } from './HunkBlock'
 import { ConflictResolutionPanel } from './ConflictResolutionPanel'
+import { KeyHints } from '@/components/shared/KeyHints'
 import type { FileStatus } from '@/lib/types'
 
 function isConflicted(f: FileStatus): boolean {
   return f.staged === 'U' || f.unstaged === 'U' ||
     (f.staged === 'A' && f.unstaged === 'A') ||
     (f.staged === 'D' && f.unstaged === 'D')
+}
+
+function focusPanel(name: string) {
+  const el = document.querySelector<HTMLElement>(`[data-panel="${name}"]`)
+  el?.focus()
 }
 
 interface ChunkDiffPanelProps {
@@ -16,9 +23,62 @@ interface ChunkDiffPanelProps {
 }
 
 export function ChunkDiffPanel({ filePath, staged, fileStatus }: ChunkDiffPanelProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [focused, setFocused] = useState(false)
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if ((e.target as HTMLElement).tagName === 'BUTTON') return
+    const scroll = scrollRef.current
+    switch (e.key) {
+      case 'ArrowDown':
+      case 'j':
+        e.preventDefault()
+        scroll?.scrollBy({ top: 60 })
+        break
+      case 'ArrowUp':
+      case 'k':
+        e.preventDefault()
+        scroll?.scrollBy({ top: -60 })
+        break
+      case 'PageDown':
+        e.preventDefault()
+        scroll?.scrollBy({ top: scroll.clientHeight * 0.85 })
+        break
+      case 'PageUp':
+        e.preventDefault()
+        scroll?.scrollBy({ top: -scroll.clientHeight * 0.85 })
+        break
+      case 'Tab':
+        e.preventDefault()
+        if (e.shiftKey) {
+          focusPanel('changes-filelist')
+        } else {
+          focusPanel('changes-commitbox')
+        }
+        break
+      case 'Escape':
+        e.preventDefault()
+        focusPanel('changes-filelist')
+        break
+    }
+  }, [])
+
   if (isConflicted(fileStatus)) {
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div
+        ref={containerRef}
+        data-panel="changes-diff"
+        tabIndex={0}
+        onFocus={() => setFocused(true)}
+        onBlur={e => { if (!containerRef.current?.contains(e.relatedTarget as Node)) setFocused(false) }}
+        onKeyDown={handleKeyDown}
+        style={{
+          flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          outline: 'none',
+          boxShadow: focused ? 'inset 2px 0 0 var(--acc)' : 'none',
+        }}
+      >
         <div style={{
           flexShrink: 0, padding: '8px 14px',
           borderBottom: '1px solid var(--border-sub)',
@@ -33,6 +93,13 @@ export function ChunkDiffPanel({ filePath, staged, fileStatus }: ChunkDiffPanelP
           </span>
         </div>
         <ConflictResolutionPanel filePath={filePath} />
+        {focused && (
+          <KeyHints hints={[
+            { keys: ['↑', '↓'], label: 'Scroll' },
+            { keys: ['Tab'], label: 'Commit' },
+            { keys: ['Esc'], label: 'Files' },
+          ]} />
+        )}
       </div>
     )
   }
@@ -60,7 +127,19 @@ export function ChunkDiffPanel({ filePath, staged, fileStatus }: ChunkDiffPanelP
   const totalRemoved = hunks.reduce((n, h) => n + (h.lines?.filter(l => l.type === 'del').length ?? 0), 0)
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div
+      ref={containerRef}
+      data-panel="changes-diff"
+      tabIndex={0}
+      onFocus={() => setFocused(true)}
+      onBlur={e => { if (!containerRef.current?.contains(e.relatedTarget as Node)) setFocused(false) }}
+      onKeyDown={handleKeyDown}
+      style={{
+        flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        outline: 'none',
+        boxShadow: focused ? 'inset 2px 0 0 var(--acc)' : 'none',
+      }}
+    >
       {/* File header */}
       <div style={{
         flexShrink: 0, padding: '8px 14px',
@@ -87,7 +166,7 @@ export function ChunkDiffPanel({ filePath, staged, fileStatus }: ChunkDiffPanelP
       </div>
 
       {/* Hunks */}
-      <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-content)' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-content)' }}>
         {hunks.map((hunk, idx) => (
           <HunkBlock key={idx} hunk={hunk} filePath={filePath} staged={staged} />
         ))}
@@ -95,6 +174,15 @@ export function ChunkDiffPanel({ filePath, staged, fileStatus }: ChunkDiffPanelP
           <EmptyPanel message="No changes to display" />
         )}
       </div>
+
+      {focused && (
+        <KeyHints hints={[
+          { keys: ['↑', '↓'], label: 'Scroll' },
+          { keys: ['PgUp', 'PgDn'], label: 'Page' },
+          { keys: ['Tab'], label: 'Commit' },
+          { keys: ['Esc'], label: 'Files' },
+        ]} />
+      )}
     </div>
   )
 }
