@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 
 	gitpkg "bough/git"
@@ -222,6 +223,17 @@ func (a *App) DiscardFile(filePath string) error {
 	}
 	a.watcher.MarkStatusCall()
 	return a.repo.DiscardFile(filePath)
+}
+
+func (a *App) DiscardStagedFile(filePath string) error {
+	if err := a.requireLicense(); err != nil {
+		return err
+	}
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	a.watcher.MarkStatusCall()
+	return a.repo.DiscardStagedFile(filePath)
 }
 
 func (a *App) DiscardHunk(patch string) error {
@@ -635,6 +647,23 @@ func (a *App) OpenInFinder(path string) error {
 		cmd = exec.Command("explorer", path)
 	default:
 		cmd = exec.Command("xdg-open", path)
+	}
+	return cmd.Start()
+}
+
+// RevealInFinder reveals the given repo-relative file path in the platform's
+// native file browser, with the file selected where supported.
+// macOS: open -R, Windows: explorer /select, Linux: xdg-open on parent dir.
+func (a *App) RevealInFinder(relativePath string) error {
+	full := filepath.Join(a.repo.Path, relativePath)
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", "-R", full)
+	case "windows":
+		cmd = exec.Command("explorer", "/select,"+full)
+	default:
+		cmd = exec.Command("xdg-open", filepath.Dir(full))
 	}
 	return cmd.Start()
 }

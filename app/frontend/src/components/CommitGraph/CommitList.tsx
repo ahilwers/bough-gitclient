@@ -126,17 +126,30 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
     const currentIdx = commits.findIndex(c => c.hash === selectedCommit)
     let nextIdx = currentIdx
 
-    if (e.key === 'ArrowDown' || e.key === 'j') {
+    if (e.key === 'ArrowDown' || (e.key === 'j' && !e.ctrlKey)) {
       nextIdx = Math.min(currentIdx + 1, commits.length - 1)
       e.preventDefault()
-    } else if (e.key === 'ArrowUp' || e.key === 'k') {
+    } else if (e.key === 'ArrowUp' || (e.key === 'k' && !e.ctrlKey)) {
       nextIdx = Math.max(currentIdx - 1, 0)
       e.preventDefault()
-    } else if (e.key === 'Tab') {
+    } else if (e.key === 'G') {
+      nextIdx = commits.length - 1
       e.preventDefault()
-      if (e.shiftKey) return // no panel before commits
+    } else if ((e.key === 'l' || e.key === 'Tab') && !e.shiftKey) {
+      e.preventDefault()
+      if (e.key === 'l' && !e.ctrlKey) return // plain l — ignore
       const el = document.querySelector<HTMLElement>('[data-panel="history-detail"]')
       el?.focus()
+      return
+    } else if (e.key === 'Tab' && e.shiftKey) {
+      return // no panel before commits
+    } else if (e.key === 'd' && e.ctrlKey) {
+      e.preventDefault()
+      scrollRef.current?.scrollBy({ top: containerSize.height * 0.5 })
+      return
+    } else if (e.key === 'u' && e.ctrlKey) {
+      e.preventDefault()
+      scrollRef.current?.scrollBy({ top: -containerSize.height * 0.5 })
       return
     } else if (e.key === 'Escape') {
       setSelectedCommits([])
