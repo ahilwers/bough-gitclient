@@ -50,6 +50,20 @@ export default function ChangesView() {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (e.key === 'c' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault()
+        document.querySelector<HTMLTextAreaElement>('[data-commit-input]')?.focus()
+        return
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
       if (!selectedFile) return
       const mod = e.metaKey || e.ctrlKey
 

@@ -95,6 +95,7 @@ export function CommitBox() {
       }}
     >
       <textarea
+        data-commit-input
         value={message}
         onChange={e => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}

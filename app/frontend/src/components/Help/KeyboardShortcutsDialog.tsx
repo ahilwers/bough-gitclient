@@ -49,6 +49,7 @@ const SECTIONS: Section[] = [
   {
     title: 'Changes — Commit Box',
     rows: [
+      { keys: ['C'], label: 'Focus commit message (from any panel)' },
       { keys: ['⌘↵'], label: 'Commit' },
       { keys: ['Esc', 'Shift+Tab'], label: 'Move focus to diff panel' },
     ],
