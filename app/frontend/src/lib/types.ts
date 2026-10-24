@@ -108,6 +108,21 @@ export interface CherryPickState {
   pickedMessage: string
 }
 
+export interface RebaseAction {
+  action: 'pick' | 'reword' | 'squash' | 'fixup' | 'drop'
+  hash: string
+  message: string
+}
+
+export interface RebaseState {
+  inProgress: boolean
+  headName: string   // branch being rebased
+  onto: string       // friendly name of base commit
+  step: number
+  total: number
+  conflictCount: number
+}
+
 export interface RepoStatus {
   branch: string
   ahead: number
@@ -116,6 +131,7 @@ export interface RepoStatus {
   hasConflicts: boolean
   mergeState?: MergeState
   cherryPickState?: CherryPickState
+  rebaseState?: RebaseState
 }
 
 export interface Remote {

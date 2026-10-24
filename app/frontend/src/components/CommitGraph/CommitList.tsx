@@ -2,10 +2,12 @@ import { useRef, useCallback, useState, useEffect, useMemo } from 'react'
 import { useGitStore } from '@/stores/gitStore'
 import { useCommits } from '@/hooks/useCommits'
 import { useCherryPick } from '@/hooks/useCherryPick'
+import { useRebase } from '@/hooks/useRebase'
 import { useStatus } from '@/hooks/useStatus'
 import { CommitRow } from './CommitRow'
 import { GraphCanvas, ROW_HEIGHT } from './GraphCanvas'
 import { KeyHints } from '@/components/shared/KeyHints'
+import { RebaseSequenceEditor } from '@/components/HistoryView/RebaseSequenceEditor'
 import type { CommitNode } from '@/lib/types'
 
 const COL_WIDTH = 14
@@ -44,6 +46,15 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
   const { data: allCommits = [] } = useCommits(limit, all)
   const { data: status } = useStatus()
   const { cherryPickMutation } = useCherryPick()
+  const { startMutation: rebaseStartMutation } = useRebase()
+
+  // Rebase editor state
+  const [rebaseEditorCommits, setRebaseEditorCommits] = useState<CommitNode[] | null>(null)
+  // Reword dialog state
+  const [rewordCommit, setRewordCommit] = useState<CommitNode | null>(null)
+  const [rewordMessage, setRewordMessage] = useState('')
+  // Drop confirm state
+  const [dropCommit, setDropCommit] = useState<CommitNode | null>(null)
 
   const currentBranch = status?.branch ?? ''
 
@@ -198,6 +209,43 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
     cherryPickMutation.mutate({ hashes, combinedMessage })
   }, [cherryPickMutation])
 
+  // Open the full sequence editor for all commits from HEAD down to anchorHash.
+  const handleOpenRebaseEditor = useCallback((anchorHash: string) => {
+    const idx = commits.findIndex(c => c.hash === anchorHash)
+    if (idx === -1) return
+    setRebaseEditorCommits(commits.slice(0, idx + 1))
+  }, [commits])
+
+  // Quick reword: open dialog pre-filled with current message.
+  const handleReword = useCallback((commit: CommitNode) => {
+    setRewordCommit(commit)
+    setRewordMessage(commit.message)
+  }, [])
+
+  // Squash into parent: run rebase with [pick parent, squash this].
+  const handleSquash = useCallback((commit: CommitNode) => {
+    const idx = commits.findIndex(c => c.hash === commit.hash)
+    if (idx === -1 || idx === commits.length - 1) return // no parent in list
+    const parent = commits[idx + 1] // next commit (older) is the parent in newest-first list
+    rebaseStartMutation.mutate([
+      { action: 'squash', hash: commit.hash, message: commit.message },
+      { action: 'pick',   hash: parent.hash,  message: parent.message },
+    ])
+  }, [commits, rebaseStartMutation])
+
+  // Drop commit: open confirmation dialog.
+  const handleDrop = useCallback((commit: CommitNode) => {
+    setDropCommit(commit)
+  }, [])
+
+  const confirmDrop = useCallback(() => {
+    if (!dropCommit) return
+    rebaseStartMutation.mutate([
+      { action: 'drop', hash: dropCommit.hash, message: dropCommit.message },
+    ])
+    setDropCommit(null)
+  }, [dropCommit, rebaseStartMutation])
+
   const handleDragStart = useCallback((_commit: CommitNode) => {
     setIsDraggingCommits(true)
   }, [setIsDraggingCommits])
@@ -312,6 +360,10 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
                 selectedCommits={selectedCommits}
                 selectedCommitMessages={selectedCommitMessages}
                 currentBranch={currentBranch}
+                onOpenRebaseEditor={handleOpenRebaseEditor}
+                onReword={handleReword}
+                onSquash={handleSquash}
+                onDrop={handleDrop}
               />
             ))}
           </div>
@@ -326,6 +378,174 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
           { keys: ['⇧+Click'], label: 'Range' },
           { keys: ['⌘+Click'], label: 'Multi' },
         ]} />
+      )}
+
+      {/* Rebase sequence editor */}
+      {rebaseEditorCommits && (
+        <RebaseSequenceEditor
+          commits={rebaseEditorCommits}
+          onClose={() => setRebaseEditorCommits(null)}
+        />
+      )}
+
+      {/* Reword dialog */}
+      {rewordCommit && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 3000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.45)',
+          }}
+          onClick={() => setRewordCommit(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--bg-panel)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              padding: '20px 22px',
+              width: 480,
+              boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
+              display: 'flex', flexDirection: 'column', gap: 14,
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-pri)' }}>
+              Reword Commit
+            </div>
+            <code style={{ fontSize: 11, color: 'var(--text-ter)', fontFamily: 'monospace' }}>
+              {rewordCommit.shortHash}
+            </code>
+            <input
+              autoFocus
+              value={rewordMessage}
+              onChange={e => setRewordMessage(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Escape') { e.preventDefault(); setRewordCommit(null) }
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault()
+                  if (rewordMessage.trim()) {
+                    rebaseStartMutation.mutate(
+                      [{ action: 'reword', hash: rewordCommit.hash, message: rewordMessage.trim() }],
+                      { onSuccess: () => setRewordCommit(null) }
+                    )
+                  }
+                }
+              }}
+              style={{
+                border: '1px solid var(--border)', borderRadius: 6,
+                background: 'var(--bg-input)', color: 'var(--text-pri)',
+                fontSize: 12, fontFamily: 'monospace', padding: '7px 10px',
+                outline: 'none', width: '100%', boxSizing: 'border-box',
+              }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--acc)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button
+                onClick={() => setRewordCommit(null)}
+                style={{
+                  padding: '6px 14px', borderRadius: 5,
+                  border: '1px solid var(--border)', background: 'transparent',
+                  color: 'var(--text-sec)', fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (rewordMessage.trim()) {
+                    rebaseStartMutation.mutate(
+                      [{ action: 'reword', hash: rewordCommit.hash, message: rewordMessage.trim() }],
+                      { onSuccess: () => setRewordCommit(null) }
+                    )
+                  }
+                }}
+                disabled={!rewordMessage.trim() || rebaseStartMutation.isPending}
+                style={{
+                  padding: '6px 14px', borderRadius: 5, border: 'none',
+                  background: !rewordMessage.trim() || rebaseStartMutation.isPending ? 'var(--bg-badge)' : 'var(--acc)',
+                  color: !rewordMessage.trim() || rebaseStartMutation.isPending ? 'var(--text-ter)' : 'white',
+                  fontSize: 12, fontWeight: 600,
+                  cursor: !rewordMessage.trim() || rebaseStartMutation.isPending ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {rebaseStartMutation.isPending ? 'Rewording…' : 'Reword'}
+              </button>
+            </div>
+            <p style={{ margin: 0, fontSize: 10, color: 'var(--text-ter)' }}>
+              Press{' '}
+              <kbd style={{ padding: '1px 4px', background: 'var(--bg-badge)', borderRadius: 3, fontFamily: 'monospace', fontSize: 10 }}>
+                ⌘ Enter
+              </kbd>
+              {' '}to save
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Drop confirmation */}
+      {dropCommit && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 3000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.45)',
+          }}
+          onClick={() => setDropCommit(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--bg-panel)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              padding: '20px 24px',
+              width: 360,
+              boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
+              display: 'flex', flexDirection: 'column', gap: 14,
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Escape') { e.preventDefault(); setDropCommit(null) }
+              if (e.key === 'Enter') { e.preventDefault(); confirmDrop() }
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-pri)' }}>
+              Drop Commit?
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-sec)', lineHeight: 1.5 }}>
+              Commit{' '}
+              <code style={{ fontFamily: 'monospace', color: 'var(--text-pri)' }}>
+                {dropCommit.shortHash}
+              </code>
+              {' '}and all its changes will be permanently removed from history.
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button
+                autoFocus
+                onClick={() => setDropCommit(null)}
+                style={{
+                  padding: '6px 14px', borderRadius: 5,
+                  border: '1px solid var(--border)', background: 'transparent',
+                  color: 'var(--text-sec)', fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDrop}
+                disabled={rebaseStartMutation.isPending}
+                style={{
+                  padding: '6px 14px', borderRadius: 5, border: 'none',
+                  background: 'var(--danger)', color: 'white',
+                  fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                {rebaseStartMutation.isPending ? 'Dropping…' : 'Drop Commit'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

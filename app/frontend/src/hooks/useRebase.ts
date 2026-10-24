@@ -1,0 +1,54 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { StartInteractiveRebase, ContinueRebase, AbortRebase } from '@wailsjs/go/main/App'
+import { useGitStore } from '@/stores/gitStore'
+import { parseGitError } from '@/lib/format'
+import type { RebaseAction } from '@/lib/types'
+
+export function useRebase() {
+  const qc = useQueryClient()
+  const { showFlash, setView } = useGitStore()
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['status'] })
+    qc.invalidateQueries({ queryKey: ['commits'] })
+    qc.invalidateQueries({ queryKey: ['diff'] })
+  }
+
+  const startMutation = useMutation({
+    mutationFn: (actions: RebaseAction[]) => StartInteractiveRebase(actions),
+    onSuccess: () => {
+      invalidate()
+      showFlash('Rebase completed successfully')
+    },
+    onError: (err: Error) => {
+      // git rebase exits non-zero on conflict — the status now reflects the
+      // halted rebase (rebase-merge directory present, files conflicted).
+      invalidate()
+      setView('changes')
+      showFlash(parseGitError(err), 'danger', 8000)
+    },
+  })
+
+  const continueMutation = useMutation({
+    mutationFn: () => ContinueRebase(),
+    onSuccess: () => {
+      invalidate()
+      showFlash('Rebase continued')
+    },
+    onError: (err: Error) => {
+      invalidate()
+      showFlash(parseGitError(err), 'danger')
+    },
+  })
+
+  const abortMutation = useMutation({
+    mutationFn: () => AbortRebase(),
+    onSuccess: () => {
+      invalidate()
+      showFlash('Rebase aborted', 'info')
+    },
+    onError: (err: Error) => showFlash(parseGitError(err), 'danger'),
+  })
+
+  return { startMutation, continueMutation, abortMutation }
+}

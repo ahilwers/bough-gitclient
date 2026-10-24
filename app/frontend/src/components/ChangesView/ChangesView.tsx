@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
 import { StageFile, UnstageFile, DiscardFile, AbortMerge } from '@wailsjs/go/main/App'
+import { useRebase } from '@/hooks/useRebase'
 import { FileStatusList } from './FileStatusList'
 import { ChunkDiffPanel } from './ChunkDiffPanel'
 import { CommitBox } from './CommitBox'
@@ -19,6 +20,8 @@ export default function ChangesView() {
   const { data: status } = useStatus()
   const mergeState = status?.mergeState
   const cherryPickState = status?.cherryPickState
+  const rebaseState = status?.rebaseState
+  const { continueMutation: rebaseContinueMutation, abortMutation: rebaseAbortMutation } = useRebase()
   // Show cherry-pick banner: CHERRY_PICK_HEAD detected, Zustand flag set,
   // or conflicts exist with no merge in progress.
   const showCherryPickBanner = !!cherryPickState
@@ -268,6 +271,61 @@ export default function ChangesView() {
           >
             {abortCherryPickMutation.isPending && <Loader2 size={11} className="spin" />}
             Abort Cherry-pick
+          </button>
+        </div>
+      )}
+
+      {/* Rebase-in-progress banner */}
+      {rebaseState?.inProgress && (
+        <div style={{
+          flexShrink: 0,
+          padding: '7px 14px',
+          background: rebaseState.conflictCount > 0
+            ? 'color-mix(in srgb, var(--danger) 12%, var(--bg-panel))'
+            : 'color-mix(in srgb, var(--warn) 12%, var(--bg-panel))',
+          borderBottom: '1px solid var(--border-sub)',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span style={{
+            fontSize: 11, fontWeight: 700,
+            color: rebaseState.conflictCount > 0 ? 'var(--danger)' : 'var(--warn)',
+            letterSpacing: '0.04em',
+          }}>
+            REBASING
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--text-sec)', flex: 1 }}>
+            {rebaseState.conflictCount > 0
+              ? `${rebaseState.conflictCount} conflict${rebaseState.conflictCount !== 1 ? 's' : ''} remaining — resolve and commit to continue`
+              : `Step ${rebaseState.step} of ${rebaseState.total} — commit to continue rebasing '${rebaseState.headName}'`
+            }
+          </span>
+          {rebaseState.conflictCount === 0 && (
+            <button
+              onClick={() => rebaseContinueMutation.mutate()}
+              disabled={rebaseContinueMutation.isPending}
+              style={{
+                padding: '4px 10px', borderRadius: 5, border: 'none',
+                background: 'var(--acc)', color: 'white', fontSize: 11,
+                cursor: rebaseContinueMutation.isPending ? 'not-allowed' : 'pointer',
+                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
+              }}
+            >
+              {rebaseContinueMutation.isPending && <Loader2 size={11} className="spin" />}
+              Continue
+            </button>
+          )}
+          <button
+            onClick={() => rebaseAbortMutation.mutate()}
+            disabled={rebaseAbortMutation.isPending}
+            style={{
+              padding: '4px 10px', borderRadius: 5, border: '1px solid var(--border)',
+              background: 'transparent', color: 'var(--text-sec)', fontSize: 11,
+              cursor: rebaseAbortMutation.isPending ? 'not-allowed' : 'pointer',
+              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
+            }}
+          >
+            {rebaseAbortMutation.isPending && <Loader2 size={11} className="spin" />}
+            Abort Rebase
           </button>
         </div>
       )}

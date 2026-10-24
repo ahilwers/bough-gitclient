@@ -290,6 +290,44 @@ export namespace git {
 	        this.mergeMessage = source["mergeMessage"];
 	    }
 	}
+	export class RebaseAction {
+	    action: string;
+	    hash: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RebaseAction(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.action = source["action"];
+	        this.hash = source["hash"];
+	        this.message = source["message"];
+	    }
+	}
+	export class RebaseState {
+	    inProgress: boolean;
+	    headName: string;
+	    onto: string;
+	    step: number;
+	    total: number;
+	    conflictCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new RebaseState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.inProgress = source["inProgress"];
+	        this.headName = source["headName"];
+	        this.onto = source["onto"];
+	        this.step = source["step"];
+	        this.total = source["total"];
+	        this.conflictCount = source["conflictCount"];
+	    }
+	}
 	
 	export class Remote {
 	    name: string;
@@ -315,6 +353,7 @@ export namespace git {
 	    hasConflicts: boolean;
 	    mergeState?: MergeState;
 	    cherryPickState?: CherryPickState;
+	    rebaseState?: RebaseState;
 	
 	    static createFrom(source: any = {}) {
 	        return new RepoStatus(source);
@@ -329,6 +368,7 @@ export namespace git {
 	        this.hasConflicts = source["hasConflicts"];
 	        this.mergeState = this.convertValues(source["mergeState"], MergeState);
 	        this.cherryPickState = this.convertValues(source["cherryPickState"], CherryPickState);
+	        this.rebaseState = this.convertValues(source["rebaseState"], RebaseState);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

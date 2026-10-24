@@ -145,8 +145,12 @@ func (r *Repository) Status() (RepoStatus, error) {
 	}
 	mergeState := r.DetectMergeState(conflictCount)
 	var cherryPickState *CherryPickState
+	var rebaseState *RebaseState
 	if mergeState == nil {
 		cherryPickState = r.DetectCherryPickState(conflictCount)
+		if cherryPickState == nil {
+			rebaseState = r.DetectRebaseState(conflictCount)
+		}
 	}
 
 	return RepoStatus{
@@ -155,6 +159,7 @@ func (r *Repository) Status() (RepoStatus, error) {
 		HasConflicts:    hasConflicts,
 		MergeState:      mergeState,
 		CherryPickState: cherryPickState,
+		RebaseState:     rebaseState,
 	}, nil
 }
 

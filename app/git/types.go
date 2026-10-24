@@ -134,6 +134,25 @@ type CherryPickState struct {
 	PickedMessage string `json:"pickedMessage"` // commit message of the halted cherry-pick
 }
 
+// RebaseAction is one entry in an interactive rebase sequence.
+// Action is one of: "pick" | "reword" | "squash" | "fixup" | "drop"
+type RebaseAction struct {
+	Action  string `json:"action"`
+	Hash    string `json:"hash"`
+	Message string `json:"message"`
+}
+
+// RebaseState is set when an interactive rebase is in progress
+// (.git/rebase-merge directory exists).
+type RebaseState struct {
+	InProgress    bool   `json:"inProgress"`
+	HeadName      string `json:"headName"`      // branch being rebased
+	Onto          string `json:"onto"`          // friendly name of the base commit
+	Step          int    `json:"step"`          // current step (e.g. 2)
+	Total         int    `json:"total"`         // total steps (e.g. 5)
+	ConflictCount int    `json:"conflictCount"` // remaining conflicted files
+}
+
 // RepoStatus summarises the current state of a repository.
 type RepoStatus struct {
 	Branch          string           `json:"branch"`
@@ -143,4 +162,5 @@ type RepoStatus struct {
 	HasConflicts    bool             `json:"hasConflicts"`
 	MergeState      *MergeState      `json:"mergeState,omitempty"`
 	CherryPickState *CherryPickState `json:"cherryPickState,omitempty"`
+	RebaseState     *RebaseState     `json:"rebaseState,omitempty"`
 }

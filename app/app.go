@@ -451,6 +451,47 @@ func (a *App) AbortCherryPick() error {
 	return nil
 }
 
+// --- Interactive Rebase ---
+
+func (a *App) StartInteractiveRebase(actions []gitpkg.RebaseAction) error {
+	if err := a.requireLicense(); err != nil {
+		return err
+	}
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	err := a.repo.StartInteractiveRebase(actions)
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return err
+}
+
+func (a *App) ContinueRebase() error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	err := a.repo.ContinueRebase()
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return err
+}
+
+func (a *App) AbortRebase() error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.AbortRebase(); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
+func (a *App) CommitsOnRemote(hashes []string) ([]string, error) {
+	if a.repo == nil {
+		return nil, gitpkg.ErrNotARepo
+	}
+	return a.repo.CommitsOnRemote(hashes)
+}
+
 func (a *App) CheckoutBranch(branch string) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
