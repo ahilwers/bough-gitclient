@@ -21,6 +21,11 @@ interface CommitRowProps {
   selectedCommits: string[]
   selectedCommitMessages: string[]
   currentBranch: string
+  // Rebase callbacks (only offered for non-merge commits on local branches)
+  onOpenRebaseEditor: (anchorHash: string) => void
+  onReword: (commit: CommitNode) => void
+  onSquash: (commit: CommitNode) => void
+  onDrop: (commit: CommitNode) => void
 }
 
 export function CommitRow({
@@ -38,6 +43,10 @@ export function CommitRow({
   selectedCommits,
   selectedCommitMessages,
   currentBranch,
+  onOpenRebaseEditor,
+  onReword,
+  onSquash,
+  onDrop,
 }: CommitRowProps) {
   const timeAgo = formatRelativeDate(commit.date)
 
@@ -51,6 +60,10 @@ export function CommitRow({
     ? selectedCommitMessages.join('\n\n---\n\n')
     : commit.fullMessage
 
+  // Rebase actions are only available for single non-merge commits.
+  const isMergeCommit = commit.parents.length > 1
+  const canRebase = !isMergeCommit
+
   const contextItems = [
     {
       label: contextPickHashes.length > 1
@@ -58,6 +71,14 @@ export function CommitRow({
         : `Cherry-pick onto '${currentBranch}'`,
       onClick: () => onCherryPick(contextPickHashes, contextPickMessage),
     },
+    ...(canRebase ? [
+      { type: 'separator' as const },
+      { label: 'Reword Commit…', onClick: () => onReword(commit) },
+      { label: 'Squash into Parent', onClick: () => onSquash(commit) },
+      { label: 'Drop Commit', onClick: () => onDrop(commit), destructive: true },
+      { type: 'separator' as const },
+      { label: 'Interactive Rebase from here…', onClick: () => onOpenRebaseEditor(commit.hash) },
+    ] : []),
   ]
 
   const bg = isSelected

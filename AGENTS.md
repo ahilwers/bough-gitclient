@@ -133,3 +133,5 @@ After changes, run in order:
 3. `make test && make test-frontend` (unit tests)
 4. Check real Git repos (100+, 1000+, 10000+ commits)
 5. Test cross-platform: macOS x86_64/ARM, Windows, Linux
+
+## Imported Claude Cowork project instructions

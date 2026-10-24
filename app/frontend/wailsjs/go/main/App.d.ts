@@ -7,6 +7,8 @@ export function AbortCherryPick():Promise<void>;
 
 export function AbortMerge():Promise<void>;
 
+export function AbortRebase():Promise<void>;
+
 export function AcceptBoth(arg1:string):Promise<void>;
 
 export function ActivateLicense(arg1:string):Promise<license.LicenseStatus>;
@@ -34,6 +36,10 @@ export function CheckoutTag(arg1:string):Promise<void>;
 export function CheckoutTheirs(arg1:string):Promise<void>;
 
 export function CherryPickCommits(arg1:Array<string>):Promise<void>;
+
+export function CommitsOnRemote(arg1:Array<string>):Promise<Array<string>>;
+
+export function ContinueRebase():Promise<void>;
 
 export function CreateBranch(arg1:string,arg2:string,arg3:boolean):Promise<void>;
 
@@ -122,6 +128,8 @@ export function StageFile(arg1:string):Promise<void>;
 export function StageFiles(arg1:Array<string>):Promise<void>;
 
 export function StageHunk(arg1:string):Promise<void>;
+
+export function StartInteractiveRebase(arg1:Array<git.RebaseAction>):Promise<void>;
 
 export function StoreCredentials(arg1:string,arg2:string,arg3:string):Promise<void>;
 

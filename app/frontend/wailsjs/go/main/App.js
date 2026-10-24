@@ -10,6 +10,10 @@ export function AbortMerge() {
   return window['go']['main']['App']['AbortMerge']();
 }
 
+export function AbortRebase() {
+  return window['go']['main']['App']['AbortRebase']();
+}
+
 export function AcceptBoth(arg1) {
   return window['go']['main']['App']['AcceptBoth'](arg1);
 }
@@ -64,6 +68,14 @@ export function CheckoutTheirs(arg1) {
 
 export function CherryPickCommits(arg1) {
   return window['go']['main']['App']['CherryPickCommits'](arg1);
+}
+
+export function CommitsOnRemote(arg1) {
+  return window['go']['main']['App']['CommitsOnRemote'](arg1);
+}
+
+export function ContinueRebase() {
+  return window['go']['main']['App']['ContinueRebase']();
 }
 
 export function CreateBranch(arg1, arg2, arg3) {
@@ -240,6 +252,10 @@ export function StageFiles(arg1) {
 
 export function StageHunk(arg1) {
   return window['go']['main']['App']['StageHunk'](arg1);
+}
+
+export function StartInteractiveRebase(arg1) {
+  return window['go']['main']['App']['StartInteractiveRebase'](arg1);
 }
 
 export function StoreCredentials(arg1, arg2, arg3) {
