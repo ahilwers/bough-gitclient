@@ -50,7 +50,7 @@ cd app/frontend && npm run build
 ## Repository Layout
 
 ```
-app/            # Wails app (once scaffolded per plans/01-setup.md)
+app/            # Wails app (Wails 2 + React scaffold)
   main.go
   app.go        # Go backend methods bound to frontend via Wails
   frontend/     # React + TypeScript SPA
@@ -59,7 +59,6 @@ app/            # Wails app (once scaffolded per plans/01-setup.md)
       hooks/
       store/    # Zustand store
       i18n/     # EN + DE translations
-plans/          # Step-by-step implementation plans (read these before coding)
 docs/           # Research, design spec, prototype
 ```
 
@@ -100,21 +99,7 @@ The Changes view supports per-hunk and per-line staging. `StageHunk` / `UnstageH
 ### Auto-Update
 Version is embedded at compile time via `-ldflags`. A single appcast XML is served at a known URL; each platform's updater library polls it. EdDSA signatures are required on all update artifacts.
 
-## Implementation Plans
+## Further reading
 
-Before implementing any feature, read the relevant plan file in `plans/`:
-
-| File | Topic |
-|------|-------|
-| `plans/00-overview.md` | Phase roadmap, key decisions |
-| `plans/01-setup.md` | Wails scaffold, all dependencies, global CSS tokens, i18n |
-| `plans/02-git-backend.md` | Go types, backend methods |
-| `plans/03-commit-graph.md` | Canvas graph renderer |
-| `plans/04-frontend.md` | App shell, toolbar, sidebar, Zustand store |
-| `plans/05-history-view.md` | History view, CommitDetailPanel, Monaco diff |
-| `plans/06-changes-view.md` | Changes view, hunk staging, CommitBox |
-| `plans/07-worktrees.md` | Worktree management UI |
-| `plans/08-updates-distribution.md` | CI/CD, code signing, appcast |
-| `plans/09-licensing.md` | Note on the removed payment and licensing system |
-
-Feature plans end with verification checklists — use them to confirm completeness.
+- `docs/` — design and architecture documents
+- GitHub Issues — bug reports and feature requests

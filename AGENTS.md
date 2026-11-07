@@ -105,7 +105,6 @@ app/
 ├── update/                # Platform-specific updaters
 └── wails.json             # Wails configuration
 
-plans/                     # Implementation plans (read before coding)
 scripts/                   # Build/deploy utilities
 ```
 
@@ -128,19 +127,9 @@ scripts/                   # Build/deploy utilities
 
 ## Before Implementing Features
 
-**Always read the relevant plan file first:**
-- `plans/00-overview.md` - Phase roadmap
-- `plans/01-setup.md` - Wails scaffold, dependencies
-- `plans/02-git-backend.md` - Go types, backend methods
-- `plans/03-commit-graph.md` - Canvas graph renderer
-- `plans/04-frontend.md` - App shell, shared components  
-- `plans/05-history-view.md` - History view, diff viewer
-- `plans/06-changes-view.md` - Staging, chunk diff
-- `plans/07-worktrees.md` - Worktree management
-- `plans/08-updates-distribution.md` - CI/CD, signing
-- `plans/09-licensing.md` - Note on the removed payment and licensing system
-
-Feature plans have verification checklists — confirm completeness before moving on.
+Check the relevant documentation in `docs/` and the code conventions in this file before adding new
+features. Confirm your changes pass the [verification commands](#verification-commands) below before
+moving on.
 
 ## Verification Commands
 
