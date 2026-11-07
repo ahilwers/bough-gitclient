@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { useBranches } from '@/hooks/useBranches'
@@ -61,23 +62,17 @@ export function MergeConfirmDialog({ fromBranch, intoBranch, onClose }: Props) {
 
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 24 }}>
             <Dialog.Close asChild>
-              <button style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: 'none', color: 'var(--text-pri)', fontSize: 13, cursor: 'pointer' }}>
+              <Button variant="secondary">
                 Cancel
-              </button>
+              </Button>
             </Dialog.Close>
-            <button
+            <Button
               onClick={handleMerge}
               disabled={mergeMutation.isPending}
-              style={{
-                padding: '7px 14px', borderRadius: 6, border: 'none',
-                background: 'var(--acc)', color: '#fff',
-                fontSize: 13, fontWeight: 500,
-                cursor: mergeMutation.isPending ? 'not-allowed' : 'pointer',
-                opacity: mergeMutation.isPending ? 0.6 : 1,
-              }}
+              variant="primary"
             >
               {mergeMutation.isPending ? 'Merging…' : 'Merge'}
-            </button>
+            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

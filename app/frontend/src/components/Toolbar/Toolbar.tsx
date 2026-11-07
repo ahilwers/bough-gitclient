@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon, FolderOpen, FolderPlus, Globe, HelpCircle, Loader2 } from 'lucide-react'
@@ -202,12 +203,12 @@ export default function Toolbar() {
       {/* Repo selector dropdown */}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
-          <button className="toolbar-btn" style={{ maxWidth: 200, gap: 4, paddingLeft: 10, paddingRight: 8 }}>
+          <Button variant="ghost" style={{ display: 'flex', alignItems: 'center', height: 28, borderRadius: 'var(--r-sm)', maxWidth: 200, gap: 4, paddingLeft: 10, paddingRight: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {repoName}
             </span>
             <ChevronDown size={12} style={{ flexShrink: 0, color: 'var(--text-ter)' }} />
-          </button>
+          </Button>
         </DropdownMenu.Trigger>
 
         <DropdownMenu.Portal>
@@ -418,7 +419,7 @@ interface TabButtonProps {
 
 function TabButton({ icon, label, active, badge, onClick }: TabButtonProps) {
   return (
-    <button
+    <Button variant="ghost"
       onClick={onClick}
       style={{
         display: 'flex',
@@ -460,7 +461,7 @@ function TabButton({ icon, label, active, badge, onClick }: TabButtonProps) {
           {badge > 99 ? '99+' : badge}
         </span>
       )}
-    </button>
+    </Button>
   )
 }
 
@@ -473,26 +474,14 @@ interface IconButtonProps {
 
 function IconButton({ icon, label, onClick, disabled }: IconButtonProps) {
   return (
-    <button
+    <Button variant="icon"
       onClick={onClick}
       title={label}
       aria-label={label}
       disabled={disabled}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 30,
-        height: 30,
-        borderRadius: 'var(--r-sm)',
-        border: 'none',
-        background: 'transparent',
-        color: disabled ? 'var(--text-ter)' : 'var(--text-pri)',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.6 : 1,
-      }}
+      style={{ width: 30, height: 30 }}
     >
       {icon}
-    </button>
+    </Button>
   )
 }

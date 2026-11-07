@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { GetFileContent, CheckoutOurs, CheckoutTheirs, AcceptBoth, StageFile, OpenMergeToolForFile } from '@wailsjs/go/main/App'
@@ -89,16 +90,17 @@ export function ConflictResolutionPanel({ filePath }: Props) {
         <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--danger)', marginRight: 4 }}>
           Conflict
         </span>
-        <ActionButton label="Use Ours"    title="Accept the local (HEAD) version"       onClick={() => oursMutation.mutate()}        disabled={isPending} color="var(--acc)" />
-        <ActionButton label="Use Theirs"  title="Accept the incoming branch version"    onClick={() => theirsMutation.mutate()}      disabled={isPending} color="var(--success)" />
-        <ActionButton label="Use Both"    title="Keep both changes (remove markers)"    onClick={() => bothMutation.mutate()}        disabled={isPending} color="var(--warn)" />
+        <ActionButton label="Use Ours"    title="Accept the local (HEAD) version"    aria-label="Accept the local (HEAD) version"       onClick={() => oursMutation.mutate()}        disabled={isPending} color="var(--acc)" />
+        <ActionButton label="Use Theirs"  title="Accept the incoming branch version"  aria-label="Accept the incoming branch version"    onClick={() => theirsMutation.mutate()}      disabled={isPending} color="var(--success)" />
+        <ActionButton label="Use Both"    title="Keep both changes (remove markers)"    aria-label="Keep both changes (remove markers)"    onClick={() => bothMutation.mutate()}        disabled={isPending} color="var(--warn)" />
         <div style={{ flex: 1 }} />
-        <ActionButton label="External Tool" title="Open in git mergetool"               onClick={() => openToolMutation.mutate()}    disabled={openToolMutation.isPending} color="var(--text-sec)" subtle />
-        <ActionButton label="Mark Resolved" title="Stage the file after manual editing" onClick={() => markResolvedMutation.mutate()} disabled={isPending} color="var(--text-pri)" subtle />
+        <ActionButton label="External Tool" title="Open in git mergetool" aria-label="Open in git mergetool"               onClick={() => openToolMutation.mutate()}    disabled={openToolMutation.isPending} color="var(--text-sec)" subtle />
+        <ActionButton label="Mark Resolved" title="Stage the file after manual editing" aria-label="Stage the file after manual editing" onClick={() => markResolvedMutation.mutate()} disabled={isPending} color="var(--text-pri)" subtle />
         {isCherryPick && (
           <ActionButton
             label="Abort Cherry-pick"
             title="Abort the cherry-pick and restore the pre-pick state"
+            aria-label="Abort the cherry-pick and restore the pre-pick state"
             onClick={() => abortCherryPickMutation.mutate()}
             disabled={abortCherryPickMutation.isPending}
             color="var(--danger)"
@@ -111,7 +113,7 @@ export function ConflictResolutionPanel({ filePath }: Props) {
       {mergeCommits.length > 0 && (
         <div style={{ flexShrink: 0, borderBottom: '1px solid var(--border-sub)', background: 'var(--bg-panel)' }}>
           {/* Toggle row */}
-          <button
+          <Button variant="ghost"
             onClick={() => setCommitsExpanded(v => !v)}
             style={{
               width: '100%', padding: '5px 14px',
@@ -125,7 +127,7 @@ export function ConflictResolutionPanel({ filePath }: Props) {
               style={{ flexShrink: 0, color: 'var(--text-ter)', transform: commitsExpanded ? 'rotate(90deg)' : undefined, transition: 'transform 0.15s' }}
             />
             {mergeCommits.length} incoming commit{mergeCommits.length > 1 ? 's' : ''}
-          </button>
+          </Button>
 
           {/* Commit list */}
           {commitsExpanded && (
@@ -257,21 +259,13 @@ interface ActionButtonProps {
 
 function ActionButton({ label, title, onClick, disabled, color, subtle }: ActionButtonProps) {
   return (
-    <button
+    <Button variant={subtle ? 'secondary' : color === 'var(--danger)' ? 'danger' : 'primary'}
       onClick={onClick}
       disabled={disabled}
       title={title}
-      style={{
-        padding: '4px 10px', borderRadius: 5,
-        border: subtle ? `1px solid var(--border)` : 'none',
-        background: subtle ? 'transparent' : `color-mix(in srgb, ${color} 15%, transparent)`,
-        color, fontSize: 11, fontWeight: 600,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.5 : 1,
-        whiteSpace: 'nowrap',
-      }}
+      style={{ whiteSpace: 'nowrap' }}
     >
       {label}
-    </button>
+    </Button>
   )
 }

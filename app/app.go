@@ -14,6 +14,7 @@ import (
 
 // App holds application state and exposes methods to the frontend via Wails IPC.
 type App struct {
+	aiMu    sync.Mutex // Serializes AI settings writes and generation.
 	pullMu  sync.Mutex // Serializes pull validation/integration with repository and branch switches.
 	ctx     context.Context
 	repo    *gitpkg.Repository

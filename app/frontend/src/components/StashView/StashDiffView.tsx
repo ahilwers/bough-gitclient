@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
@@ -95,7 +96,7 @@ export function StashDiffView({ entry, onClose }: StashDiffViewProps) {
         background: 'var(--bg-panel)',
         borderBottom: '1px solid var(--border)',
       }}>
-        <button
+        <Button variant="icon" aria-label="Close"
           onClick={onClose}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
@@ -103,7 +104,7 @@ export function StashDiffView({ entry, onClose }: StashDiffViewProps) {
           }}
         >
           <X size={16} />
-        </button>
+        </Button>
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-pri)' }}>
@@ -188,19 +189,13 @@ export function StashDiffView({ entry, onClose }: StashDiffViewProps) {
                 <code style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-pri)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {activeDiffFile.path}
                 </code>
-                <button
+                <Button variant="primary"
                   onClick={() => applyFileMutation.mutate(activeDiffFile.path)}
                   disabled={applyFileMutation.isPending}
-                  style={{
-                    flexShrink: 0,
-                    padding: '3px 10px', borderRadius: 5, border: 'none',
-                    background: 'var(--acc)', color: '#fff',
-                    fontSize: 11, fontWeight: 600, cursor: applyFileMutation.isPending ? 'not-allowed' : 'pointer',
-                    opacity: applyFileMutation.isPending ? 0.6 : 1,
-                  }}
+                  style={{ flexShrink: 0 }}
                 >
                   Apply file
-                </button>
+                </Button>
               </div>
 
               {/* Hunks */}
@@ -264,9 +259,10 @@ function StashFileRow({ file, selected, onSelect, onApply }: StashFileRowProps) 
           {deleted > 0 && <span style={{ color: 'var(--danger)' }}>−{deleted}</span>}
         </div>
       </div>
-      <button
+      <Button variant="ghost"
         onClick={e => { e.stopPropagation(); onApply() }}
         title="Apply this file"
+        aria-label="Apply this file"
         style={{
           background: 'none', border: 'none', cursor: 'pointer',
           fontSize: 11, fontWeight: 600, color: 'var(--acc)',
@@ -275,27 +271,11 @@ function StashFileRow({ file, selected, onSelect, onApply }: StashFileRowProps) 
         }}
       >
         Apply
-      </button>
+      </Button>
     </div>
   )
 }
 
 function ActionButton({ label, onClick, disabled, danger }: { label: string; onClick: () => void; disabled: boolean; danger?: boolean }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        padding: '5px 12px', borderRadius: 6,
-        background: danger ? 'var(--danger)' : 'var(--bg-content)',
-        color: danger ? '#fff' : 'var(--text-pri)',
-        border: danger ? 'none' : '1px solid var(--border)',
-        fontSize: 12, fontWeight: 500,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.6 : 1,
-      } as React.CSSProperties}
-    >
-      {label}
-    </button>
-  )
+  return <Button variant={danger ? 'danger' : 'secondary'} onClick={onClick} disabled={disabled}>{label}</Button>
 }

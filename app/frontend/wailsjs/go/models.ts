@@ -354,11 +354,11 @@ export namespace git {
 	    branch: string;
 	    upstream: string;
 	    remotes: string[];
-
+	
 	    static createFrom(source: any = {}) {
 	        return new PushInfo(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.repoPath = source["repoPath"];
@@ -558,6 +558,29 @@ export namespace git {
 	        this.head = source["head"];
 	        this.isMain = source["isMain"];
 	        this.isDirty = source["isDirty"];
+	    }
+	}
+
+}
+
+export namespace main {
+	
+	export class AISettings {
+	    provider: string;
+	    baseURL: string;
+	    model: string;
+	    hasAPIKey: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AISettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.provider = source["provider"];
+	        this.baseURL = source["baseURL"];
+	        this.model = source["model"];
+	        this.hasAPIKey = source["hasAPIKey"];
 	    }
 	}
 
