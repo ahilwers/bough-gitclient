@@ -10,7 +10,7 @@ import { ManageRemotesDialog } from '@/components/RemoteManager/ManageRemotesDia
 import { KeyboardShortcutsDialog } from '@/components/Help/KeyboardShortcutsDialog'
 
 export default function Toolbar() {
-  const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash, theme, toggleTheme, licenseStatus, setLicenseDialogOpen, setHelpDialogOpen, setLoadingOperation } = useGitStore()
+  const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash, theme, toggleTheme, setHelpDialogOpen, setLoadingOperation } = useGitStore()
   const queryClient = useQueryClient()
   const { data: status } = useStatus()
   const [remoteDialogOpen, setRemoteDialogOpen] = useState(false)
@@ -279,29 +279,6 @@ export default function Toolbar() {
           label="Keyboard shortcuts (?)"
           onClick={() => setHelpDialogOpen(true)}
         />
-        {licenseStatus?.state === 'trial' && (
-          <>
-            <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
-            <button
-              onClick={() => setLicenseDialogOpen(true)}
-              title="Activate license"
-              style={{
-                height: 22,
-                padding: '0 8px',
-                borderRadius: 'var(--r-sm)',
-                border: '1px solid var(--warn)',
-                background: 'color-mix(in srgb, var(--warn) 15%, transparent)',
-                color: 'var(--warn)',
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Trial — {licenseStatus.daysLeft}d left
-            </button>
-          </>
-        )}
       </div>
 
       {remoteDialogOpen && <ManageRemotesDialog onClose={() => setRemoteDialogOpen(false)} />}

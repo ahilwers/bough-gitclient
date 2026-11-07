@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { EventsOn } from '@wailsjs/runtime/runtime'
-import { SaveWindowSize, GetRecentRepos, GetLicenseStatus } from '@wailsjs/go/main/App'
+import { SaveWindowSize, GetRecentRepos } from '@wailsjs/go/main/App'
 import { useGitStore } from '@/stores/gitStore'
 import { useKeyboard } from '@/hooks/useKeyboard'
 import Toolbar from '@/components/Toolbar/Toolbar'
@@ -11,10 +11,9 @@ import ChangesView from '@/components/ChangesView/ChangesView'
 import FlashNotification from '@/components/shared/FlashNotification'
 import ProgressBar from '@/components/shared/ProgressBar'
 import CommandPalette from '@/components/shared/CommandPalette'
-import { LicenseDialog } from '@/components/shared/LicenseDialog'
 
 export default function App() {
-  const { activeView, showSidebar, theme, licenseStatus, licenseDialogOpen, setLicenseDialogOpen } = useGitStore()
+  const { activeView, showSidebar, theme } = useGitStore()
   const queryClient = useQueryClient()
   const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -39,29 +38,6 @@ export default function App() {
     GetRecentRepos().then(repos => {
       if (repos?.length) useGitStore.getState().setRecentRepos(repos)
     }).catch(() => { /* non-critical */ })
-  }, [])
-
-  // Load license status on mount.
-  useEffect(() => {
-    GetLicenseStatus().then(status => {
-      const store = useGitStore.getState()
-      store.setLicenseStatus(status)
-      // Block access only when expired — trial users keep full access.
-      if (status.state === 'expired') {
-        store.setLicenseDialogOpen(true)
-      }
-    }).catch(() => { /* non-critical */ })
-  }, [])
-
-  // Listen for the server-side revocation event.
-  useEffect(() => {
-    const unsub = EventsOn('license:revoked', () => {
-      GetLicenseStatus().then(status => {
-        useGitStore.getState().setLicenseStatus(status)
-        useGitStore.getState().setLicenseDialogOpen(true)
-      }).catch(() => {})
-    })
-    return unsub
   }, [])
 
   // Persist window size across sessions.
@@ -99,9 +75,6 @@ export default function App() {
       <CommandPalette />
       <ProgressBar />
       <FlashNotification />
-      {licenseDialogOpen && licenseStatus && (
-        <LicenseDialog status={licenseStatus} />
-      )}
     </div>
   )
 }

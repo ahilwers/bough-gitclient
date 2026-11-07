@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project: Bough
 
-A cross-platform, native Git GUI client for macOS (primary), Windows, and Linux. One-time purchase with a 30-day free trial. No subscription, no bundled Chromium.
+A cross-platform, native Git GUI client for macOS (primary), Windows, and Linux. No usage restrictions or bundled Chromium.
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Desktop framework | Wails 2 (Go backend + native WebView, typed IPC) |
-| Backend | Go 1.22+ |
+| Backend | Go 1.27+ |
 | Git reads | go-git v5 |
 | Git writes (push/pull/fetch) | CLI exec.Command (for auth, GPG, hooks) |
 | Filesystem watching | fsnotify |
@@ -23,20 +23,22 @@ A cross-platform, native Git GUI client for macOS (primary), Windows, and Linux.
 | Diff viewer | Monaco Editor |
 | Animations | Framer Motion |
 | Auto-update | Sparkle 2 (macOS), WinSparkle (Windows), AppImageUpdate (Linux) |
-| Licensing | Ed25519-signed keys, OS keychain storage, offline validation |
 
 ## Development Commands
 
-All Wails commands must be run from `app/`:
+Requires Go 1.27+ and Node.js 22. Wails v2.17.1 is pinned as a Go tool in `app/go.mod`; no global CLI installation is needed. All Wails commands must be run from `app/`:
 
 ```bash
 # Start dev server (hot reload, Go + frontend)
-cd app && wails dev
+cd app && go tool wails dev
 
 # Production build  →  app/build/bin/Bough.app
-cd app && wails build
+cd app && go tool wails build
 
-# Go dependencies
+# Download pinned Go dependencies (including the Wails tool)
+cd app && go mod download
+
+# After changing Go dependencies
 cd app && go mod tidy
 
 # Frontend only
@@ -57,7 +59,6 @@ app/            # Wails app (once scaffolded per plans/01-setup.md)
       hooks/
       store/    # Zustand store
       i18n/     # EN + DE translations
-licenseserver/  # Separate Go HTTP service for license activation
 plans/          # Step-by-step implementation plans (read these before coding)
 docs/           # Research, design spec, prototype
 ```
@@ -99,9 +100,6 @@ The Changes view supports per-hunk and per-line staging. `StageHunk` / `UnstageH
 ### Auto-Update
 Version is embedded at compile time via `-ldflags`. A single appcast XML is served at a known URL; each platform's updater library polls it. EdDSA signatures are required on all update artifacts.
 
-### Licensing
-Ed25519 key pairs: private key on license server, public key embedded in binary. License keys are validated offline. OS keychain is used for storage (no plaintext files). Multi-seat: 1 license = 2 activations. Revocation checked via HTTP ~130 days post-activation.
-
 ## Implementation Plans
 
 Before implementing any feature, read the relevant plan file in `plans/`:
@@ -117,6 +115,6 @@ Before implementing any feature, read the relevant plan file in `plans/`:
 | `plans/06-changes-view.md` | Changes view, hunk staging, CommitBox |
 | `plans/07-worktrees.md` | Worktree management UI |
 | `plans/08-updates-distribution.md` | CI/CD, code signing, appcast |
-| `plans/09-licensing.md` | Trial system, license server |
+| `plans/09-licensing.md` | Note on the removed payment and licensing system |
 
-Each plan ends with a verification checklist — use it to confirm completeness.
+Feature plans end with verification checklists — use them to confirm completeness.

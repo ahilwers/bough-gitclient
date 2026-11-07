@@ -55,27 +55,6 @@
   },
   "errors": {
     "notARepo": "Not a git repository",
-    "generic": "An error occurred",
-    "licenseExpired": "Your license has expired. Please activate a license to continue."
-  },
-  "license": {
-    "dialog": {
-      "trialTitle": "{{days}} days left in your trial",
-      "expiredTitle": "Your trial has expired",
-      "trialSubtitle": "Purchase a license to keep full access after your trial ends.",
-      "expiredSubtitle": "You are now in read-only mode. Purchase a license to resume commits, push, and pull.",
-      "buyButton": "Buy Bough",
-      "orEnterKey": "or enter your license key",
-      "keyInputLabel": "License key",
-      "activateButton": "Activate",
-      "activating": "Activating…",
-      "continueReadOnly": "Continue"
-    },
-    "error": {
-      "emptyKey": "Please enter your license key.",
-      "invalidKey": "This key is not valid. Check for typos or contact support.",
-      "networkError": "Could not reach the activation server. Check your internet connection and try again.",
-      "activationFailed": "Activation failed. Please try again or contact support."
-    }
+    "generic": "An error occurred"
   }
 }
