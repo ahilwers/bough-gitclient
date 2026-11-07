@@ -30,6 +30,13 @@ jobs:
   build:
     name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
+    # Mirror signing secrets into job-level env so they can be tested in `if:`
+    # conditions (`secrets` is not an allowed context there).
+    env:
+      HAS_APPLE_CERT: ${{ secrets.APPLE_CERTIFICATE != '' }}
+      HAS_APPLE_API: ${{ secrets.APPLE_API_KEY != '' && secrets.APPLE_TEAM_ID != '' }}
+      HAS_WIN_CERT: ${{ secrets.SIGN_CERTIFICATE != '' }}
+      HAS_SPARKLE_PUB: ${{ secrets.SPARKLE_PUBLIC_KEY != '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -93,7 +100,7 @@ jobs:
       # Inject the Sparkle EdDSA public key into Info.plist if provided.
       # Needed only for the macOS auto-update to verify cast signatures.
       - name: Set Sparkle public key
-        if: matrix.family == 'macos' && secrets.SPARKLE_PUBLIC_KEY != ''
+        if: matrix.family == 'macos' && env.HAS_SPARKLE_PUB == 'true'
         env:
           SPARKLE_PUBLIC_KEY: ${{ secrets.SPARKLE_PUBLIC_KEY }}
         run: >-
@@ -111,7 +118,7 @@ jobs:
 
       # ── macOS: sign, package to DMG, notarize, staple ───────────────────────
       - name: Import Apple Developer certificate
-        if: matrix.family == 'macos' && secrets.APPLE_CERTIFICATE != ''
+        if: matrix.family == 'macos' && env.HAS_APPLE_CERT == 'true'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -150,7 +157,7 @@ jobs:
           mv "${{ matrix.pkg_basename }}.dmg" ../../../
 
       - name: Notarize & staple macOS
-        if: matrix.family == 'macos' && secrets.APPLE_API_KEY != '' && secrets.APPLE_TEAM_ID != ''
+        if: matrix.family == 'macos' && env.HAS_APPLE_API == 'true'
         env:
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -170,7 +177,7 @@ jobs:
 
       # ── Windows: sign NSIS installer ────────────────────────────────────────
       - name: Sign Windows installer
-        if: matrix.family == 'windows' && secrets.SIGN_CERTIFICATE != ''
+        if: matrix.family == 'windows' && env.HAS_WIN_CERT == 'true'
         env:
           SIGN_CERTIFICATE: ${{ secrets.SIGN_CERTIFICATE }}
           SIGN_PASSWORD: ${{ secrets.SIGN_PASSWORD }}
@@ -259,13 +266,15 @@ jobs:
 
   # ────────────────────── Appcast (optional auto-update) ──────────────────────
   # Generates the Sparkle appcast.xml and publishes it to the gh-pages branch,
-  # which hosting the XML at updates.bough.app enables. Optional: skipped when
-  # SPARKLE_PRIVATE_KEY is not configured. Failing here never blocks the release.
+  # which hosting the XML at updates.bough.app enables. Optional: steps are
+  # skipped when SPARKLE_PRIVATE_KEY is not configured. Failing here never
+  # blocks the release.
   appcast:
     name: Generate Appcast
     needs: publish
     runs-on: ubuntu-latest
-    if: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
+    env:
+      HAS_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
     permissions:
       contents: write
     steps:
@@ -274,12 +283,14 @@ jobs:
           fetch-depth: 0
 
       - name: Generate appcast
+        if: env.HAS_SPARKLE_KEY == 'true'
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: bash scripts/generate_appcast.sh "${{ env.VERSION }}"
 
       - name: Deploy appcast to gh-pages
+        if: env.HAS_SPARKLE_KEY == 'true'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
