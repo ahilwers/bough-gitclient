@@ -50,27 +50,6 @@
   },
   "errors": {
     "notARepo": "Kein Git-Repository",
-    "generic": "Ein Fehler ist aufgetreten",
-    "licenseExpired": "Deine Lizenz ist abgelaufen. Bitte aktiviere eine Lizenz, um fortzufahren."
-  },
-  "license": {
-    "dialog": {
-      "trialTitle": "{{days}} Tage verbleiben in deiner Testphase",
-      "expiredTitle": "Deine Testphase ist abgelaufen",
-      "trialSubtitle": "Kaufe eine Lizenz, um vollen Zugriff nach dem Ende der Testphase zu behalten.",
-      "expiredSubtitle": "Du befindest dich jetzt im Nur-Lese-Modus. Kaufe eine Lizenz, um Commits, Push und Pull wieder zu nutzen.",
-      "buyButton": "Bough kaufen",
-      "orEnterKey": "oder Lizenzschlüssel eingeben",
-      "keyInputLabel": "Lizenzschlüssel",
-      "activateButton": "Aktivieren",
-      "activating": "Wird aktiviert…",
-      "continueReadOnly": "Weiter"
-    },
-    "error": {
-      "emptyKey": "Bitte gib deinen Lizenzschlüssel ein.",
-      "invalidKey": "Dieser Schlüssel ist ungültig. Überprüfe die Eingabe oder wende dich an den Support.",
-      "networkError": "Der Aktivierungsserver ist nicht erreichbar. Überprüfe deine Internetverbindung und versuche es erneut.",
-      "activationFailed": "Aktivierung fehlgeschlagen. Bitte versuche es erneut oder wende dich an den Support."
-    }
+    "generic": "Ein Fehler ist aufgetreten"
   }
 }

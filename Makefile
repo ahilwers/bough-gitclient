@@ -9,13 +9,13 @@ LDFLAGS  := -X main.version=$(VERSION) -X main.buildDate=$(BUILD_DATE)
 
 ## dev: Start Wails dev server with hot reload (Go + React).
 dev:
-	cd app && wails dev
+	cd app && go tool wails dev
 
 # ── Production builds ─────────────────────────────────────────────────────────
 
 ## build-wails: Build the full Wails application (outputs to app/build/bin/).
 build-wails:
-	cd app && wails build -ldflags "$(LDFLAGS)"
+	cd app && go tool wails build -ldflags "$(LDFLAGS)"
 
 ## build: Build the Go binary only (no frontend embedding), useful for backend tests.
 build:

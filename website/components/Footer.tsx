@@ -14,7 +14,7 @@ export default function Footer() {
 
   const toggleLocale = () => {
     const newLocale = locale === 'en' ? 'de' : 'en'
-    const newPathname = pathname.replace(`/${locale}/`, `/${newLocale}/`)
+    const newPathname = pathname.replace(new RegExp(`^/${locale}(?=/|$)`), `/${newLocale}`)
     router.push(newPathname)
   }
 

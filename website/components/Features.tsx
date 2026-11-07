@@ -145,8 +145,8 @@ export default function Features() {
     },
     {
       icon: <ShieldIcon />,
-      title: t('subscription.title'),
-      description: t('subscription.desc'),
+      title: t('local.title'),
+      description: t('local.desc'),
     },
     {
       icon: <LightningIcon />,

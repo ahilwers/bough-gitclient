@@ -2,13 +2,11 @@ package main
 
 import (
 	"context"
-	"errors"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 
 	gitpkg "bough/git"
-	licensepkg "bough/license"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -36,21 +34,6 @@ func (a *App) startup(ctx context.Context) {
 	if err := gitpkg.EnsureCredentialHelper(); err != nil {
 		wailsruntime.LogWarning(ctx, "Could not configure credential helper: "+err.Error())
 	}
-
-	// Start trial clock on first launch (no-op on subsequent launches).
-	_ = licensepkg.EnsureTrialStarted()
-
-	// Run the one-time post-dispute revocation check in the background.
-	go func() {
-		status := licensepkg.GetStatus()
-		if status.State == "active" {
-			licensepkg.MaybeCheckRevocation(status.LicenseKey, status.ActivatedAt)
-			newStatus := licensepkg.GetStatus()
-			if newStatus.State != "active" {
-				wailsruntime.EventsEmit(ctx, "license:revoked")
-			}
-		}
-	}()
 
 	var err error
 	a.watcher, err = gitpkg.NewWatcher()
@@ -149,9 +132,6 @@ func (a *App) GetUntrackedFileDiff(filePath string) (*gitpkg.DiffFile, error) {
 // --- Staging ---
 
 func (a *App) StageFiles(filePaths []string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -160,9 +140,6 @@ func (a *App) StageFiles(filePaths []string) error {
 }
 
 func (a *App) UnstageFiles(filePaths []string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -171,9 +148,6 @@ func (a *App) UnstageFiles(filePaths []string) error {
 }
 
 func (a *App) StageFile(filePath string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -182,9 +156,6 @@ func (a *App) StageFile(filePath string) error {
 }
 
 func (a *App) UnstageFile(filePath string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -193,9 +164,6 @@ func (a *App) UnstageFile(filePath string) error {
 }
 
 func (a *App) StageHunk(patch string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -204,9 +172,6 @@ func (a *App) StageHunk(patch string) error {
 }
 
 func (a *App) UnstageHunk(patch string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -215,9 +180,6 @@ func (a *App) UnstageHunk(patch string) error {
 }
 
 func (a *App) DiscardFile(filePath string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -226,9 +188,6 @@ func (a *App) DiscardFile(filePath string) error {
 }
 
 func (a *App) DiscardStagedFile(filePath string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -237,9 +196,6 @@ func (a *App) DiscardStagedFile(filePath string) error {
 }
 
 func (a *App) DiscardHunk(patch string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -248,9 +204,6 @@ func (a *App) DiscardHunk(patch string) error {
 }
 
 func (a *App) CreateCommit(message string) (string, error) {
-	if err := a.requireLicense(); err != nil {
-		return "", err
-	}
 	if a.repo == nil {
 		return "", gitpkg.ErrNotARepo
 	}
@@ -258,9 +211,6 @@ func (a *App) CreateCommit(message string) (string, error) {
 }
 
 func (a *App) AmendCommit(message string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -270,9 +220,6 @@ func (a *App) AmendCommit(message string) error {
 // --- Remote operations (CLI-git) ---
 
 func (a *App) Fetch(remote string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -285,9 +232,6 @@ func (a *App) Fetch(remote string) error {
 }
 
 func (a *App) Pull(remote, branch string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -296,9 +240,6 @@ func (a *App) Pull(remote, branch string) error {
 }
 
 func (a *App) Push(remote, branch string, force bool) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -329,9 +270,6 @@ func (a *App) ListBranches() (gitpkg.BranchList, error) {
 }
 
 func (a *App) CreateBranch(name, from string, checkoutAfter bool) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -343,9 +281,6 @@ func (a *App) CreateBranch(name, from string, checkoutAfter bool) error {
 }
 
 func (a *App) MergeBranch(from string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -428,9 +363,6 @@ func (a *App) GetMergeCommits() ([]gitpkg.CommitNode, error) {
 }
 
 func (a *App) CherryPickCommits(hashes []string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -454,9 +386,6 @@ func (a *App) AbortCherryPick() error {
 // --- Interactive Rebase ---
 
 func (a *App) StartInteractiveRebase(actions []gitpkg.RebaseAction) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -717,34 +646,6 @@ func (a *App) GetAppVersion() string {
 	return version
 }
 
-// --- Licensing ---
-
-// GetLicenseStatus returns the current trial/activation status.
-// Called by the frontend on load and after a successful ActivateLicense call.
-func (a *App) GetLicenseStatus() licensepkg.LicenseStatus {
-	return licensepkg.GetStatus()
-}
-
-// ActivateLicense sends key to the license server, stores the signed record, and
-// returns the updated status. Returns an error when the key is invalid or the
-// server is unreachable.
-func (a *App) ActivateLicense(key string) (licensepkg.LicenseStatus, error) {
-	if err := licensepkg.ActivateWithServer(key); err != nil {
-		return licensepkg.LicenseStatus{State: "invalid"}, err
-	}
-	return licensepkg.GetStatus(), nil
-}
-
-// requireLicense returns an error when the license has expired. All write
-// operations call this guard so the app enters read-only mode automatically.
-func (a *App) requireLicense() error {
-	status := licensepkg.GetStatus()
-	if status.State == "expired" || status.State == "invalid" {
-		return errors.New("license:expired")
-	}
-	return nil
-}
-
 // --- Window state ---
 
 // SaveWindowSize persists the window dimensions and current position so the
@@ -800,9 +701,6 @@ func (a *App) ListRemotes() ([]gitpkg.Remote, error) {
 }
 
 func (a *App) AddRemote(name, url string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -810,9 +708,6 @@ func (a *App) AddRemote(name, url string) error {
 }
 
 func (a *App) UpdateRemote(name, url string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -820,9 +715,6 @@ func (a *App) UpdateRemote(name, url string) error {
 }
 
 func (a *App) RenameRemote(oldName, newName string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -830,9 +722,6 @@ func (a *App) RenameRemote(oldName, newName string) error {
 }
 
 func (a *App) RemoveRemote(name string) error {
-	if err := a.requireLicense(); err != nil {
-		return err
-	}
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}

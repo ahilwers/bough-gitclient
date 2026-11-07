@@ -44,7 +44,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version-file: app/go.mod
           cache-dependency-path: app/go.sum
 
       - uses: actions/setup-node@v4
@@ -53,17 +53,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: app/frontend/package-lock.json
 
+      - name: Download Go dependencies
+        run: go mod download
+        working-directory: app
+
       # ── Platform dependencies ─────────────────────────────────────────────
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install create-dmg
-          go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-      - name: Install dependencies (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
@@ -75,7 +73,6 @@ jobs:
             appimagetool \
             fuse \
             libfuse2
-          go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
       # ── Build ─────────────────────────────────────────────────────────────
       - name: Build Wails app (macOS — with Sparkle CGo)
@@ -83,7 +80,7 @@ jobs:
         env:
           CGO_ENABLED: '1'
         run: |
-          wails build \
+          go tool wails build \
             -platform ${{ matrix.wails_platform }} \
             -tags sparkle \
             -ldflags "-X main.version=${{ github.ref_name }} -X main.buildDate=$(date -u +%Y-%m-%d)"
@@ -94,7 +91,7 @@ jobs:
         env:
           CGO_ENABLED: '1'
         run: |
-          wails build \
+          go tool wails build \
             -platform ${{ matrix.wails_platform }} \
             -ldflags "-X main.version=${{ github.ref_name }} -X main.buildDate=$(date -u +%Y-%m-%d)"
         working-directory: app

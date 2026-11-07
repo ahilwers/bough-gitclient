@@ -8,12 +8,12 @@ export default function Stats() {
 
   const stats = [
     {
-      value: t('price'),
-      label: t('priceDesc'),
+      value: t('free'),
+      label: t('freeDesc'),
     },
     {
-      value: t('trial'),
-      label: t('trialDesc'),
+      value: t('native'),
+      label: t('nativeDesc'),
     },
     {
       value: t('platforms'),

@@ -32,16 +32,6 @@ export function formatRelativeDate(date: Date | string): string {
 }
 
 /**
- * Masks all but the first two segments of a Bough license key.
- * e.g. "BOUGH-A3F2K-XMPL9-QZ7RT-4WJHB" → "BOUGH-A3F2K-****-****-****"
- */
-export function maskLicenseKey(key: string): string {
-  const parts = key.split('-')
-  if (parts.length < 3) return key
-  return [parts[0], parts[1], ...parts.slice(2).map(() => '****')].join('-')
-}
-
-/**
  * Returns the last component of a file path (the filename).
  */
 export function basename(path: string): string {

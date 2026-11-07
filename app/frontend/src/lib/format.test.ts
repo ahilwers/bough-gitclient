@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { shortHash, formatRelativeDate, maskLicenseKey, basename, parseGitError } from './format'
+import { shortHash, formatRelativeDate, basename, parseGitError } from './format'
 
 describe('shortHash', () => {
   it('returns first 7 chars of a full hash', () => {
@@ -13,19 +13,6 @@ describe('shortHash', () => {
   })
   it('handles empty string', () => {
     expect(shortHash('')).toBe('')
-  })
-})
-
-describe('maskLicenseKey', () => {
-  it('masks all but the first two segments', () => {
-    expect(maskLicenseKey('BOUGH-A3F2K-XMPL9-QZ7RT-4WJHB'))
-      .toBe('BOUGH-A3F2K-****-****-****')
-  })
-  it('handles a key with exactly 2 segments (no masking needed)', () => {
-    expect(maskLicenseKey('BOUGH-A3F2K')).toBe('BOUGH-A3F2K')
-  })
-  it('handles a key with 3 segments', () => {
-    expect(maskLicenseKey('BOUGH-A3F2K-XMPL9')).toBe('BOUGH-A3F2K-****')
   })
 })
 

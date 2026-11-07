@@ -3,7 +3,7 @@ name: Deploy Website
 on:
   push:
     branches: [main]
-    paths: [website/**]
+    paths: [website/**, .github/workflows/website.yml]
 
 jobs:
   build:
@@ -28,10 +28,10 @@ jobs:
       - name: Build
         run: pnpm build
         working-directory: website
-        env:
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_PRICE_ID: ${{ secrets.STRIPE_PRICE_ID }}
-          NEXT_PUBLIC_BASE_URL: https://boughapp.com
+
+      - name: Test
+        run: pnpm test
+        working-directory: website
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

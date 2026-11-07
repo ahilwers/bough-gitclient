@@ -2,7 +2,7 @@
 
 **Phase:** Ongoing — tests are written alongside the feature they cover, not after.
 **Prerequisite:** `01-setup.md` complete
-**Goal:** Reliable, fast, maintainable test suite covering Go backend, frontend components, and the license server. UI tests run without a real Wails build.
+**Goal:** Reliable, fast, maintainable test suite covering the Go backend and frontend components. UI tests run without a real Wails build.
 
 ---
 
@@ -10,8 +10,7 @@
 
 | Layer | Tool | What it tests |
 |---|---|---|
-| Go backend (`app/git/`, `app/license/`, `app/update/`) | `go test` | Git operations, diff parsing, staging, auth, license validation |
-| License server (`licenseserver/`) | `go test` | Webhook handler, key generation, revocation, mailer mock |
+| Go backend (`app/git/`, `app/update/`) | `go test` | Git operations, diff parsing, staging, auth, updates |
 | Frontend units (`app/frontend/src/lib/`, hooks) | Vitest | Pure functions, Zustand store, TanStack Query hooks |
 | Frontend components | Vitest + React Testing Library | UI components with mocked Wails bindings |
 | End-to-end flows | Playwright | Full user flows against Vite dev server with mocked backend |
@@ -232,162 +231,7 @@ cd app && go test -race ./...
 
 ---
 
-## 4. License Server Tests (`licenseserver/`)
-
-### Key generation tests (`licenseserver/keygen/keygen_test.go`)
-
-```go
-package keygen_test
-
-import (
-    "crypto/ed25519"
-    "crypto/rand"
-    "encoding/hex"
-    "strings"
-    "testing"
-
-    "bough/licenseserver/keygen"
-)
-
-func newTestKeyGen(t *testing.T) *keygen.KeyGen {
-    t.Helper()
-    _, priv, _ := ed25519.GenerateKey(rand.Reader)
-    seed := priv.Seed()
-    return keygen.New(hex.EncodeToString(seed))
-}
-
-func TestGenerate_Format(t *testing.T) {
-    kg := newTestKeyGen(t)
-    key, err := kg.Generate("test@example.com", "indie", "perpetual")
-    if err != nil {
-        t.Fatalf("Generate: %v", err)
-    }
-    parts := strings.Split(key, "-")
-    if len(parts) != 5 || parts[0] != "BOUGH" {
-        t.Errorf("unexpected key format: %q", key)
-    }
-}
-
-func TestGenerate_Deterministic(t *testing.T) {
-    kg := newTestKeyGen(t)
-    k1, _ := kg.Generate("a@b.com", "indie", "perpetual")
-    k2, _ := kg.Generate("a@b.com", "indie", "perpetual")
-    if k1 != k2 {
-        t.Error("Generate is not deterministic for same inputs")
-    }
-}
-
-func TestGenerate_DifferentEmails(t *testing.T) {
-    kg := newTestKeyGen(t)
-    k1, _ := kg.Generate("alice@b.com", "indie", "perpetual")
-    k2, _ := kg.Generate("bob@b.com", "indie", "perpetual")
-    if k1 == k2 {
-        t.Error("different emails should produce different keys")
-    }
-}
-```
-
-### Webhook handler tests (`licenseserver/handler/webhook_test.go`)
-
-```go
-package handler_test
-
-import (
-    "bytes"
-    "encoding/json"
-    "net/http"
-    "net/http/httptest"
-    "testing"
-
-    "bough/licenseserver/handler"
-    "bough/licenseserver/keygen"
-    "bough/licenseserver/store"
-)
-
-// mockMailer records sent emails without actually sending them.
-type mockMailer struct {
-    Sent []struct{ To, Key string }
-}
-
-func (m *mockMailer) SendLicenseKey(to, key string) error {
-    m.Sent = append(m.Sent, struct{ To, Key string }{to, key})
-    return nil
-}
-
-func TestWebhook_CheckoutCompleted(t *testing.T) {
-    kg := newTestKeyGen(t)
-    ml := &mockMailer{}
-    db, _ := store.Open(":memory:")
-
-    // Build a fake Stripe checkout.session.completed event
-    event := map[string]any{
-        "type": "checkout.session.completed",
-        "data": map[string]any{
-            "object": map[string]any{
-                "id": "cs_test_123",
-                "customer_details": map[string]any{
-                    "email": "buyer@example.com",
-                },
-            },
-        },
-    }
-    body, _ := json.Marshal(event)
-
-    // Use a test secret and bypass Stripe signature verification
-    // by injecting a test-mode handler variant
-    h := handler.WebhookForTest(kg, ml, db)
-    req := httptest.NewRequest("POST", "/webhook", bytes.NewReader(body))
-    rec := httptest.NewRecorder()
-    h.ServeHTTP(rec, req)
-
-    if rec.Code != http.StatusOK {
-        t.Errorf("status = %d, want 200", rec.Code)
-    }
-    if len(ml.Sent) != 1 {
-        t.Fatalf("expected 1 email sent, got %d", len(ml.Sent))
-    }
-    if ml.Sent[0].To != "buyer@example.com" {
-        t.Errorf("email To = %q, want buyer@example.com", ml.Sent[0].To)
-    }
-}
-
-func TestWebhook_Refund_RevokesKey(t *testing.T) {
-    kg := newTestKeyGen(t)
-    ml := &mockMailer{}
-    db, _ := store.Open(":memory:")
-
-    // Pre-insert a key linked to a payment
-    db.SaveIssuedKey("BOUGH-TEST-KEY", "buyer@example.com", "ch_test_456")
-
-    event := map[string]any{
-        "type": "charge.refunded",
-        "data": map[string]any{
-            "object": map[string]any{"id": "ch_test_456"},
-        },
-    }
-    body, _ := json.Marshal(event)
-
-    h := handler.WebhookForTest(kg, ml, db)
-    req := httptest.NewRequest("POST", "/webhook", bytes.NewReader(body))
-    rec := httptest.NewRecorder()
-    h.ServeHTTP(rec, req)
-
-    if rec.Code != http.StatusOK {
-        t.Errorf("status = %d, want 200", rec.Code)
-    }
-
-    revoked, _ := db.GetRevokedKeys()
-    if len(revoked) != 1 || revoked[0] != "BOUGH-TEST-KEY" {
-        t.Errorf("key not revoked after refund: %v", revoked)
-    }
-}
-```
-
-> **Note:** `handler.WebhookForTest()` is a variant of the webhook handler that skips Stripe signature verification — only compiled into test binaries via a `_test.go` helper file. The production `handler.Webhook()` always verifies signatures.
-
----
-
-## 5. Frontend Unit Tests (Vitest)
+## 4. Frontend Unit Tests (Vitest)
 
 ### Setup (`app/frontend/vitest.config.ts`)
 
@@ -435,7 +279,7 @@ This file mirrors the auto-generated `wailsjs/go/main/App.ts` but returns contro
 
 ```typescript
 import { vi } from 'vitest'
-import type { CommitNode, RepoStatus, LicenseStatus } from '@/lib/types'
+import type { CommitNode, RepoStatus } from '@/lib/types'
 
 // Default mock implementations — override per-test with vi.mocked(...).mockResolvedValue(...)
 export const OpenRepository = vi.fn<[string], Promise<string>>()
@@ -446,9 +290,6 @@ export const GetCommits = vi.fn<[number], Promise<CommitNode[]>>()
 
 export const GetStatus = vi.fn<[], Promise<RepoStatus>>()
   .mockResolvedValue({ staged: [], unstaged: [], untracked: [] })
-
-export const GetLicenseStatus = vi.fn<[], Promise<LicenseStatus>>()
-  .mockResolvedValue({ state: 'active', daysLeft: 0, licenseKey: 'BOUGH-TEST-****', email: 'test@example.com' })
 
 export const CreateCommit = vi.fn<[string], Promise<string>>()
   .mockResolvedValue('abc1234')
@@ -463,7 +304,7 @@ export const Push = vi.fn<[string, string, boolean], Promise<void>>()
 
 ```typescript
 import { describe, it, expect } from 'vitest'
-import { formatRelativeDate, shortHash, maskLicenseKey } from './format'
+import { shortHash } from './format'
 
 describe('shortHash', () => {
   it('returns first 7 chars of a full hash', () => {
@@ -471,13 +312,6 @@ describe('shortHash', () => {
   })
   it('returns the full string if shorter than 7', () => {
     expect(shortHash('abc')).toBe('abc')
-  })
-})
-
-describe('maskLicenseKey', () => {
-  it('masks the last three segments', () => {
-    expect(maskLicenseKey('BOUGH-A3F2K-XMPL9-QZ7RT-4WJHB'))
-      .toBe('BOUGH-A3F2K-****-****-****')
   })
 })
 ```
@@ -538,38 +372,6 @@ describe('useCommits', () => {
 })
 ```
 
-### Component tests (`app/frontend/src/components/shared/LicenseDialog.test.tsx`)
-
-```typescript
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
-import { LicenseDialog } from './LicenseDialog'
-import { ActivateLicense } from '@/wailsjs/go/main/App'
-
-describe('LicenseDialog', () => {
-  it('shows trial days remaining when in trial', () => {
-    render(<LicenseDialog status={{ state: 'trial', daysLeft: 12 }} />)
-    expect(screen.getByText(/12 days/i)).toBeInTheDocument()
-  })
-
-  it('calls ActivateLicense with entered key', async () => {
-    vi.mocked(ActivateLicense).mockResolvedValue(
-      { state: 'active', daysLeft: 0, licenseKey: 'BOUGH-TEST-****', email: 'a@b.com' }
-    )
-    render(<LicenseDialog status={{ state: 'expired', daysLeft: 0 }} />)
-
-    fireEvent.change(screen.getByPlaceholderText(/BOUGH-/i), {
-      target: { value: 'BOUGH-A3F2K-XMPL9-QZ7RT-4WJHB' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /activate/i }))
-
-    await waitFor(() =>
-      expect(ActivateLicense).toHaveBeenCalledWith('BOUGH-A3F2K-XMPL9-QZ7RT-4WJHB')
-    )
-  })
-})
-```
-
 ### Running frontend tests
 
 ```bash
@@ -598,7 +400,7 @@ npm run test:coverage
 
 ---
 
-## 6. End-to-End Tests (Playwright)
+## 5. End-to-End Tests (Playwright)
 
 E2E tests run the frontend in Vite dev server mode with fully mocked Wails bindings. No Wails build is required.
 
@@ -681,9 +483,9 @@ npx playwright test --ui
 
 ---
 
-## 7. CI Pipeline (`.github/workflows/test.yml`)
+## 6. CI Pipeline (`.github/workflows/test.yml`)
 
-Tests run on every push and pull request.
+Tests run on pushes to `main` and every pull request. Go 1.27 is selected from `app/go.mod`; Wails v2.17.1 is a pinned Go tool, not a global CLI. In addition to Go tests, macOS CI runs `go tool wails build` from `app/` with Node.js 22 to check binding generation and the production frontend/native build.
 
 ```yaml
 name: Tests
@@ -701,15 +503,52 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version-file: app/go.mod
+          cache-dependency-path: app/go.sum
 
-      - name: Test app backend
-        run: go test -race -cover ./...
+      - name: Download Go dependencies
+        run: go mod download
         working-directory: app
 
-      - name: Test license server
-        run: go test -race -cover ./...
-        working-directory: licenseserver
+      - name: Test app backend
+        run: go test -race -cover ./git/...
+        working-directory: app
+
+  app-tests:
+    name: Wails App Tests and Build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: app/go.mod
+          cache-dependency-path: app/go.sum
+
+      - name: Download Go dependencies
+        run: go mod download
+        working-directory: app
+
+      - name: Prepare embedded assets for Go tests
+        run: mkdir -p frontend/dist && touch frontend/dist/.placeholder
+        working-directory: app
+
+      - name: Test app bindings
+        run: go test -race -cover .
+        working-directory: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: app/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: app/frontend
+
+      - name: Build Wails app with generated bindings
+        run: go tool wails build
+        working-directory: app
 
   frontend-tests:
     name: Frontend Tests (Vitest)
@@ -769,35 +608,30 @@ jobs:
 
 ---
 
-## 8. Coverage Targets
+## 7. Coverage Targets
 
 These are guidelines, not hard gates — pragmatic coverage matters more than hitting a number.
 
 | Package | Target |
 |---|---|
 | `app/git/` | ≥ 80% |
-| `app/license/` | ≥ 90% (correctness is critical here) |
-| `licenseserver/keygen/` | 100% |
-| `licenseserver/handler/` | ≥ 85% |
 | Frontend lib/utils | ≥ 90% |
 | Frontend components | ≥ 70% (happy path + key error states) |
 
 ---
 
-## 9. What Not to Test
+## 8. What Not to Test
 
 - Auto-generated Wails bindings (`wailsjs/`) — these are generated code
 - The Canvas 2D graph renderer — pixel-level rendering is not testable in jsdom; test the *data* (swimlane algorithm in Go) instead
-- OS keychain calls in `license/store.go` — mock the `LoadLicense`/`SaveLicense` interface boundary in tests
 - Sparkle/WinSparkle CGo bindings — these are third-party libraries; test the Go wrapper that calls them
 
 ---
 
-## 10. Checklist
+## 9. Checklist
 
 **Setup:**
 - [ ] `go test ./...` passes in `app/` with no failures
-- [ ] `go test ./...` passes in `licenseserver/`
 - [ ] `vitest.config.ts` with jsdom environment and wailsjs alias
 - [ ] `src/test/setup.ts` with `window.runtime` mock
 - [ ] `src/test/wailsmocks/` folder with all bound methods mocked
@@ -809,17 +643,13 @@ These are guidelines, not hard gates — pragmatic coverage matters more than hi
 - [ ] `app/git/commits_test.go` — GetCommits, graph layout fields
 - [ ] `app/git/diff_test.go` — GetCommitDiff, GetFileDiff
 - [ ] `app/git/staging_test.go` — StageFile, CreateCommit, StageHunk
-- [ ] `app/license/license_test.go` — Validate, GetStatus, MaybeCheckRevocation (mocked HTTP)
-- [ ] `app/license/trial_test.go` — TrialDaysLeft with simulated time
-- [ ] `licenseserver/keygen/keygen_test.go` — Generate, SignRevocationList
-- [ ] `licenseserver/handler/webhook_test.go` — checkout, refund, dispute events
-- [ ] `licenseserver/store/db_test.go` — SaveIssuedKey, Revoke, Unrevoke, GetRevokedKeys
 - [ ] Frontend: `format.test.ts`, `gitStore.test.ts`
 - [ ] Frontend: `useCommits.test.ts`, `useBranches.test.ts`
-- [ ] Frontend: `LicenseDialog.test.tsx`, `CommitBox.test.tsx`
-- [ ] E2E: history view, changes view, license activation flow
+- [ ] Frontend: `CommitBox.test.tsx`
+- [ ] E2E: history view, changes view
 
 **CI:**
 - [ ] `.github/workflows/test.yml` running on every PR
 - [ ] Go race detector enabled (`-race`)
+- [ ] macOS production build with binding generation passes (`cd app && go tool wails build`, Go 1.27+, Node.js 22)
 - [ ] Playwright report uploaded on failure

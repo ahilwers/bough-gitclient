@@ -13,10 +13,52 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version-file: app/go.mod
+          cache-dependency-path: app/go.sum
+
+      - name: Download Go dependencies
+        run: go mod download
+        working-directory: app
 
       - name: Test app backend
         run: go test -race -cover ./git/...
+        working-directory: app
+
+  app-tests:
+    name: Wails App Tests and Build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: app/go.mod
+          cache-dependency-path: app/go.sum
+
+      - name: Download Go dependencies
+        run: go mod download
+        working-directory: app
+
+      # Go tests need embedded assets before the full Wails build below.
+      - name: Prepare embedded assets
+        run: mkdir -p frontend/dist && touch frontend/dist/.placeholder
+        working-directory: app
+
+      - name: Test app bindings
+        run: go test -race -cover .
+        working-directory: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: app/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: app/frontend
+
+      - name: Build Wails app with generated bindings
+        run: go tool wails build
         working-directory: app
 
   frontend-tests:

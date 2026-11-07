@@ -5,14 +5,6 @@ import type { WorktreeInfo } from '@/lib/types'
 export type View = 'history' | 'changes'
 export type Theme = 'light' | 'dark'
 
-export interface LicenseStatus {
-  state: string
-  daysLeft: number
-  licenseKey: string
-  activatedAt: string
-  email: string
-}
-
 interface GitStore {
   // Appearance
   theme: Theme
@@ -60,11 +52,7 @@ interface GitStore {
   cherryPickConflictActive: boolean
   setCherryPickConflictActive: (v: boolean) => void
 
-  // Licensing
-  licenseStatus: LicenseStatus | null
-  setLicenseStatus: (s: LicenseStatus | null) => void
-  licenseDialogOpen: boolean
-  setLicenseDialogOpen: (open: boolean) => void
+  // Help dialog
   helpDialogOpen: boolean
   setHelpDialogOpen: (open: boolean) => void
 
@@ -107,8 +95,6 @@ const initialState = {
   isDraggingCommits: false,
   pendingCherryPickMessage: null as string | null,
   cherryPickConflictActive: false,
-  licenseStatus: null as LicenseStatus | null,
-  licenseDialogOpen: false,
   helpDialogOpen: false,
   loadingOperation: null as string | null,
 }
@@ -150,8 +136,6 @@ export const useGitStore = create<GitStore>()(
       setPendingCherryPickMessage: (msg) => set({ pendingCherryPickMessage: msg }),
       setCherryPickConflictActive: (v) => set({ cherryPickConflictActive: v }),
 
-      setLicenseStatus: (licenseStatus) => set({ licenseStatus }),
-      setLicenseDialogOpen: (licenseDialogOpen) => set({ licenseDialogOpen }),
       setHelpDialogOpen: (helpDialogOpen) => set({ helpDialogOpen }),
       setLoadingOperation: (loadingOperation) => set({ loadingOperation }),
 

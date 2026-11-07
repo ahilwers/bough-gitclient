@@ -34,8 +34,8 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
     de: 'Bough — Der Git-Client, der dir gehört',
   }
   const descriptions: Record<Locale, string> = {
-    en: 'Beautiful, fast, and native Git GUI for macOS, Windows, and Linux. One-time €29 purchase, no subscriptions.',
-    de: 'Schöner, schneller und nativer Git-Client für macOS, Windows und Linux. Einmalig €29, keine Abonnements.',
+    en: 'Bough is a free, native Git client for macOS, Windows, and Linux.',
+    de: 'Bough ist ein kostenloser, nativer Git-Client für macOS, Windows und Linux.',
   }
 
   const l = locales.includes(locale as Locale) ? (locale as Locale) : 'en'

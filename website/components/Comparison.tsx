@@ -66,20 +66,6 @@ export default function Comparison() {
 
   const comparisonData = [
     {
-      feature: t('price'),
-      bough: '€29',
-      tower: '€79/yr',
-      gitkraken: '€4.99/mo',
-      fork: '€49',
-    },
-    {
-      feature: t('subscription'),
-      bough: true,
-      tower: false,
-      gitkraken: false,
-      fork: true,
-    },
-    {
       feature: t('worktrees'),
       bough: true,
       tower: false,

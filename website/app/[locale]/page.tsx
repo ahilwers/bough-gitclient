@@ -3,7 +3,7 @@ import Hero from '@/components/Hero'
 import Stats from '@/components/Stats'
 import Features from '@/components/Features'
 import Comparison from '@/components/Comparison'
-import Pricing from '@/components/Pricing'
+import Download from '@/components/Download'
 import FAQ from '@/components/FAQ'
 
 interface PageProps {
@@ -34,7 +34,7 @@ export default function HomePage() {
       <Stats />
       <Features />
       <Comparison />
-      <Pricing />
+      <Download />
       <FAQ />
     </>
   )

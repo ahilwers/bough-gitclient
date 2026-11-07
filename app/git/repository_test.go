@@ -30,8 +30,18 @@ func TestOpen_DetectsDotGit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open from subdirectory: %v", err)
 	}
-	if repo.Path != dir {
-		t.Errorf("Path = %q, want %q", repo.Path, dir)
+	// go-git resolves symlinks in the worktree root (e.g. /var -> /private/var
+	// on macOS). Compare directory identity rather than path spelling.
+	want, err := os.Stat(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.Stat(repo.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !os.SameFile(got, want) {
+		t.Errorf("Path = %q, want the repository at %q", repo.Path, dir)
 	}
 }
 

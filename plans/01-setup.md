@@ -6,16 +6,18 @@
 
 ---
 
-## 1. Create the Wails Project
+## 1. Prepare the Wails Project
+
+Prerequisites: Go 1.27+ and Node.js 22. The scaffold already lives in `app/`. Wails v2.17.1 is pinned by the module requirement and `tool github.com/wailsapp/wails/v2/cmd/wails` directive in `app/go.mod`; do not install a global Wails CLI or override `GOTOOLCHAIN` to an older Go version.
 
 ```bash
-# In your development directory (e.g. ~/code/)
-wails init -n bough -t react-ts
-
-cd bough
+# From the repository root:
+cd app
+go mod download
+go tool wails version
 ```
 
-Wails creates this initial structure:
+The original Wails scaffold has this structure (now under `app/`):
 ```
 bough/
 ├── main.go
@@ -79,12 +81,16 @@ go get github.com/fsnotify/fsnotify
 go mod tidy
 ```
 
-Verify `go.mod` now contains:
-```
+Verify `app/go.mod` contains (other requirements omitted):
+```go
+go 1.27.0
+
+tool github.com/wailsapp/wails/v2/cmd/wails
+
 require (
     github.com/go-git/go-git/v5 v5.x.x
     github.com/fsnotify/fsnotify v1.x.x
-    github.com/wailsapp/wails/v2 v2.x.x
+    github.com/wailsapp/wails/v2 v2.17.1
 )
 ```
 
@@ -768,8 +774,8 @@ export const useGitStore = create<GitStore>()(
 ## 15. Verify the Build
 
 ```bash
-# From the project root:
-wails dev
+# From app/ (prepared in step 1):
+go tool wails dev
 
 # You should see:
 # - The Wails dev server starting
@@ -777,7 +783,7 @@ wails dev
 # - No console errors
 
 # For production build:
-wails build
+go tool wails build
 # Output: build/bin/Bough.app (macOS), build/bin/Bough.exe (Windows)
 ```
 
@@ -812,11 +818,11 @@ Add Google Fonts to `frontend/index.html`:
 
 After completing this phase, verify:
 
-- [ ] `wails dev` starts without errors
+- [ ] `go tool wails dev` starts without errors
 - [ ] Native window opens on the correct OS
 - [ ] Dark mode activates when system is in dark mode
 - [ ] Custom titlebar replaces the native one (macOS: traffic lights still visible)
-- [ ] `wails build` produces a runnable binary
+- [ ] `go tool wails build` produces a runnable binary
 - [ ] All npm packages installed without errors
 - [ ] `go mod tidy` runs clean
 - [ ] Fonts load correctly (Inter, JetBrains Mono)

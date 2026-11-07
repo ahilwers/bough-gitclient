@@ -23,7 +23,7 @@ build:
 		./cmd/main.go
 
 build-wails:
-	wails build \
+	cd app && go tool wails build \
 		-ldflags="-X main.version=$(VERSION) -X main.buildDate=$(BUILD_DATE)" \
 		-o Bough.app
 ```
@@ -547,7 +547,7 @@ func (u *LinuxUpdater) InstallUpdate(ctx context.Context, downloadURL string) er
 
 **File:** `.github/workflows/release.yml`
 
-Complete CI/CD pipeline for building and releasing on all platforms.
+Complete CI/CD pipeline for building and releasing on all platforms. Requires Go 1.27+ and Node.js 22. Wails v2.17.1 is pinned as a Go tool in `app/go.mod`; download dependencies with `cd app && go mod download`, then run all Wails commands from `app/` using `go tool wails` (no global CLI or older `GOTOOLCHAIN` override). The checked-in workflow is authoritative; the example below outlines the pipeline.
 
 ```yaml
 name: Release
@@ -595,45 +595,45 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.22'
+          go-version-file: app/go.mod
+          cache-dependency-path: app/go.sum
 
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '22'
+
+      - name: Download Go dependencies
+        run: go mod download
+        working-directory: app
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install create-dmg
-          npm install -g wails
 
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         run: |
           choco install wix -y
-          npm install -g wails
 
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y appimage-builder
-          npm install -g wails
 
-      - name: Build frontend
-        run: |
-          cd frontend
-          npm install
-          npm run build
-          cd ..
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: app/frontend
 
       - name: Build Wails app
         env:
           VERSION: ${{ github.ref_name }}
           BUILD_DATE: ${{ github.event.created_at }}
         run: |
-          wails build -platform ${{ matrix.target }} -o ${{ matrix.artifact }}
+          go tool wails build -platform ${{ matrix.target }} -o ${{ matrix.artifact }}
+        working-directory: app
 
       - name: Sign binary (macOS)
         if: runner.os == 'macOS'

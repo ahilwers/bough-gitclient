@@ -2,7 +2,6 @@
 
 import { useTranslations } from 'next-intl'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
 
 const AppScreenMockup = () => (
   <motion.div
@@ -210,26 +209,6 @@ const AppScreenMockup = () => (
 
 export default function Hero() {
   const t = useTranslations('hero')
-  const [isLoadingCheckout, setIsLoadingCheckout] = useState(false)
-
-  const handleBuyClick = async () => {
-    setIsLoadingCheckout(true)
-    try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locale: 'en' }),
-      })
-
-      const data = await response.json()
-      if (data.url) {
-        window.location.href = data.url
-      }
-    } catch (error) {
-      console.error('Checkout error:', error)
-      setIsLoadingCheckout(false)
-    }
-  }
 
   return (
     <section className="relative min-h-screen bg-gradient pt-32 pb-20 px-4 overflow-hidden">
@@ -256,23 +235,14 @@ export default function Hero() {
             {t('subheadline')}
           </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-            <button
-              onClick={handleBuyClick}
-              disabled={isLoadingCheckout}
-              className="btn-primary w-full sm:w-auto"
-            >
-              {isLoadingCheckout ? 'Loading...' : t('buyNow')}
-            </button>
-            <button className="btn-secondary w-full sm:w-auto">
-              {t('downloadTrial')}
-            </button>
+          <div className="flex justify-center mb-12">
+            <a href="#download" className="btn-primary w-full sm:w-auto">
+              {t('download')}
+            </a>
           </div>
 
-          {/* Trial badge */}
           <div className="inline-block px-4 py-2 rounded-full border border-border-subtle bg-black/30 backdrop-blur-sm text-xs text-text-secondary">
-            {t('trialBadge')}
+            {t('freeBadge')}
           </div>
         </motion.div>
 

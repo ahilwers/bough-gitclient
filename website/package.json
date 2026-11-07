@@ -8,6 +8,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "node --test tests/*.test.mjs",
     "lint": "next lint"
   },
   "dependencies": {
@@ -15,8 +16,7 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "next-intl": "^4.9.0",
-    "framer-motion": "^11.18.2",
-    "stripe": "^17.7.0"
+    "framer-motion": "^11.18.2"
   },
   "devDependencies": {
     "typescript": "5.7.3",

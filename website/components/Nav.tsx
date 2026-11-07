@@ -25,15 +25,8 @@ export default function Nav() {
 
   const toggleLocale = () => {
     const newLocale = locale === 'en' ? 'de' : 'en'
-    const newPathname = pathname.replace(`/${locale}/`, `/${newLocale}/`)
+    const newPathname = pathname.replace(new RegExp(`^/${locale}(?=/|$)`), `/${newLocale}`)
     router.push(newPathname)
-  }
-
-  const handleBuyClick = () => {
-    const element = document.getElementById('pricing')
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-    }
   }
 
   return (
@@ -59,10 +52,10 @@ export default function Nav() {
             {t('features')}
           </a>
           <a
-            href="#pricing"
+            href={`/${locale}#download`}
             className="text-text-secondary hover:text-accent-blue transition-colors"
           >
-            {t('pricing')}
+            {t('download')}
           </a>
           <a
             href="#faq"
@@ -83,13 +76,9 @@ export default function Nav() {
             {locale === 'en' ? 'DE' : 'EN'}
           </button>
 
-          {/* Buy button */}
-          <button
-            onClick={handleBuyClick}
-            className="btn-primary hidden sm:block"
-          >
-            {t('buyNow')}
-          </button>
+          <a href={`/${locale}#download`} className="btn-primary hidden sm:block">
+            {t('downloadCta')}
+          </a>
 
           {/* Mobile menu toggle */}
           <button
@@ -128,11 +117,11 @@ export default function Nav() {
               {t('features')}
             </a>
             <a
-              href="#pricing"
+              href={`/${locale}#download`}
               className="block text-text-secondary hover:text-accent-blue transition-colors py-2"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              {t('pricing')}
+              {t('download')}
             </a>
             <a
               href="#faq"
@@ -141,15 +130,13 @@ export default function Nav() {
             >
               {t('faq')}
             </a>
-            <button
-              onClick={() => {
-                handleBuyClick()
-                setIsMobileMenuOpen(false)
-              }}
-              className="btn-primary w-full mt-4"
+            <a
+              href={`/${locale}#download`}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="btn-primary block w-full mt-4 text-center"
             >
-              {t('buyNow')}
-            </button>
+              {t('downloadCta')}
+            </a>
           </div>
         </div>
       )}

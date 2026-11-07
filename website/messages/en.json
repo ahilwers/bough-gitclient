@@ -1,22 +1,21 @@
 {
   "nav": {
     "features": "Features",
-    "pricing": "Pricing",
+    "download": "Download",
     "faq": "FAQ",
-    "buyNow": "Buy Now — €29"
+    "downloadCta": "Download info"
   },
   "hero": {
     "headline": "The Git Client\nYou Actually Own",
-    "subheadline": "Beautiful, fast, and native — with a one-time price. No subscriptions, no cloud, no nonsense.",
-    "buyNow": "Buy Now — €29",
-    "downloadTrial": "Download Free Trial",
-    "trialBadge": "30-day free trial · No credit card required"
+    "subheadline": "A beautiful, fast, native Git client for your desktop. Free to use and built for developers.",
+    "download": "Download information",
+    "freeBadge": "Free to use · macOS, Windows and Linux"
   },
   "stats": {
-    "price": "€29",
-    "priceDesc": "One-time · Forever yours",
-    "trial": "30 days",
-    "trialDesc": "Free trial · No credit card",
+    "free": "Free",
+    "freeDesc": "For everyone",
+    "native": "Native",
+    "nativeDesc": "Built for your desktop",
     "platforms": "3 platforms",
     "platformsDesc": "macOS · Windows · Linux"
   },
@@ -34,9 +33,9 @@
       "title": "Git Worktrees",
       "desc": "Work on multiple branches simultaneously without stashing. Bough manages all your worktrees from one sidebar."
     },
-    "subscription": {
-      "title": "Own It Forever",
-      "desc": "One payment. All future updates for the current major version. No recurring fees, no feature unlocks, no cloud account required."
+    "local": {
+      "title": "Your Repositories, Your Desktop",
+      "desc": "Work with your local Git repositories without a cloud account."
     },
     "native": {
       "title": "Native, Not Electron",
@@ -53,48 +52,27 @@
     "tower": "Tower",
     "gitkraken": "GitKraken",
     "fork": "Fork",
-    "price": "Price",
-    "subscription": "Subscription",
     "worktrees": "Git Worktrees",
     "nativeApp": "No Electron",
     "macos": "macOS",
     "windows": "Windows",
     "linux": "Linux"
   },
-  "pricing": {
-    "title": "Simple, fair pricing",
-    "price": "€29",
-    "subtitle": "One-time payment · VAT may apply",
-    "features": [
-      "All platforms (macOS, Windows, Linux)",
-      "30-day free trial included",
-      "Lifetime license for current major version",
-      "2 activations per license",
-      "All future updates for v1",
-      "Email support"
-    ],
-    "buyNow": "Buy Now",
-    "existingKey": "Already have a key?",
-    "activateInApp": "Activate in the app under Bough → License",
-    "downloadTrialMac": "Download Trial – macOS (Apple Silicon)",
-    "downloadTrialMacIntel": "Download Trial – macOS (Intel)",
-    "downloadTrialWin": "Download Trial – Windows",
-    "downloadTrialLinux": "Download Trial – Linux AppImage"
+  "download": {
+    "title": "Bough is free",
+    "platforms": "Bough targets macOS, Windows and Linux.",
+    "availability": "Public download links are not available here yet."
   },
   "faq": {
     "title": "Frequently asked questions",
-    "q1": "Is it really a one-time payment?",
-    "a1": "Yes. Pay €29 once and Bough is yours forever. You'll receive all updates for the current major version (v1.x) at no extra cost.",
-    "q2": "What happens after the 30-day trial?",
-    "a2": "Bough enters read-only mode — you can still browse your repository history and diffs, but write operations (commit, push, pull) require a license.",
-    "q3": "Can I use it on multiple machines?",
-    "a3": "Yes. One license covers 2 activations — perfect for a work and a personal machine.",
+    "q1": "Is Bough free?",
+    "a1": "Yes, Bough is free to use.",
+    "q2": "Where can I download Bough?",
+    "a2": "Public download links are not available here yet.",
+    "q3": "Which platforms does Bough support?",
+    "a3": "Bough targets macOS, Windows and Linux.",
     "q4": "Does Bough require internet access?",
-    "a4": "Only to push/pull from remotes (like any git client). License validation is offline. The only online check is a one-time revocation check ~130 days after purchase.",
-    "q5": "What if I need Linux support?",
-    "a5": "Bough is distributed as an AppImage on Linux, which runs on any modern distribution without installation.",
-    "q6": "What payment methods do you accept?",
-    "a6": "All major credit and debit cards via Stripe. Apple Pay and Google Pay where available."
+    "a4": "You can work with local repositories offline. Network operations such as push and pull require access to the remote."
   },
   "footer": {
     "tagline": "The Git client you actually own",
@@ -103,11 +81,5 @@
     "contact": "Contact",
     "copyright": "© 2025 Bough. All rights reserved.",
     "language": "Language"
-  },
-  "success": {
-    "title": "Thank you for your purchase!",
-    "message": "Your license key is on its way — check your inbox (including spam folder) within the next few minutes.",
-    "downloadSection": "Download Bough",
-    "backToHome": "Back to home"
   }
 }
