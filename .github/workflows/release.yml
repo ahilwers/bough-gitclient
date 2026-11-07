@@ -133,7 +133,13 @@ jobs:
         run: |
           EXTRA=()
           # Generate the NSIS installer on Windows (Bough-amd64-installer.exe).
-          if [ "${{ matrix.family }}" = "windows" ]; then EXTRA+=(-nsis); fi
+          if [ "${{ matrix.family }}" = "windows" ]; then
+            # The choco-deployed NSIS is usually not on the runner PATH; locate
+            # makensis and prepend its directory so Wails can build the installer.
+            MAKENSIS_DIR="$(dirname "$(command -v makensis || echo '/c/Program Files (x86)/NSIS/makensis.exe')")"
+            export PATH="$MAKENSIS_DIR:$PATH"
+            EXTRA+=(-nsis)
+          fi
           # Ubuntu 24.04 only has webkit2gtk 4.1: build with the webkit2_41 tag.
           if [ "${{ matrix.family }}" = "linux" ]; then EXTRA+=(-tags webkit2_41); fi
           go tool wails build \
