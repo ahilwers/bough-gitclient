@@ -94,12 +94,14 @@ jobs:
         working-directory: app/frontend
 
       # Wails needs GTK/WebKit dev libs to build the Linux binary.
+      # ubuntu-24.04 (noble) only ships webkit2gtk 4.1, so we use the
+      # `webkit2_41` Wails build tag (see -tags below).
       - name: Install Linux build dependencies
         if: matrix.family == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev \
-            libayatana-appindicator3-dev librsvg2-dev libglib2.0-dev
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev libayatana-appindicator3-dev librsvg2-dev libglib2.0-dev
 
       - name: Download Go dependencies
         run: go mod download
@@ -122,9 +124,15 @@ jobs:
         # available on all hosted runners).
         shell: bash
         run: |
+          EXTRA=()
+          # Generate the NSIS installer on Windows (Bough-amd64-installer.exe).
+          if [ "${{ matrix.family }}" = "windows" ]; then EXTRA+=(-nsis); fi
+          # Ubuntu 24.04 only has webkit2gtk 4.1: build with the webkit2_41 tag.
+          if [ "${{ matrix.family }}" = "linux" ]; then EXTRA+=(-tags webkit2_41); fi
           go tool wails build \
             -clean \
             -platform ${{ matrix.platform }} \
+            "${EXTRA[@]}" \
             -ldflags "-X main.version=${{ env.VERSION }} -X main.buildDate=${{ env.BUILD_DATE }}"
         working-directory: app
 
