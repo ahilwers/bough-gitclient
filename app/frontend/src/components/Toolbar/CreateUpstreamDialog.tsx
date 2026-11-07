@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import * as Dialog from '@radix-ui/react-dialog'
 import type { git } from '@wailsjs/go/models'
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function CreateUpstreamDialog({ info, onConfirm, onClose }: Props) {
+  const { t } = useTranslation()
   // With multiple remotes, require a deliberate selection instead of assuming origin.
   const [remote, setRemote] = useState(info.remotes.length === 1 ? info.remotes[0] : '')
   const cancelRef = useRef<HTMLButtonElement>(null)
@@ -29,31 +31,31 @@ export function CreateUpstreamDialog({ info, onConfirm, onClose }: Props) {
           }}
         >
           <Dialog.Title style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-pri)', marginBottom: 8 }}>
-            Create Upstream Branch?
+            {t('push.createUpstream.title')}
           </Dialog.Title>
           <Dialog.Description style={{ fontSize: 12, color: 'var(--text-sec)', marginBottom: 20 }}>
-            Branch <strong>{info.branch}</strong> has no upstream. Push it to a remote branch with the same name and track it for future pushes and pulls?
+            {t('push.createUpstream.description', { branch: info.branch })}
           </Dialog.Description>
           {info.remotes.length === 0 ? (
-            <p style={{ fontSize: 12, color: 'var(--text-sec)' }}>No remotes configured. Add one using Manage Remotes before pushing.</p>
+            <p style={{ fontSize: 12, color: 'var(--text-sec)' }}>{t('push.createUpstream.noRemotes')}</p>
           ) : (
             <label style={{ display: 'grid', gap: 6, fontSize: 12, color: 'var(--text-pri)' }}>
-              Remote
-              <select aria-label="Remote" value={remote} onChange={event => setRemote(event.target.value)}
+              {t('push.createUpstream.remote')}
+              <select aria-label={t('push.createUpstream.remote')} value={remote} onChange={event => setRemote(event.target.value)}
                 style={{ padding: 7, background: 'var(--bg-content)', color: 'var(--text-pri)', border: '1px solid var(--border)', borderRadius: 6 }}>
-                <option value="" disabled>Select a remote…</option>
+                <option value="" disabled>{t('push.createUpstream.selectRemote')}</option>
                 {info.remotes.map(name => <option key={name} value={name}>{name}</option>)}
               </select>
             </label>
           )}
-          {remote && <p style={{ fontSize: 12, color: 'var(--text-sec)', marginTop: 12 }}>Upstream: {remote}/{info.branch}</p>}
+          {remote && <p style={{ fontSize: 12, color: 'var(--text-sec)', marginTop: 12 }}>{t('push.createUpstream.preview', { upstream: `${remote}/${info.branch}` })}</p>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 24 }}>
             <Dialog.Close asChild>
-              <button ref={cancelRef} style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: 'none', color: 'var(--text-pri)', fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              <button ref={cancelRef} style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: 'none', color: 'var(--text-pri)', fontSize: 13, cursor: 'pointer' }}>{t('push.createUpstream.cancel')}</button>
             </Dialog.Close>
             <button disabled={!remote} onClick={() => onConfirm(remote)}
               style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: 'var(--acc)', color: '#fff', fontSize: 13, fontWeight: 500, cursor: remote ? 'pointer' : 'not-allowed', opacity: remote ? 1 : 0.6 }}>
-              Create Upstream &amp; Push
+              {t('push.createUpstream.confirm')}
             </button>
           </div>
         </Dialog.Content>
