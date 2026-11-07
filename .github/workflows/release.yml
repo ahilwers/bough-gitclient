@@ -11,6 +11,9 @@ on:
   push:
     tags:
       - "v*.*.*"
+  # Allow manual triggering from the Actions tab (build/test without publishing a
+  # real release). For these manual runs the publish job creates a DRAFT release.
+  workflow_dispatch:
 
 concurrency:
   group: release-${{ github.ref }}
@@ -246,6 +249,9 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
+          # Manual (workflow_dispatch) runs create a DRAFT release so they can be
+          # checked before anything is published. Tag runs publish for real.
+          draft: ${{ github.event_name == 'workflow_dispatch' }}
           generate_release_notes: true
           files: release/*
         env:
