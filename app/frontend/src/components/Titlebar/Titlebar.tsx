@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { Sun, Moon } from 'lucide-react'
 import { useGitStore } from '@/stores/gitStore'
 
@@ -33,7 +34,7 @@ export default function Titlebar() {
       </div>
 
       {/* Theme toggle — must opt out of window drag */}
-      <button
+      <Button variant="ghost"
         onClick={toggleTheme}
         title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         aria-label="Toggle theme"
@@ -53,7 +54,7 @@ export default function Titlebar() {
         }}
       >
         {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-      </button>
+      </Button>
     </div>
   )
 }

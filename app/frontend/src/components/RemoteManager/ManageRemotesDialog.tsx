@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X, Plus, Pencil, Trash2, Check, AlertCircle } from 'lucide-react'
@@ -198,15 +199,16 @@ export function ManageRemotesDialog({ onClose }: Props) {
                     </div>
                     {editError && <FieldError message={editError} />}
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                      <button onClick={cancelEdit} style={ghostBtnStyle}>Cancel</button>
-                      <button
+                      <Button onClick={cancelEdit} variant="secondary">Cancel</Button>
+                      <Button
                         onClick={saveEdit}
                         disabled={updateMutation.isPending || renameMutation.isPending}
-                        style={accentBtnStyle}
+                        variant="primary"
+                        style={{ display: 'flex', alignItems: 'center', gap: 5 }}
                       >
                         <Check size={13} />
                         Save
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ) : pendingDelete === remote.name ? (
@@ -216,14 +218,14 @@ export function ManageRemotesDialog({ onClose }: Props) {
                       Remove remote <strong>{remote.name}</strong>?
                     </p>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                      <button onClick={() => setPendingDelete(null)} style={ghostBtnStyle}>Cancel</button>
-                      <button
+                      <Button onClick={() => setPendingDelete(null)} variant="secondary">Cancel</Button>
+                      <Button
                         onClick={confirmDelete}
                         disabled={removeMutation.isPending}
-                        style={{ ...accentBtnStyle, background: 'var(--danger)' }}
+                        variant="danger"
                       >
                         Remove
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ) : (
@@ -235,20 +237,22 @@ export function ManageRemotesDialog({ onClose }: Props) {
                         {remote.fetchURL}
                       </span>
                     </div>
-                    <button
+                    <Button variant="ghost"
                       onClick={() => { setAdding(false); startEdit(remote) }}
                       title="Edit remote"
+                      aria-label="Edit remote"
                       style={iconBtnStyle}
                     >
                       <Pencil size={13} />
-                    </button>
-                    <button
+                    </Button>
+                    <Button variant="ghost"
                       onClick={() => { setEditingName(null); setPendingDelete(remote.name) }}
                       title="Remove remote"
+                      aria-label="Remove remote"
                       style={{ ...iconBtnStyle, color: 'var(--danger)' }}
                     >
                       <Trash2 size={13} />
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -288,15 +292,16 @@ export function ManageRemotesDialog({ onClose }: Props) {
                 </div>
                 {addError && <FieldError message={addError} />}
                 <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                  <button onClick={() => { setAdding(false); setNewName(''); setNewURL(''); setAddError('') }} style={ghostBtnStyle}>Cancel</button>
-                  <button
+                  <Button onClick={() => { setAdding(false); setNewName(''); setNewURL(''); setAddError('') }} variant="secondary">Cancel</Button>
+                  <Button
                     onClick={saveAdd}
                     disabled={addMutation.isPending}
-                    style={accentBtnStyle}
+                    variant="primary"
+                    style={{ display: 'flex', alignItems: 'center', gap: 5 }}
                   >
                     <Check size={13} />
                     {addMutation.isPending ? 'Adding…' : 'Add'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -304,15 +309,16 @@ export function ManageRemotesDialog({ onClose }: Props) {
 
           {/* Footer */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-sub)' }}>
-            <button
+            <Button
               onClick={() => { setEditingName(null); setPendingDelete(null); setAdding(true); setNewName(''); setNewURL(''); setAddError('') }}
-              style={{ ...accentBtnStyle, background: 'none', color: 'var(--acc)', border: '1px solid var(--acc)' }}
+              variant="secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: 5 }}
             >
               <Plus size={13} />
               Add Remote
-            </button>
+            </Button>
             <Dialog.Close asChild>
-              <button style={ghostBtnStyle}>Close</button>
+              <Button variant="secondary">Close</Button>
             </Dialog.Close>
           </div>
         </Dialog.Content>
@@ -328,30 +334,6 @@ function FieldError({ message }: { message: string }) {
       {message}
     </p>
   )
-}
-
-const ghostBtnStyle: React.CSSProperties = {
-  padding: '6px 12px',
-  borderRadius: 6,
-  border: 'none',
-  background: 'none',
-  color: 'var(--text-pri)',
-  fontSize: 13,
-  cursor: 'pointer',
-}
-
-const accentBtnStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 5,
-  padding: '6px 12px',
-  borderRadius: 6,
-  border: 'none',
-  background: 'var(--acc)',
-  color: '#fff',
-  fontSize: 13,
-  fontWeight: 500,
-  cursor: 'pointer',
 }
 
 const iconBtnStyle: React.CSSProperties = {

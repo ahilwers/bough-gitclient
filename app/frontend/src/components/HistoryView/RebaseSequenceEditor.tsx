@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useEffect, useRef, useState } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
 import { CommitsOnRemote } from '@wailsjs/go/main/App'
@@ -193,7 +194,7 @@ export function RebaseSequenceEditor({ commits, onClose }: Props) {
               {' · '}click badge to change action · drag to reorder · double-click to rename
             </div>
           </div>
-          <button
+          <Button variant="icon" aria-label="Close"
             onClick={onClose}
             style={{
               width: 28, height: 28, borderRadius: 6, border: 'none',
@@ -202,7 +203,7 @@ export function RebaseSequenceEditor({ commits, onClose }: Props) {
             }}
           >
             <X size={15} />
-          </button>
+          </Button>
         </div>
 
         {/* Rows */}
@@ -244,9 +245,10 @@ export function RebaseSequenceEditor({ commits, onClose }: Props) {
                 </div>
 
                 {/* Action badge */}
-                <button
+                <Button variant="ghost"
                   onClick={() => cycleAction(idx)}
                   title="Click to cycle action"
+                  aria-label="Click to cycle action"
                   style={{
                     flexShrink: 0,
                     padding: '2px 7px',
@@ -259,7 +261,7 @@ export function RebaseSequenceEditor({ commits, onClose }: Props) {
                   }}
                 >
                   {ACTION_LABEL[row.action]}
-                </button>
+                </Button>
 
                 {/* Short hash */}
                 <code style={{
@@ -291,6 +293,7 @@ export function RebaseSequenceEditor({ commits, onClose }: Props) {
                   <span
                     onDoubleClick={() => startEdit(idx)}
                     title="Double-click to edit message"
+                    aria-label="Double-click to edit message"
                     style={{
                       flex: 1, fontSize: 12, color: row.action === 'drop' ? 'var(--text-ter)' : 'var(--text-pri)',
                       overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
@@ -304,7 +307,7 @@ export function RebaseSequenceEditor({ commits, onClose }: Props) {
 
                 {/* Pushed indicator */}
                 {!loadingRemote && isPushed && (
-                  <span title="Already pushed to remote" style={{
+                  <span title="Already pushed to remote" aria-label="Already pushed to remote" style={{
                     flexShrink: 0, fontSize: 10, fontWeight: 600,
                     color: 'var(--warn)',
                     background: 'color-mix(in srgb, var(--warn) 15%, transparent)',
@@ -343,31 +346,19 @@ export function RebaseSequenceEditor({ commits, onClose }: Props) {
           padding: '12px 18px',
           borderTop: '1px solid var(--border-sub)',
         }}>
-          <button
+          <Button
             onClick={onClose}
-            style={{
-              padding: '6px 16px', borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'transparent', color: 'var(--text-sec)',
-              fontSize: 12, cursor: 'pointer',
-            }}
+            variant="secondary"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleRebase}
             disabled={startMutation.isPending}
-            style={{
-              padding: '6px 18px', borderRadius: 6,
-              border: 'none',
-              background: startMutation.isPending ? 'var(--bg-badge)' : 'var(--acc)',
-              color: startMutation.isPending ? 'var(--text-ter)' : 'white',
-              fontSize: 12, fontWeight: 600,
-              cursor: startMutation.isPending ? 'not-allowed' : 'pointer',
-            }}
+            variant="primary"
           >
             {startMutation.isPending ? 'Rebasing…' : 'Rebase'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

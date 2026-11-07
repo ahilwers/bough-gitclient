@@ -563,3 +563,26 @@ export namespace git {
 
 }
 
+export namespace main {
+	
+	export class AISettings {
+	    provider: string;
+	    baseURL: string;
+	    model: string;
+	    hasAPIKey: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AISettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.provider = source["provider"];
+	        this.baseURL = source["baseURL"];
+	        this.model = source["model"];
+	        this.hasAPIKey = source["hasAPIKey"];
+	    }
+	}
+
+}
+
