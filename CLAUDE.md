@@ -59,7 +59,7 @@ app/            # Wails app (Wails 2 + React scaffold)
       hooks/
       store/    # Zustand store
       i18n/     # EN + DE translations
-docs/           # Research, design spec, prototype
+docs/           # Design and architecture documents
 ```
 
 ## Architecture
