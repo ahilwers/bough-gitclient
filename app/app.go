@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -243,6 +244,17 @@ func (a *App) Push(remote, branch string, force bool) error {
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
+	if remote == "" && branch == "" {
+		// Recheck just before a default push: autoSetupRemote must not publish
+		// an untracked branch if it changed after the frontend preflight.
+		info, err := a.repo.GetPushInfo()
+		if err != nil {
+			return err
+		}
+		if info.Upstream == "" {
+			return fmt.Errorf("branch %q has no upstream; confirm creation before pushing", info.Branch)
+		}
+	}
 	args := []string{"push", remote, branch}
 	if force {
 		args = append(args, "--force-with-lease")
@@ -252,6 +264,22 @@ func (a *App) Push(remote, branch string, force bool) error {
 		return gitpkg.ErrAuthFailed
 	}
 	return err
+}
+
+// GetPushInfo checks the current branch without contacting or changing a remote.
+func (a *App) GetPushInfo() (gitpkg.PushInfo, error) {
+	if a.repo == nil {
+		return gitpkg.PushInfo{}, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetPushInfo()
+}
+
+// PushWithUpstream publishes only the repository and branch the user confirmed.
+func (a *App) PushWithUpstream(repoPath, remote, branch string) error {
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	return a.repo.PushWithUpstream(repoPath, remote, branch)
 }
 
 // StoreCredentials writes credentials into the configured git credential helper.
