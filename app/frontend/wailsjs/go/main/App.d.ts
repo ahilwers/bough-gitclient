@@ -70,6 +70,8 @@ export function GetFileDiff(arg1:string,arg2:boolean):Promise<git.DiffFile>;
 
 export function GetMergeCommits():Promise<Array<git.CommitNode>>;
 
+export function GetPushInfo():Promise<git.PushInfo>;
+
 export function GetRecentRepos():Promise<Array<string>>;
 
 export function GetStashDiff(arg1:number):Promise<Array<git.DiffFile>>;
@@ -103,6 +105,8 @@ export function Pull(arg1:string,arg2:string):Promise<void>;
 export function PullIntoLocalBranch(arg1:string,arg2:string):Promise<void>;
 
 export function Push(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
+export function PushWithUpstream(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function RemoveRemote(arg1:string):Promise<void>;
 
