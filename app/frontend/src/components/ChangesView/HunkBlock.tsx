@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { StageHunk, UnstageHunk, DiscardHunk } from '@wailsjs/go/main/App'
@@ -145,7 +146,7 @@ interface HunkButtonProps {
 function HunkButton({ label, color, hoverBg, onClick, disabled }: HunkButtonProps) {
   const [hovered, setHovered] = useState(false)
   return (
-    <button
+    <Button variant="ghost"
       onClick={onClick}
       disabled={disabled}
       onMouseEnter={() => setHovered(true)}
@@ -159,7 +160,7 @@ function HunkButton({ label, color, hoverBg, onClick, disabled }: HunkButtonProp
       }}
     >
       {label}
-    </button>
+    </Button>
   )
 }
 

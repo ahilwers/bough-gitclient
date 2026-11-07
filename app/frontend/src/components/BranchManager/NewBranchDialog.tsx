@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useState, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X, AlertCircle } from 'lucide-react'
@@ -146,23 +147,17 @@ export function NewBranchDialog({ onClose }: Props) {
           {/* Actions */}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 24 }}>
             <Dialog.Close asChild>
-              <button style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: 'none', color: 'var(--text-pri)', fontSize: 13, cursor: 'pointer' }}>
+              <Button variant="secondary">
                 Cancel
-              </button>
+              </Button>
             </Dialog.Close>
-            <button
+            <Button
               onClick={handleSubmit}
               disabled={createMutation.isPending}
-              style={{
-                padding: '7px 14px', borderRadius: 6, border: 'none',
-                background: 'var(--acc)', color: '#fff',
-                fontSize: 13, fontWeight: 500,
-                cursor: createMutation.isPending ? 'not-allowed' : 'pointer',
-                opacity: createMutation.isPending ? 0.6 : 1,
-              }}
+              variant="primary"
             >
               {createMutation.isPending ? 'Creating…' : 'Create Branch'}
-            </button>
+            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

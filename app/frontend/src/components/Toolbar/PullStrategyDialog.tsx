@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useRef } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useTranslation } from 'react-i18next'
@@ -17,9 +18,9 @@ export function PullStrategyDialog({ branch, onChoose, onClose }: { branch: stri
           <p style={{ color: 'var(--text-sec)' }}>{t('pull.once')}</p>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button className="toolbar-btn" ref={cancel} onClick={onClose}>{t('pull.cancel')}</button>
-          <button className="toolbar-btn" onClick={() => onChoose('merge')}>{t('pull.merge')}</button>
-          <button className="toolbar-btn" onClick={() => onChoose('rebase')}>{t('pull.rebase')}</button>
+          <Button variant="secondary" ref={cancel} onClick={onClose}>{t('pull.cancel')}</Button>
+          <Button variant="secondary" onClick={() => onChoose('merge')}>{t('pull.merge')}</Button>
+          <Button variant="secondary" onClick={() => onChoose('rebase')}>{t('pull.rebase')}</Button>
         </div>
       </Dialog.Content>
     </Dialog.Portal>

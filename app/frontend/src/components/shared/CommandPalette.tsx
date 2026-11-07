@@ -1,3 +1,4 @@
+import { Button } from './Button'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search } from 'lucide-react'
@@ -142,7 +143,7 @@ export default function CommandPalette() {
                 </div>
               )}
               {filtered.map((cmd, idx) => (
-                <button
+                <Button variant="ghost"
                   key={cmd.label}
                   onClick={() => run(cmd)}
                   style={{
@@ -165,7 +166,7 @@ export default function CommandPalette() {
                       {cmd.shortcut}
                     </span>
                   )}
-                </button>
+                </Button>
               ))}
             </div>
           </motion.div>
