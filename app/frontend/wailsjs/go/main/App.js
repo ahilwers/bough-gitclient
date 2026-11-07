@@ -82,6 +82,14 @@ export function CreateCommit(arg1) {
   return window['go']['main']['App']['CreateCommit'](arg1);
 }
 
+export function CreateStash(arg1, arg2) {
+  return window['go']['main']['App']['CreateStash'](arg1, arg2);
+}
+
+export function CreateTag(arg1, arg2) {
+  return window['go']['main']['App']['CreateTag'](arg1, arg2);
+}
+
 export function DeleteTag(arg1) {
   return window['go']['main']['App']['DeleteTag'](arg1);
 }

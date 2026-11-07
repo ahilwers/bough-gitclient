@@ -2,19 +2,46 @@ package git
 
 import (
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// GetStashDiff returns the full diff for stash@{index} as a list of DiffFile,
-// parsed with the same logic used for working-copy diffs.
+// GetStashDiff returns the tracked and untracked changes in stash@{index}.
 func (r *Repository) GetStashDiff(index int) ([]DiffFile, error) {
-	out, err := CLI(r.Path, "stash", "show", "-p", fmt.Sprintf("stash@{%d}", index))
+	ref, err := CLI(r.Path, "rev-parse", "--verify", fmt.Sprintf("stash@{%d}^{commit}", index))
 	if err != nil {
 		return nil, err
 	}
-	return parsePatchOutput(out), nil
+	ref = strings.TrimSpace(ref)
+	out, err := CLI(r.Path, "stash", "show", "-p", "--include-untracked", "--no-renames", "--no-color", "--no-ext-diff", ref)
+	if err != nil {
+		return nil, err
+	}
+	// The NUL-delimited names handle quoted paths, empty files, and binary
+	// patches, none of which always have a usable +++ line in the patch.
+	names, err := CLI(r.Path, "stash", "show", "--name-only", "-z", "--include-untracked", "--no-renames", "--no-ext-diff", ref)
+	if err != nil {
+		return nil, err
+	}
+	files := parsePatchOutput(out)
+	paths := strings.Split(strings.TrimSuffix(names, "\x00"), "\x00")
+	if names == "" {
+		paths = nil
+	}
+	if len(files) != len(paths) {
+		return nil, fmt.Errorf("stash diff contains %d patches for %d paths", len(files), len(paths))
+	}
+	for i := range files {
+		files[i].Path = paths[i]
+		if files[i].OldPath == "--- /dev/null" {
+			files[i].OldPath = "/dev/null"
+		} else if files[i].OldPath != "" && files[i].OldPath != "/dev/null" {
+			files[i].OldPath = paths[i]
+		}
+	}
+	return files, nil
 }
 
 // ApplyStashHunk applies a single hunk patch to the working tree without
@@ -30,11 +57,29 @@ func (r *Repository) ApplyStashHunk(patch string) error {
 	return nil
 }
 
-// ApplyStashFile overwrites a single file in the working tree with its
-// version from stash@{index}, leaving other files untouched.
+// ApplyStashFile restores one file from stash@{index}. Tracked files retain
+// the existing checkout behavior; untracked files are restored without staging
+// them or overwriting an existing file.
 func (r *Repository) ApplyStashFile(index int, filePath string) error {
-	_, err := CLI(r.Path, "checkout", fmt.Sprintf("stash@{%d}", index), "--", filePath)
-	return err
+	path := filepath.FromSlash(filePath)
+	if !filepath.IsLocal(path) || filepath.Clean(path) == "." || filepath.ToSlash(filepath.Clean(path)) != filePath {
+		return fmt.Errorf("invalid stash file path %q", filePath)
+	}
+	ref, err := CLI(r.Path, "rev-parse", "--verify", fmt.Sprintf("stash@{%d}^{commit}", index))
+	if err != nil {
+		return err
+	}
+	ref = strings.TrimSpace(ref)
+	pathspec := ":(literal)" + filePath
+	_, tracked, err := r.stashFileEntry(ref, filePath, pathspec)
+	if err != nil {
+		return err
+	}
+	if tracked {
+		_, err = CLI(r.Path, "checkout", ref, "--", pathspec)
+		return err
+	}
+	return r.restoreUntrackedStashFile(ref, filePath, pathspec)
 }
 
 // ListStashes returns all stash entries in stash order (newest first).

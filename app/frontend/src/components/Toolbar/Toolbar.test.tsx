@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { GetStatus } from '@wailsjs/go/main/App'
+import { CreateBranch, GetStatus, ListBranches } from '@wailsjs/go/main/App'
 import { useGitStore } from '@/stores/gitStore'
 import Toolbar from './Toolbar'
+import CommandPalette from '@/components/shared/CommandPalette'
 
 const status = { branch: 'feature/current-branch', ahead: 0, behind: 0, files: [], hasConflicts: false }
 
@@ -71,5 +72,57 @@ describe('current branch indicator', () => {
     const queryClient = renderToolbar()
     await act(async () => { await queryClient.ensureQueryData({ queryKey: ['status'] }) })
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+})
+
+describe('repository creation actions', () => {
+  beforeEach(() => {
+    vi.mocked(GetStatus).mockReset().mockResolvedValue(status)
+    vi.mocked(ListBranches).mockResolvedValue({ local: [{ name: 'main', remote: '', isHead: true, upstream: '', ahead: 0, behind: 0 }], remotes: [] })
+    vi.mocked(CreateBranch).mockReset().mockResolvedValue(undefined)
+    useGitStore.setState({ activeView: 'changes', activeRepo: '/repo', activeWorktree: null, recentRepos: [] })
+  })
+  afterEach(() => cleanup())
+
+  it('opens the branch dialog from Changes and creates a branch', async () => {
+    renderToolbar()
+    fireEvent.click(screen.getByRole('button', { name: 'Branch' }))
+    expect(await screen.findByRole('dialog', { name: 'New Branch' })).toBeInTheDocument()
+    await screen.findByRole('option', { name: /main/ })
+    fireEvent.change(screen.getByPlaceholderText('feature/my-feature'), { target: { value: 'feature/new' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create Branch' }))
+    await waitFor(() => expect(CreateBranch).toHaveBeenCalledWith('feature/new', 'main', true))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'New Branch' })).not.toBeInTheDocument())
+  })
+
+  it.each([
+    ['Stash', 'Create Stash'],
+    ['Tag', 'Create Tag'],
+  ])('opens the %s dialog from the toolbar', async (button, title) => {
+    renderToolbar()
+    fireEvent.click(screen.getByRole('button', { name: button }))
+    expect(await screen.findByRole('dialog', { name: title })).toBeInTheDocument()
+  })
+
+  it('disables creation actions without a repository', () => {
+    useGitStore.setState({ activeRepo: null })
+    renderToolbar()
+    for (const name of ['Branch', 'Stash', 'Tag']) expect(screen.getByRole('button', { name })).toBeDisabled()
+  })
+
+  it('opens the branch dialog from the command palette', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+    render(<QueryClientProvider client={queryClient}><Toolbar /><CommandPalette /></QueryClientProvider>)
+    fireEvent.click(screen.getByRole('button', { name: 'Command Palette (⌘K)' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'New Branch' }))
+    expect(await screen.findByRole('dialog', { name: 'New Branch' })).toBeInTheDocument()
+  })
+
+  it('closes a creation dialog when the worktree changes', async () => {
+    renderToolbar()
+    fireEvent.click(screen.getByRole('button', { name: 'Branch' }))
+    expect(await screen.findByRole('dialog', { name: 'New Branch' })).toBeInTheDocument()
+    act(() => useGitStore.setState({ activeWorktree: '/other-worktree' }))
+    expect(screen.queryByRole('dialog', { name: 'New Branch' })).not.toBeInTheDocument()
   })
 })

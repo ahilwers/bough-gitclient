@@ -26,6 +26,7 @@ export function NewBranchDialog({ onClose }: Props) {
   }, [headBranch])
 
   const handleSubmit = () => {
+    if (createMutation.isPending) return
     const name = branchName.trim()
     if (!name) { setError('Branch name is required'); return }
     if (!/^[a-zA-Z0-9._\-/]+$/.test(name)) { setError('Invalid characters in branch name'); return }

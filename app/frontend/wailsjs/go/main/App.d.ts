@@ -42,6 +42,10 @@ export function CreateBranch(arg1:string,arg2:string,arg3:boolean):Promise<void>
 
 export function CreateCommit(arg1:string):Promise<string>;
 
+export function CreateStash(arg1:string,arg2:boolean):Promise<void>;
+
+export function CreateTag(arg1:string,arg2:string):Promise<void>;
+
 export function DeleteTag(arg1:string):Promise<void>;
 
 export function DiscardFile(arg1:string):Promise<void>;

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { ChevronRight, GitBranch, Globe, Tag as TagIcon, Archive, Layers, Search, X } from 'lucide-react'
 import { Plus } from 'lucide-react'
@@ -45,6 +45,16 @@ export default function Sidebar() {
   const [dragOverHead, setDragOverHead] = useState(false)
   const [pending, setPending] = useState<PendingConfirm | null>(null)
   const [openStash, setOpenStash] = useState<StashEntry | null>(null)
+
+  // A newly created stash shifts all numeric stash indices.
+  useEffect(() => {
+    const onStashCreated = () => {
+      setOpenStash(null)
+      setPending(current => current?.kind === 'dropStash' ? null : current)
+    }
+    window.addEventListener('stash:created', onStashCreated)
+    return () => window.removeEventListener('stash:created', onStashCreated)
+  }, [])
 
   const { data: branches, checkoutMutation, checkoutRemoteMutation, pullIntoLocalMutation, pullIntoCurrentMutation } = useBranches()
   const { data: worktrees, removeMutation, switchMutation } = useWorktrees()

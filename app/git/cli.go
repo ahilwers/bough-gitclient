@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 )
@@ -19,6 +20,12 @@ const cliTimeout = 15 * time.Second
 // is exceeded so callers never block the IPC handler goroutine indefinitely.
 // Empty args are silently ignored (useful for conditional flags).
 func CLI(dir string, args ...string) (string, error) {
+	return cliWithEnv(dir, nil, args...)
+}
+
+// cliWithEnv runs Git with additional environment variables overriding the
+// inherited environment. CLI calls it without overrides.
+func cliWithEnv(dir string, env []string, args ...string) (string, error) {
 	filtered := make([]string, 0, len(args))
 	for _, a := range args {
 		if a != "" {
@@ -30,6 +37,9 @@ func CLI(dir string, args ...string) (string, error) {
 
 	cmd := exec.CommandContext(ctx, "git", filtered...)
 	cmd.Dir = dir
+	if len(env) > 0 {
+		cmd.Env = append(os.Environ(), env...)
+	}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

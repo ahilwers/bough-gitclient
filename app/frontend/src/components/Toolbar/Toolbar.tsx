@@ -10,13 +10,16 @@ import { parseGitError } from '@/lib/format'
 import { useQueryClient } from '@tanstack/react-query'
 import { ManageRemotesDialog } from '@/components/RemoteManager/ManageRemotesDialog'
 import { KeyboardShortcutsDialog } from '@/components/Help/KeyboardShortcutsDialog'
+import { NewBranchDialog } from '@/components/BranchManager/NewBranchDialog'
+import { CreateStashDialog } from '@/components/StashView/CreateStashDialog'
+import { CreateTagDialog } from '@/components/TagManager/CreateTagDialog'
 
 import { PullStrategyDialog } from './PullStrategyDialog'
 import type { git } from '@wailsjs/go/models'
 
 export default function Toolbar() {
   const { t } = useTranslation()
-  const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash, theme, toggleTheme, setHelpDialogOpen, setLoadingOperation } = useGitStore()
+  const { activeView, setActiveView, activeRepo, activeWorktree, recentRepos, setActiveRepo, showFlash, theme, toggleTheme, setHelpDialogOpen, setLoadingOperation } = useGitStore()
   const queryClient = useQueryClient()
   const { data: status } = useStatus()
   const [remoteDialogOpen, setRemoteDialogOpen] = useState(false)
@@ -24,6 +27,25 @@ export default function Toolbar() {
   const [pullLoading, setPullLoading] = useState(false)
   const [pushLoading, setPushLoading] = useState(false)
   const [upstreamInfo, setUpstreamInfo] = useState<git.PushInfo | null>(null)
+  const [createDialog, setCreateDialog] = useState<{ kind: 'branch' | 'stash' | 'tag'; repo: string; worktree: string | null } | null>(null)
+
+  const openCreateDialog = (kind: 'branch' | 'stash' | 'tag') => {
+    if (activeRepo) setCreateDialog({ kind, repo: activeRepo, worktree: activeWorktree })
+  }
+  // Close a dialog when its repository or worktree is no longer active.
+  const currentDialog = createDialog?.repo === activeRepo && createDialog?.worktree === activeWorktree ? createDialog : null
+  useEffect(() => { setCreateDialog(null) }, [activeRepo, activeWorktree])
+
+  useEffect(() => {
+    const onCreate = (event: Event) => {
+      const kind = (event as CustomEvent<string>).detail
+      if (activeRepo && (kind === 'branch' || kind === 'stash' || kind === 'tag')) {
+        setCreateDialog({ kind, repo: activeRepo, worktree: activeWorktree })
+      }
+    }
+    window.addEventListener('git:create', onCreate)
+    return () => window.removeEventListener('git:create', onCreate)
+  }, [activeRepo, activeWorktree])
 
   useEffect(() => { setUpstreamInfo(null) }, [activeRepo])
 
@@ -345,9 +367,9 @@ export default function Toolbar() {
         <IconButton icon={pullLoading ? <Loader2 size={14} className="spin" /> : <ArrowDown size={14} />} label="Pull" onClick={() => handlePull()} disabled={fetchLoading || pullLoading || pushLoading} />
         <IconButton icon={pushLoading ? <Loader2 size={14} className="spin" /> : <ArrowUp size={14} />} label="Push" onClick={handlePush} disabled={fetchLoading || pullLoading || pushLoading} />
         <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
-        <IconButton icon={<GitBranch size={14} />} label="Branch" />
-        <IconButton icon={<Layers size={14} />} label="Stash" />
-        <IconButton icon={<Tag size={14} />} label="Tag" />
+        <IconButton icon={<GitBranch size={14} />} label="Branch" onClick={() => openCreateDialog('branch')} disabled={!activeRepo} />
+        <IconButton icon={<Layers size={14} />} label="Stash" onClick={() => openCreateDialog('stash')} disabled={!activeRepo} />
+        <IconButton icon={<Tag size={14} />} label="Tag" onClick={() => openCreateDialog('tag')} disabled={!activeRepo} />
         <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
         <IconButton
           icon={<Search size={14} />}
@@ -367,6 +389,9 @@ export default function Toolbar() {
         />
       </div>
 
+      {currentDialog?.kind === 'branch' && <NewBranchDialog onClose={() => setCreateDialog(null)} />}
+      {currentDialog?.kind === 'stash' && <CreateStashDialog onClose={() => setCreateDialog(null)} />}
+      {currentDialog?.kind === 'tag' && <CreateTagDialog onClose={() => setCreateDialog(null)} />}
       {upstreamInfo && <CreateUpstreamDialog info={upstreamInfo} onConfirm={handleCreateUpstream} onClose={() => setUpstreamInfo(null)} />}
       {remoteDialogOpen && <ManageRemotesDialog onClose={() => setRemoteDialogOpen(false)} />}
       {pullChoice && pullChoice.repo === activeRepo && pullChoice.branch === branch && <PullStrategyDialog branch={pullChoice.branch} onClose={() => setPullChoice(null)} onChoose={strategy => handlePull(strategy)} />}
