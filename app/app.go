@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sync"
 
 	gitpkg "bough/git"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -13,6 +14,7 @@ import (
 
 // App holds application state and exposes methods to the frontend via Wails IPC.
 type App struct {
+	pullMu  sync.Mutex // Serializes pull validation/integration with repository and branch switches.
 	ctx     context.Context
 	repo    *gitpkg.Repository
 	watcher *gitpkg.Watcher
@@ -50,6 +52,8 @@ func (a *App) startup(ctx context.Context) {
 // --- Repository ---
 
 func (a *App) OpenRepository(path string) (string, error) {
+	a.pullMu.Lock()
+	defer a.pullMu.Unlock()
 	repo, err := gitpkg.Open(path)
 	if err != nil {
 		return "", err
@@ -298,6 +302,8 @@ func (a *App) ListBranches() (gitpkg.BranchList, error) {
 }
 
 func (a *App) CreateBranch(name, from string, checkoutAfter bool) error {
+	a.pullMu.Lock()
+	defer a.pullMu.Unlock()
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -450,6 +456,8 @@ func (a *App) CommitsOnRemote(hashes []string) ([]string, error) {
 }
 
 func (a *App) CheckoutBranch(branch string) error {
+	a.pullMu.Lock()
+	defer a.pullMu.Unlock()
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -461,6 +469,8 @@ func (a *App) CheckoutBranch(branch string) error {
 }
 
 func (a *App) CheckoutRemoteBranch(remoteBranch string) error {
+	a.pullMu.Lock()
+	defer a.pullMu.Unlock()
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -472,6 +482,8 @@ func (a *App) CheckoutRemoteBranch(remoteBranch string) error {
 }
 
 func (a *App) PullIntoLocalBranch(remote, localBranch string) error {
+	a.pullMu.Lock()
+	defer a.pullMu.Unlock()
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
@@ -625,6 +637,8 @@ func (a *App) RemoveWorktree(wtPath string) error {
 // the correct worktree state because they run git -C wtPath.
 // The frontend is notified via "repo:changed" so it invalidates all queries.
 func (a *App) SwitchWorktree(wtPath string) error {
+	a.pullMu.Lock()
+	defer a.pullMu.Unlock()
 	if a.repo == nil {
 		return gitpkg.ErrNotARepo
 	}
