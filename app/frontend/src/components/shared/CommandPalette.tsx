@@ -14,7 +14,7 @@ export default function CommandPalette() {
   const [query, setQuery] = useState('')
   const [activeIdx, setActiveIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { setActiveView } = useGitStore()
+  const { setActiveView, activeRepo } = useGitStore()
 
   const commands: Command[] = useMemo(() => [
     { label: 'History view',  shortcut: '⌘1', action: () => setActiveView('history') },
@@ -22,10 +22,13 @@ export default function CommandPalette() {
     { label: 'Fetch',         shortcut: '⌘F', action: () => {} },
     { label: 'Pull',          shortcut: '⌘L', action: () => {} },
     { label: 'Push',          shortcut: '⌘P', action: () => {} },
-    { label: 'New Branch',    shortcut: '⌘B', action: () => {} },
-    { label: 'Stash',         shortcut: '⌘S', action: () => {} },
+    ...(activeRepo ? [
+      { label: 'New Branch', action: () => window.dispatchEvent(new CustomEvent('git:create', { detail: 'branch' })) },
+      { label: 'Stash', action: () => window.dispatchEvent(new CustomEvent('git:create', { detail: 'stash' })) },
+      { label: 'New Tag', action: () => window.dispatchEvent(new CustomEvent('git:create', { detail: 'tag' })) },
+    ] : []),
     { label: 'Commit',        shortcut: '⌘↵', action: () => {} },
-  ], [setActiveView])
+  ], [setActiveView, activeRepo])
 
   const filtered = useMemo(() =>
     query.trim()

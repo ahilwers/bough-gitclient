@@ -149,6 +149,10 @@ func parsePatchOutput(patch string) []DiffFile {
 			if current != nil {
 				current.Path = strings.TrimPrefix(rawLine, "+++ b/")
 			}
+		case strings.HasPrefix(rawLine, "Binary files ") && strings.HasSuffix(rawLine, " differ"):
+			if current != nil {
+				current.Binary = true
+			}
 		case strings.HasPrefix(rawLine, "@@"):
 			if current == nil {
 				continue

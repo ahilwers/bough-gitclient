@@ -47,6 +47,9 @@ export interface BranchInfo { name: string; remote: string; isHead: boolean; ups
 export interface BranchList { local: BranchInfo[]; remotes: BranchInfo[] }
 export interface WorktreeInfo { path: string; branch: string; head: string; isMain: boolean; isDirty: boolean }
 export const ListBranches = vi.fn((): Promise<BranchList> => Promise.resolve({ local: [], remotes: [] }))
+export const CreateBranch = vi.fn((_name: string, _from: string, _checkoutAfter: boolean): Promise<void> => Promise.resolve())
+export const CreateStash = vi.fn((_message: string, _includeUntracked: boolean): Promise<void> => Promise.resolve())
+export const CreateTag = vi.fn((_name: string, _target: string): Promise<void> => Promise.resolve())
 export const ListWorktrees = vi.fn((): Promise<WorktreeInfo[]> => Promise.resolve([]))
 export const AddWorktree = vi.fn((_path: string, _branch: string): Promise<void> => Promise.resolve())
 export const RemoveWorktree = vi.fn((_path: string): Promise<void> => Promise.resolve())
