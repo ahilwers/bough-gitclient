@@ -34,17 +34,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # macOS Intel (x86_64)  — runs on a native Intel runner (macos-13)
+          # macOS Intel (x86_64)  — only remaining Intel label, valid until ~Aug 2027
           - label: macOS (Intel)
-            os: macos-13
+            os: macos-15-intel
             platform: darwin/amd64
             family: macos
             artifact: app/build/bin/Bough
             pkg_basename: Bough-${{ github.ref_name }}-macos-intel
 
-          # macOS Apple Silicon (arm64)
+          # macOS Apple Silicon (arm64) — macos-latest currently maps to macOS 26 (arm64)
           - label: macOS (Apple Silicon)
-            os: macos-14
+            os: macos-latest
             platform: darwin/arm64
             family: macos
             artifact: app/build/bin/Bough

@@ -166,8 +166,9 @@ Bough-v0.1.0-linux-x86_64.AppImage
 - **`Bough.app`: "not verified" despite signing:** This only happens when **notarization**
   (`APPLE_API_KEY*` + `APPLE_TEAM_ID`) is missing or failed. `stapler staple` attaches the
   notarization **stamp** required to lift the warning.
-- **macOS runners:** `macos-13` (Intel) and `macos-14` (Apple Silicon). If GitHub retires these
-  runners, update the names in `.github/workflows/release.yml` accordingly.
+- **macOS runners:** Intel builds use `macos-15-intel` (the last remaining Intel label,
+  valid until ~Aug 2027) and Apple Silicon uses `macos-latest`. If GitHub changes/retires these,
+  update the names in `.github/workflows/release.yml` accordingly.
 
 ---
 
