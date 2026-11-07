@@ -142,6 +142,15 @@ type RebaseAction struct {
 	Message string `json:"message"`
 }
 
+// ImageSource carries one version of an image file as a base64 data URL.
+// DataURL is empty when no image exists for the requested source (e.g. the
+// file was added in this commit, so there is no parent version). Size is the
+// original file size in bytes (before base64 encoding).
+type ImageSource struct {
+	DataURL string `json:"dataURL"`
+	Size    int64  `json:"size"`
+}
+
 // RebaseState is set when an interactive rebase is in progress
 // (.git/rebase-merge directory exists).
 type RebaseState struct {

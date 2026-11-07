@@ -109,6 +109,76 @@ func (a *App) GetFileAtCommitParent(hash, filePath string) (string, error) {
 	return a.repo.GetFileAtCommitParent(hash, filePath)
 }
 
+// GetImageAtCommit returns the image at filePath in the given commit as a
+// base64 data URL. DataURL is empty when the file didn't exist at that commit.
+func (a *App) GetImageAtCommit(hash, filePath string) (gitpkg.ImageSource, error) {
+	if a.repo == nil {
+		return gitpkg.ImageSource{}, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetImageAtCommit(hash, filePath)
+}
+
+// GetImageAtCommitParent returns the image at filePath in the first parent of
+// hash. DataURL is empty when the commit has no parent or the file didn't exist.
+func (a *App) GetImageAtCommitParent(hash, filePath string) (gitpkg.ImageSource, error) {
+	if a.repo == nil {
+		return gitpkg.ImageSource{}, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetImageAtCommitParent(hash, filePath)
+}
+
+// GetImageFromWorktree reads the current working-copy file as an image.
+func (a *App) GetImageFromWorktree(filePath string) (gitpkg.ImageSource, error) {
+	if a.repo == nil {
+		return gitpkg.ImageSource{}, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetImageFromWorktree(filePath)
+}
+
+// GetImageFromIndex returns the staged (index) version of an image file.
+func (a *App) GetImageFromIndex(filePath string) (gitpkg.ImageSource, error) {
+	if a.repo == nil {
+		return gitpkg.ImageSource{}, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetImageFromIndex(filePath)
+}
+
+// GetImageFromHead returns the image as stored in the current HEAD commit.
+func (a *App) GetImageFromHead(filePath string) (gitpkg.ImageSource, error) {
+	if a.repo == nil {
+		return gitpkg.ImageSource{}, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetImageFromHead(filePath)
+}
+
+// GetImageFromMergeStage returns the image from a merge-conflict index stage:
+// 2 = ours (local HEAD), 3 = theirs (incoming branch). DataURL is empty when
+// the stage is missing (e.g. add/add conflict where one side lacks the file).
+func (a *App) GetImageFromMergeStage(filePath string, stage int) (gitpkg.ImageSource, error) {
+	if a.repo == nil {
+		return gitpkg.ImageSource{}, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetImageFromIndexStage(filePath, stage)
+}
+
+// GetImageFromStash returns the image at filePath as saved inside stash@{index}.
+// Covers both tracked and untracked (-u) stash entries.
+func (a *App) GetImageFromStash(index int, filePath string) (gitpkg.ImageSource, error) {
+	if a.repo == nil {
+		return gitpkg.ImageSource{}, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetImageFromStash(index, filePath)
+}
+
+// GetImageFromStashBase returns the image at filePath in the commit the stash
+// was based on (the stash's first parent).
+func (a *App) GetImageFromStashBase(index int, filePath string) (gitpkg.ImageSource, error) {
+	if a.repo == nil {
+		return gitpkg.ImageSource{}, gitpkg.ErrNotARepo
+	}
+	return a.repo.GetImageFromStashBase(index, filePath)
+}
+
 // --- Status & Diff ---
 
 func (a *App) GetStatus() (gitpkg.RepoStatus, error) {

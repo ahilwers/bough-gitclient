@@ -5,6 +5,9 @@ import { GetFileContent, CheckoutOurs, CheckoutTheirs, AcceptBoth, StageFile, Op
 import { ChevronRight } from 'lucide-react'
 import { useMergeCommits } from '@/hooks/useMergeCommits'
 import { useCherryPick } from '@/hooks/useCherryPick'
+import { useMergeStageImageDiff } from '@/hooks/useImageDiff'
+import { ImageDiffView } from '@/components/shared/ImageDiffView'
+import { isImagePath } from '@/lib/images'
 import { MergeCommitDetailDialog } from './MergeCommitDetailDialog'
 import { useGitStore } from '@/stores/gitStore'
 import { useStatus } from '@/hooks/useStatus'
@@ -142,7 +145,9 @@ export function ConflictResolutionPanel({ filePath }: Props) {
 
       {/* ── File content ── */}
       <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-content)' }}>
-        {isLoading ? (
+        {isImagePath(filePath) ? (
+          <ConflictImageDiff filePath={filePath} />
+        ) : isLoading ? (
           <div style={{ padding: 20, fontSize: 12, color: 'var(--text-ter)' }}>Loading…</div>
         ) : (
           <ConflictContent content={content ?? ''} />
@@ -183,6 +188,29 @@ function CommitRow({ commit, onClick }: { commit: CommitNode; onClick: () => voi
       <span style={{ fontSize: 10, color: 'var(--text-ter)', flexShrink: 0 }}>
         {formatRelativeDate(commit.date)}
       </span>
+    </div>
+  )
+}
+
+// ─── Conflict image diff ─────────────────────────────────────────────────────
+// Binary image conflicts can't show file markers — render the two versions
+// side by side (ours = stage 2, theirs = stage 3). Deciding happens via the
+// panel's "Use Ours" / "Use Theirs" action buttons above.
+
+function ConflictImageDiff({ filePath }: { filePath: string }) {
+  const { ours, theirs, isLoading } = useMergeStageImageDiff(filePath)
+
+  return (
+    <div style={{ height: '100%', padding: 8, boxSizing: 'border-box' }}>
+      <ImageDiffView
+        left={ours}
+        right={theirs}
+        leftLabel="Ours (HEAD)"
+        rightLabel="Theirs (incoming)"
+        leftEmptyHint="No image in our version"
+        rightEmptyHint="No image in their version"
+        loading={isLoading}
+      />
     </div>
   )
 }

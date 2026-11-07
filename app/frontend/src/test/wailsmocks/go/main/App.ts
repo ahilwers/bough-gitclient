@@ -10,6 +10,7 @@ export interface CommitNode {
 export interface DiffLine { type: string; content: string; oldNo: number; newNo: number }
 export interface DiffHunk { header: string; oldStart: number; oldLines: number; newStart: number; newLines: number; lines: DiffLine[] }
 export interface DiffFile { path: string; oldPath: string; hunks: DiffHunk[]; binary: boolean }
+export interface ImageSource { dataURL: string; size: number }
 export interface FileStatus { path: string; oldPath: string; staged: string; unstaged: string; added: number; deleted: number }
 export interface RepoStatus { branch: string; ahead: number; behind: number; files: FileStatus[]; hasConflicts: boolean }
 
@@ -25,6 +26,14 @@ export const GetFileDiff = vi.fn((_path: string, _staged: boolean): Promise<Diff
   Promise.resolve({ path: '', oldPath: '', hunks: [], binary: false }))
 export const GetUntrackedFileDiff = vi.fn((_path: string): Promise<DiffFile> =>
   Promise.resolve({ path: '', oldPath: '', hunks: [], binary: false }))
+export const GetImageAtCommit = vi.fn((_hash: string, _path: string): Promise<ImageSource> => Promise.resolve({ dataURL: '', size: 0 }))
+export const GetImageAtCommitParent = vi.fn((_hash: string, _path: string): Promise<ImageSource> => Promise.resolve({ dataURL: '', size: 0 }))
+export const GetImageFromWorktree = vi.fn((_path: string): Promise<ImageSource> => Promise.resolve({ dataURL: '', size: 0 }))
+export const GetImageFromIndex = vi.fn((_path: string): Promise<ImageSource> => Promise.resolve({ dataURL: '', size: 0 }))
+export const GetImageFromHead = vi.fn((_path: string): Promise<ImageSource> => Promise.resolve({ dataURL: '', size: 0 }))
+export const GetImageFromMergeStage = vi.fn((_path: string, _stage: number): Promise<ImageSource> => Promise.resolve({ dataURL: '', size: 0 }))
+export const GetImageFromStash = vi.fn((_index: number, _path: string): Promise<ImageSource> => Promise.resolve({ dataURL: '', size: 0 }))
+export const GetImageFromStashBase = vi.fn((_index: number, _path: string): Promise<ImageSource> => Promise.resolve({ dataURL: '', size: 0 }))
 export const StageFile = vi.fn((_path: string): Promise<void> => Promise.resolve())
 export const StageFiles = vi.fn((_paths: string[]): Promise<void> => Promise.resolve())
 export const UnstageFile = vi.fn((_path: string): Promise<void> => Promise.resolve())
