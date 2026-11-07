@@ -89,7 +89,6 @@ app/          Desktop application (Wails 2 · Go backend · React frontend)
   └── frontend/   React 19 + TypeScript UI
 docs/         Architecture and design documents
 scripts/      Build and utility scripts
-website/      Marketing website (Next.js)
 ```
 
 ### Git backend split
