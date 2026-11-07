@@ -24,14 +24,22 @@ import ProgressBar from '@/components/shared/ProgressBar'
 import CommandPalette from '@/components/shared/CommandPalette'
 
 export default function App() {
-  const { activeView, showSidebar, theme } = useGitStore()
+  const { activeView, showSidebar, resolvedTheme, syncSystemTheme } = useGitStore()
   const queryClient = useQueryClient()
   const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Apply theme to <html data-theme>
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-  }, [theme])
+    document.documentElement.setAttribute('data-theme', resolvedTheme)
+  }, [resolvedTheme])
+
+  // When the preference is 'system', follow OS light/dark changes live.
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = () => syncSystemTheme()
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [syncSystemTheme])
 
   // Central repo:changed handler — invalidates all data queries
   useEffect(() => {

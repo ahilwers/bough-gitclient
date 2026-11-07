@@ -9,12 +9,11 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { Button } from '../shared/Button'
-import { Sun, Moon } from 'lucide-react'
+import { ThemeMenu } from '../shared/ThemeMenu'
 import { useGitStore } from '@/stores/gitStore'
 
 export default function Titlebar() {
-  const { theme, toggleTheme, activeRepo } = useGitStore()
+  const { activeRepo } = useGitStore()
   const repoName = activeRepo ? activeRepo.split('/').pop() : null
 
   return (
@@ -44,28 +43,15 @@ export default function Titlebar() {
         )}
       </div>
 
-      {/* Theme toggle — must opt out of window drag */}
-      <Button variant="ghost"
-        onClick={toggleTheme}
-        title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-        aria-label="Toggle theme"
+      {/* Theme menu — must opt out of window drag */}
+      <ThemeMenu
         style={{
           // @ts-expect-error webkit no-drag
           WebkitAppRegion: 'no-drag',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           width: 28,
           height: 28,
-          borderRadius: 6,
-          border: 'none',
-          background: 'transparent',
-          color: 'var(--text-ter)',
-          cursor: 'pointer',
         }}
-      >
-        {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-      </Button>
+      />
     </div>
   )
 }

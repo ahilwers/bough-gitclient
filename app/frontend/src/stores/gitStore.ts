@@ -14,13 +14,23 @@ import { devtools } from 'zustand/middleware'
 import type { WorktreeInfo } from '@/lib/types'
 
 export type View = 'history' | 'changes'
-export type Theme = 'light' | 'dark'
+/** Theme preference chosen by the user. */
+export type Theme = 'light' | 'dark' | 'system'
+/** The concrete theme actually applied (resolves 'system' against the OS). */
+export type ResolvedTheme = 'light' | 'dark'
+
+/** Cycle order used by toggleTheme (light → dark → system → light). */
+const THEME_CYCLE: Theme[] = ['light', 'dark', 'system']
 
 interface GitStore {
   // Appearance
   theme: Theme
+  /** Concrete theme applied via <html data-theme>. */
+  resolvedTheme: ResolvedTheme
   setTheme: (t: Theme) => void
   toggleTheme: () => void
+  /** Re-resolve the system theme (call on prefers-color-scheme changes). */
+  syncSystemTheme: () => void
 
   // View & layout
   activeView: View
@@ -77,22 +87,35 @@ interface GitStore {
   clearFlash: () => void
 }
 
-function detectTheme(): Theme {
+function systemPrefersDark(): boolean {
   try {
-    const stored = localStorage.getItem('theme') as Theme | null
-    if (stored === 'light' || stored === 'dark') return stored
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
   } catch {
-    // localStorage may not be available in test environments
-  }
-  try {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  } catch {
-    return 'light'
+    // matchMedia may not be available in test environments
+    return false
   }
 }
 
+function resolveTheme(pref: Theme): ResolvedTheme {
+  return pref === 'system' ? (systemPrefersDark() ? 'dark' : 'light') : pref
+}
+
+function detectTheme(): Theme {
+  try {
+    const stored = localStorage.getItem('theme') as Theme | null
+    if (stored === 'light' || stored === 'dark' || stored === 'system') return stored
+  } catch {
+    // localStorage may not be available in test environments
+  }
+  // No stored preference: follow the system theme.
+  return 'system'
+}
+
+const initialTheme = detectTheme()
+
 const initialState = {
-  theme: detectTheme(),
+  theme: initialTheme,
+  resolvedTheme: resolveTheme(initialTheme) as ResolvedTheme,
   activeView: 'history' as View,
   showSidebar: true,
   flash: null,
@@ -117,12 +140,15 @@ export const useGitStore = create<GitStore>()(
 
       setTheme: (theme) => {
         try { localStorage.setItem('theme', theme) } catch { /* jsdom */ }
-        set({ theme })
+        set({ theme, resolvedTheme: resolveTheme(theme) })
       },
       toggleTheme: () => {
-        const next = get().theme === 'dark' ? 'light' : 'dark'
+        const next = THEME_CYCLE[(THEME_CYCLE.indexOf(get().theme) + 1) % THEME_CYCLE.length]
         try { localStorage.setItem('theme', next) } catch { /* jsdom */ }
-        set({ theme: next })
+        set({ theme: next, resolvedTheme: resolveTheme(next) })
+      },
+      syncSystemTheme: () => {
+        set((s) => ({ resolvedTheme: resolveTheme(s.theme) }))
       },
 
       setView: (activeView) => set({ activeView }),

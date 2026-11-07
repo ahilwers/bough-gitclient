@@ -38,7 +38,7 @@ interface DiffViewerProps {
 }
 
 export function DiffViewer({ commitHash, filePath }: DiffViewerProps) {
-  const { theme } = useGitStore()
+  const { resolvedTheme } = useGitStore()
   const isImage = isImagePath(filePath)
 
   // Hooks are called unconditionally so switching between text and image files
@@ -80,7 +80,7 @@ export function DiffViewer({ commitHash, filePath }: DiffViewerProps) {
       original={parent.data ?? ''}
       modified={current.data ?? ''}
       language={language}
-      theme={theme === 'dark' ? 'vs-dark' : 'vs'}
+      theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs'}
       options={{
         readOnly: true,
         renderSideBySide: false,

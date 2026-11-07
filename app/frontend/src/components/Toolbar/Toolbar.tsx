@@ -10,9 +10,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { Button } from '../shared/Button'
+import { ThemeMenu } from '../shared/ThemeMenu'
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon, FolderOpen, FolderPlus, Globe, HelpCircle, Loader2 } from 'lucide-react'
+import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, FolderOpen, FolderPlus, Globe, HelpCircle, Loader2 } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useGitStore } from '@/stores/gitStore'
 import { useStatus } from '@/hooks/useStatus'
@@ -31,7 +32,7 @@ import type { git } from '@wailsjs/go/models'
 
 export default function Toolbar() {
   const { t } = useTranslation()
-  const { activeView, setActiveView, activeRepo, activeWorktree, recentRepos, setActiveRepo, showFlash, theme, toggleTheme, setHelpDialogOpen, setLoadingOperation } = useGitStore()
+  const { activeView, setActiveView, activeRepo, activeWorktree, recentRepos, setActiveRepo, showFlash, setHelpDialogOpen, setLoadingOperation } = useGitStore()
   const queryClient = useQueryClient()
   const { data: status } = useStatus()
   const [remoteDialogOpen, setRemoteDialogOpen] = useState(false)
@@ -391,11 +392,7 @@ export default function Toolbar() {
           onClick={() => window.dispatchEvent(new CustomEvent('palette:open'))}
         />
         <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
-        <IconButton
-          icon={theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-          label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          onClick={toggleTheme}
-        />
+        <ThemeMenu />
         <IconButton
           icon={<HelpCircle size={14} />}
           label="Keyboard shortcuts (?)"

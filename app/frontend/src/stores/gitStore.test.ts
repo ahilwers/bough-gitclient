@@ -9,7 +9,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { act } from 'react'
 import { useGitStore } from './gitStore'
 
@@ -29,18 +29,102 @@ beforeEach(() => {
 })
 
 describe('theme', () => {
-  it('toggleTheme switches between light and dark', () => {
+  it('toggleTheme cycles light → dark → system → light', () => {
     useGitStore.setState({ theme: 'light' })
     act(() => useGitStore.getState().toggleTheme())
     expect(useGitStore.getState().theme).toBe('dark')
 
     act(() => useGitStore.getState().toggleTheme())
+    expect(useGitStore.getState().theme).toBe('system')
+
+    act(() => useGitStore.getState().toggleTheme())
     expect(useGitStore.getState().theme).toBe('light')
   })
 
-  it('setTheme sets an explicit value', () => {
+  it('setTheme sets an explicit value and updates resolvedTheme', () => {
     act(() => useGitStore.getState().setTheme('dark'))
     expect(useGitStore.getState().theme).toBe('dark')
+    expect(useGitStore.getState().resolvedTheme).toBe('dark')
+
+    act(() => useGitStore.getState().setTheme('light'))
+    expect(useGitStore.getState().theme).toBe('light')
+    expect(useGitStore.getState().resolvedTheme).toBe('light')
+  })
+
+  it('setTheme("system") makes resolvedTheme follow the OS', () => {
+    act(() => useGitStore.getState().setTheme('system'))
+    expect(useGitStore.getState().theme).toBe('system')
+    // jsdom mocks matchMedia with matches: false → resolves to light
+    expect(useGitStore.getState().resolvedTheme).toBe('light')
+  })
+
+  it('syncSystemTheme re-resolves the system preference on OS changes', () => {
+    act(() => useGitStore.getState().setTheme('system'))
+
+    // Simulate the OS switching to dark mode
+    vi.mocked(window.matchMedia).mockReturnValue({
+      matches: true,
+      media: '(prefers-color-scheme: dark)',
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })
+    act(() => useGitStore.getState().syncSystemTheme())
+    expect(useGitStore.getState().resolvedTheme).toBe('dark')
+
+    // And back to light
+    vi.mocked(window.matchMedia).mockReturnValue({
+      matches: false,
+      media: '(prefers-color-scheme: dark)',
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })
+    act(() => useGitStore.getState().syncSystemTheme())
+    expect(useGitStore.getState().resolvedTheme).toBe('light')
+  })
+
+  it('an explicit preference is not affected by syncSystemTheme', () => {
+    act(() => useGitStore.getState().setTheme('dark'))
+    act(() => useGitStore.getState().syncSystemTheme())
+    expect(useGitStore.getState().resolvedTheme).toBe('dark')
+  })
+})
+
+describe('theme startup default', () => {
+  // jsdom (in this setup) has no window.localStorage; install a minimal fake
+  // so we can exercise the store's persistence logic.
+  function fakeLocalStorage(entries: Record<string, string> = {}) {
+    const data = new Map(Object.entries(entries))
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      writable: true,
+      value: {
+        getItem: (k: string) => (data.has(k) ? (data.get(k) as string) : null),
+        setItem: (k: string, v: string) => { data.set(k, v) },
+      },
+    })
+  }
+
+  it('defaults to "system" when nothing is stored', async () => {
+    fakeLocalStorage()
+    vi.resetModules()
+    const { useGitStore: freshStore } = await import('./gitStore')
+    expect(freshStore.getState().theme).toBe('system')
+  })
+
+  it('respects an explicitly stored light/dark preference from the previous version', async () => {
+    fakeLocalStorage({ theme: 'dark' })
+    vi.resetModules()
+    const { useGitStore: freshStore } = await import('./gitStore')
+    expect(freshStore.getState().theme).toBe('dark')
+    expect(freshStore.getState().resolvedTheme).toBe('dark')
   })
 })
 
