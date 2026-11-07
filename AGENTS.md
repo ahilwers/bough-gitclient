@@ -66,7 +66,7 @@ Builds embed version via Makefile `LDFLAGS`:
 **Frontend Stack:**
 - React 19 + TypeScript 5 + Vite
 - Zustand for app state, TanStack Query v5 for async/cache
-- Tailwind CSS 4 with CSS custom properties (design tokens in `global.css`)
+- Tailwind CSS 4 with CSS custom properties (design tokens in `app/frontend/src/index.css`)
 - Monaco Editor for diff viewer, Radix UI for components
 
 **Buttons (mandatory):**
@@ -75,6 +75,24 @@ Builds embed version via Makefile `LDFLAGS`:
 - Use `ghost` for flat toolbar, tab, menu and list controls; use `icon` for icon-only controls, with an accessible `aria-label` (and optionally a tooltip `title`). Preserve selected-state and row layout semantics.
 - Button owns visual styles and hover/focus/disabled states in `app/frontend/src/index.css`. Do not create individual visual button recipes for normal actions or blanket CSS selectors targeting all native buttons. Local layout/size and selected-state styling for flat controls is allowed.
 - Native props and React 19 refs pass through, so use Button directly inside Radix `asChild` triggers/close controls. The default type is `button`; specify `type="submit"` explicitly when needed.
+
+**Design System:**
+- **Principles:** clear and focused (no decorative elements), density with grace, working copy first,
+  keyboard first (⌘K opens the Command Palette, all essential actions keyboard accessible).
+- **Theme:** light and dark themes via CSS custom properties in
+  `app/frontend/src/index.css`. Toggle by setting `data-theme="dark"` on `<html>`. Never hardcode
+  colors — always use the design tokens (e.g. `--bg-content`, `--acc`, `--success`, `--danger`).
+- **Typography:** Inter for all interface text; JetBrains Mono for hashes, filenames, diff content,
+  and technical identifiers.
+- **Icons:** Lucide (lucide-react) only, no emoji. Toolbar/sidebar icons 13px @ stroke-width 1.8;
+  muted icons use `--text-sec`, primary actions use `--acc`.
+- **Layout constants:** titlebar 40px · toolbar 44px · sidebar 200px · detail panel (history) 370px ·
+  file list (changes) 240px · commit row 34px · sidebar item 24px · file item 26px · diff line 19px.
+  Radii via `--r-sm`/`--r-md`/`--r-lg` (4/6/10px), window edge 12px.
+- **Interactions:** hover transitions 100–120ms; input focus = `--acc` border + soft glow
+  (`--acc-soft`, 2.5px ring); hunk actions start soft and fill on hover — stage `--success`,
+  discard `--danger`, unstage `--acc`; flash notifications appear bottom-center in
+  `--success`/`--danger`.
 
 **Type System:**
 Canonical Go types in `app/git/types.go` mirrored as TypeScript interfaces:
