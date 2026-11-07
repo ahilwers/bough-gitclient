@@ -237,7 +237,23 @@ func (r *Repository) DeleteBranch(info BranchDeletionInfo) error {
 	if err != nil || branchDeletionFingerprint(info.Remote, fetch, lines[0], fetchURLs, tracking, trackingOID) != info.ConfigFingerprint {
 		return fmt.Errorf("remote configuration changed; prepare deletion again")
 	}
+	// Git >= 2.56 keeps the remote-tracking branch in sync even when a delete
+	// is pushed to a URL: it applies the fetch refspec of a uniquely matching
+	// configured remote. That would drop a tracking ref we explicitly intend
+	// to keep when the push and fetch destinations differ, and it would also
+	// destroy a tracking ref refreshed concurrently during the push (the guard
+	// for that is the deletion CAS below). Temporarily neutralise the fetch
+	// mapping around the push so git cannot prune the tracking ref; the
+	// explicit cleanup below remains the only authority over it.
+	if _, e := CLI(r.Path, "config", "--unset-all", "remote."+info.Remote+".fetch"); e != nil {
+		return fmt.Errorf("remote configuration changed; prepare deletion again")
+	}
 	_, err = remoteGit(r.Path, "push", "--no-mirror", "--no-tags", "--no-follow-tags", "--no-recurse-submodules", "--force-with-lease="+info.Ref+":"+info.OID, "--", lines[0], ":"+info.Ref)
+	// Restore the fetch mapping no matter how the push ended. A remote without
+	// a fetch refspec is broken for future operations.
+	if _, re := CLI(r.Path, "config", "--add", "remote."+info.Remote+".fetch", strings.TrimSpace(fetch)); re != nil {
+		return fmt.Errorf("remote configuration changed; prepare deletion again")
+	}
 	if err != nil {
 		return err
 	}
