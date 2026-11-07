@@ -4,7 +4,8 @@ import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronD
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useGitStore } from '@/stores/gitStore'
 import { useStatus } from '@/hooks/useStatus'
-import { SelectRepository, OpenRepository, Fetch, PullForUI, ResolvePull, Push, SelectAndInitRepository } from '@wailsjs/go/main/App'
+import { SelectRepository, OpenRepository, Fetch, PullForUI, ResolvePull, Push, GetPushInfo, PushWithUpstream, SelectAndInitRepository } from '@wailsjs/go/main/App'
+import { CreateUpstreamDialog } from './CreateUpstreamDialog'
 import { parseGitError } from '@/lib/format'
 import { useQueryClient } from '@tanstack/react-query'
 import { ManageRemotesDialog } from '@/components/RemoteManager/ManageRemotesDialog'
@@ -22,6 +23,9 @@ export default function Toolbar() {
   const [fetchLoading, setFetchLoading] = useState(false)
   const [pullLoading, setPullLoading] = useState(false)
   const [pushLoading, setPushLoading] = useState(false)
+  const [upstreamInfo, setUpstreamInfo] = useState<git.PushInfo | null>(null)
+
+  useEffect(() => { setUpstreamInfo(null) }, [activeRepo])
 
   const [pullChoice, setPullChoice] = useState<git.PullSnapshot | null>(null)
   const pullGeneration = useRef(0)
@@ -147,7 +151,31 @@ export default function Toolbar() {
     setPushLoading(true)
     setLoadingOperation('Pushing…')
     try {
+      const info = await GetPushInfo()
+      if (useGitStore.getState().activeRepo !== activeRepo) return
+      if (!info.upstream) {
+        setUpstreamInfo(info)
+        return
+      }
       await Push('', '', false)
+      showFlash('Pushed successfully')
+      queryClient.invalidateQueries()
+    } catch (err) {
+      showFlash(parseGitError(err), 'danger')
+    } finally {
+      setPushLoading(false)
+      setLoadingOperation(null)
+    }
+  }
+
+  const handleCreateUpstream = async (remote: string) => {
+    const info = upstreamInfo
+    setUpstreamInfo(null)
+    if (!info || useGitStore.getState().activeRepo !== activeRepo) return
+    setPushLoading(true)
+    setLoadingOperation('Pushing…')
+    try {
+      await PushWithUpstream(info.repoPath, remote, info.branch)
       showFlash('Pushed successfully')
       queryClient.invalidateQueries()
     } catch (err) {
@@ -339,6 +367,7 @@ export default function Toolbar() {
         />
       </div>
 
+      {upstreamInfo && <CreateUpstreamDialog info={upstreamInfo} onConfirm={handleCreateUpstream} onClose={() => setUpstreamInfo(null)} />}
       {remoteDialogOpen && <ManageRemotesDialog onClose={() => setRemoteDialogOpen(false)} />}
       {pullChoice && pullChoice.repo === activeRepo && pullChoice.branch === branch && <PullStrategyDialog branch={pullChoice.branch} onClose={() => setPullChoice(null)} onChoose={strategy => handlePull(strategy)} />}
       <KeyboardShortcutsDialog />
