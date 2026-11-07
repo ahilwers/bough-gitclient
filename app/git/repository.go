@@ -83,6 +83,8 @@ func (r *Repository) Status() (RepoStatus, error) {
 	}
 
 	branch, _ := r.CurrentBranch()
+	// Use the current worktree's branch, including after CLI checkouts.
+	aheadBehind := r.fetchAheadBehind()[branch]
 	var files []FileStatus
 	hasConflicts := false
 
@@ -155,6 +157,8 @@ func (r *Repository) Status() (RepoStatus, error) {
 
 	return RepoStatus{
 		Branch:          branch,
+		Ahead:           aheadBehind[0],
+		Behind:          aheadBehind[1],
 		Files:           files,
 		HasConflicts:    hasConflicts,
 		MergeState:      mergeState,
