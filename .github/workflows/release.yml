@@ -93,6 +93,14 @@ jobs:
         run: npm ci
         working-directory: app/frontend
 
+      # Wails needs GTK/WebKit dev libs to build the Linux binary.
+      - name: Install Linux build dependencies
+        if: matrix.family == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev \
+            libayatana-appindicator3-dev librsvg2-dev libglib2.0-dev
+
       - name: Download Go dependencies
         run: go mod download
         working-directory: app
@@ -109,6 +117,10 @@ jobs:
           app/build/darwin/Info.plist
 
       - name: Build (Wails)
+        # Use bash explicitly: this step uses `\` line continuations, which break
+        # on the default PowerShell shell used by the Windows runner (Git Bash is
+        # available on all hosted runners).
+        shell: bash
         run: |
           go tool wails build \
             -clean \
@@ -127,10 +139,13 @@ jobs:
           security create-keychain -p build build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p build build.keychain
+          # Consent for codesign only — notarytool is resolved below via its real
+          # Xcode path, so it is not pinned here.
           security import certificate.p12 \
             -k build.keychain \
             -P "$APPLE_CERTIFICATE_PASSWORD" \
-            -T /usr/bin/codesign -T /usr/bin/notarytool
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
           security set-key-partition-list \
             -S apple-tool:,apple: -k build build.keychain
 
