@@ -2,6 +2,15 @@
 
 High-signal guidance for OpenCode agents working in this repository.
 
+## Language
+
+**All user-facing and in-repository text must be written in English** — including source code
+comments, identifiers, documentation, commit messages, and any text inside the repo (docs, plans,
+release notes, etc.) — **unless** it is explicitly a piece of text that has been localized/translated
+into another language (for example, a translated UI string or a localized resource). Default to
+English everywhere; write in another language only when translating an existing string into that
+language on purpose.
+
 ## Commands & Directories
 
 **Prerequisites:** Go 1.27+ and Node.js 22. Wails v2.17.1 is pinned as a Go tool in `app/go.mod`; use `go tool wails` from `app/`, not a globally installed CLI.

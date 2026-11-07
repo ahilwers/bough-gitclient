@@ -1,224 +1,282 @@
 name: Release
 
+# Build signed/notarized release artifacts for macOS, Windows and Linux and
+# publish them to a GitHub Release when a version tag (v*.*.*) is pushed.
+#
+# Signing is OPTIONAL. Artifacts are always built. If the relevant secrets are
+# not configured, that platform is simply built unsigned (macOS apps will then
+# trigger the "unidentified developer" warning — see RELEASE.md).
+
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
-permissions:
-  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+# Version is the tag name (e.g. v0.1.0) passed to the build via ldflags.
+# BUILD_DATE uses the commit timestamp so it is shell-independent (works in bash AND PowerShell).
+env:
+  VERSION: ${{ github.ref_name }}
+  BUILD_DATE: ${{ github.event.head_commit.timestamp || github.ref_name }}
 
 jobs:
-  # ── Build + sign on each platform ──────────────────────────────────────────
+  # ────────────────────────────── Build matrix ────────────────────────────────
   build:
-    name: Build (${{ matrix.target }})
+    name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: macos-13          # Intel runner
-            target: darwin/amd64
-            artifact_name: Bough-${{ github.ref_name }}-macos-intel.dmg
-            wails_platform: darwin/amd64
+          # macOS Intel (x86_64)  — runs on a native Intel runner (macos-13)
+          - label: macOS (Intel)
+            os: macos-13
+            platform: darwin/amd64
+            family: macos
+            artifact: app/build/bin/Bough
+            pkg_basename: Bough-${{ github.ref_name }}-macos-intel
 
-          - os: macos-latest      # Apple Silicon runner (M-series)
-            target: darwin/arm64
-            artifact_name: Bough-${{ github.ref_name }}-macos-arm64.dmg
-            wails_platform: darwin/arm64
+          # macOS Apple Silicon (arm64)
+          - label: macOS (Apple Silicon)
+            os: macos-14
+            platform: darwin/arm64
+            family: macos
+            artifact: app/build/bin/Bough
+            pkg_basename: Bough-${{ github.ref_name }}-macos-arm64
 
-          - os: windows-latest
-            target: windows/amd64
-            artifact_name: Bough-${{ github.ref_name }}-windows-x64.exe
-            wails_platform: windows/amd64
+          # Windows x64 (NSIS installer)
+          - label: Windows (x64)
+            os: windows-latest
+            platform: windows/amd64
+            family: windows
+            artifact: app/build/bin/Bough.exe
+            pkg_basename: Bough-${{ github.ref_name }}-windows-x64
 
-          - os: ubuntu-latest
-            target: linux/amd64
-            artifact_name: Bough-${{ github.ref_name }}-linux-x86_64.AppImage
-            wails_platform: linux/amd64
+          # Linux x86_64 (AppImage)
+          - label: Linux (x86_64)
+            os: ubuntu-latest
+            platform: linux/amd64
+            family: linux
+            artifact: app/build/bin/Bough
+            pkg_basename: Bough-${{ github.ref_name }}-linux-x86_64
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version-file: app/go.mod
           cache-dependency-path: app/go.sum
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: app/frontend/package-lock.json
+          node-version: "22"
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: app/frontend
 
       - name: Download Go dependencies
         run: go mod download
         working-directory: app
 
-      # ── Platform dependencies ─────────────────────────────────────────────
-      - name: Install dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install create-dmg
-
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgtk-3-dev \
-            libwebkit2gtk-4.0-dev \
-            appimagetool \
-            fuse \
-            libfuse2
-
-      # ── Build ─────────────────────────────────────────────────────────────
-      - name: Build Wails app (macOS — with Sparkle CGo)
-        if: runner.os == 'macOS'
+      # Inject the Sparkle EdDSA public key into Info.plist if provided.
+      # Needed only for the macOS auto-update to verify cast signatures.
+      - name: Set Sparkle public key
+        if: matrix.family == 'macos' && secrets.SPARKLE_PUBLIC_KEY != ''
         env:
-          CGO_ENABLED: '1'
+          SPARKLE_PUBLIC_KEY: ${{ secrets.SPARKLE_PUBLIC_KEY }}
+        run: >-
+          sed -i.bak
+          "s|REPLACE_WITH_EDDSA_PUBLIC_KEY|$SPARKLE_PUBLIC_KEY|"
+          app/build/darwin/Info.plist
+
+      - name: Build (Wails)
         run: |
           go tool wails build \
-            -platform ${{ matrix.wails_platform }} \
-            -tags sparkle \
-            -ldflags "-X main.version=${{ github.ref_name }} -X main.buildDate=$(date -u +%Y-%m-%d)"
+            -clean \
+            -platform ${{ matrix.platform }} \
+            -ldflags "-X main.version=${{ env.VERSION }} -X main.buildDate=${{ env.BUILD_DATE }}"
         working-directory: app
 
-      - name: Build Wails app (Windows / Linux)
-        if: runner.os != 'macOS'
+      # ── macOS: sign, package to DMG, notarize, staple ───────────────────────
+      - name: Import Apple Developer certificate
+        if: matrix.family == 'macos' && secrets.APPLE_CERTIFICATE != ''
         env:
-          CGO_ENABLED: '1'
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         run: |
-          go tool wails build \
-            -platform ${{ matrix.wails_platform }} \
-            -ldflags "-X main.version=${{ github.ref_name }} -X main.buildDate=$(date -u +%Y-%m-%d)"
-        working-directory: app
+          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
+          security create-keychain -p build build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p build build.keychain
+          security import certificate.p12 \
+            -k build.keychain \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/notarytool
+          security set-key-partition-list \
+            -S apple-tool:,apple: -k build build.keychain
 
-      # ── macOS: package as DMG ─────────────────────────────────────────────
-      - name: Create DMG (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          create-dmg \
-            --volname "Bough ${{ github.ref_name }}" \
-            --window-size 540 380 \
-            --icon-size 100 \
-            --icon "Bough.app" 140 185 \
-            --hide-extension "Bough.app" \
-            --app-drop-link 400 185 \
-            "app/build/bin/${{ matrix.artifact_name }}" \
-            "app/build/bin/Bough.app"
-
-      # ── macOS: code sign ──────────────────────────────────────────────────
-      - name: Code sign (macOS)
-        if: runner.os == 'macOS' && env.APPLE_SIGNING_KEY != ''
+      - name: Code-sign & package macOS
+        if: matrix.family == 'macos'
         env:
-          APPLE_SIGNING_KEY: ${{ secrets.APPLE_SIGNING_KEY }}
-          APPLE_SIGNING_KEY_PASSWORD: ${{ secrets.APPLE_SIGNING_KEY_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          set -euxo pipefail
+          cd app/build/bin
+          if [ -n "$APPLE_SIGNING_IDENTITY" ]; then
+            codesign --force --options runtime --timestamp \
+              --sign "$APPLE_SIGNING_IDENTITY" Bough.app
+          fi
+          hdiutil create \
+            -volname "Bough" \
+            -srcfolder Bough.app \
+            -ov -format UDZO \
+            "${{ matrix.pkg_basename }}.dmg"
+          if [ -n "$APPLE_SIGNING_IDENTITY" ]; then
+            codesign --force --sign "$APPLE_SIGNING_IDENTITY" \
+              "${{ matrix.pkg_basename }}.dmg"
+          fi
+          mv "${{ matrix.pkg_basename }}.dmg" ../../../
+
+      - name: Notarize & staple macOS
+        if: matrix.family == 'macos' && secrets.APPLE_API_KEY != '' && secrets.APPLE_TEAM_ID != ''
+        env:
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          # Import certificate
-          echo "$APPLE_SIGNING_KEY" | base64 --decode -o /tmp/cert.p12
-          security create-keychain -p "" build.keychain
-          security import /tmp/cert.p12 -k build.keychain -P "$APPLE_SIGNING_KEY_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
-          security list-keychains -d user -s build.keychain
-          rm /tmp/cert.p12
-
-          # Sign app bundle
-          codesign \
-            --deep --force --options runtime \
-            --sign "Developer ID Application: $APPLE_TEAM_ID" \
-            "app/build/bin/Bough.app"
-
-          # Re-create DMG after signing
-          create-dmg \
-            --volname "Bough ${{ github.ref_name }}" \
-            --window-size 540 380 \
-            --icon-size 100 \
-            --icon "Bough.app" 140 185 \
-            --hide-extension "Bough.app" \
-            --app-drop-link 400 185 \
-            "app/build/bin/${{ matrix.artifact_name }}" \
-            "app/build/bin/Bough.app"
-
-      # ── macOS: notarize ───────────────────────────────────────────────────
-      - name: Notarize (macOS)
-        if: runner.os == 'macOS' && env.NOTARY_USER != ''
-        env:
-          NOTARY_USER: ${{ secrets.NOTARY_USER }}
-          NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          xcrun notarytool submit "app/build/bin/${{ matrix.artifact_name }}" \
-            --apple-id "$NOTARY_USER" \
-            --password "$NOTARY_PASSWORD" \
+          set -euxo pipefail
+          echo "$APPLE_API_KEY" > authkey.p8
+          xcrun notarytool submit \
+            "${{ matrix.pkg_basename }}.dmg" \
+            --key authkey.p8 \
+            --key-id "$APPLE_API_KEY_ID" \
+            --issuer "$APPLE_API_ISSUER" \
             --team-id "$APPLE_TEAM_ID" \
-            --wait
-          xcrun stapler staple "app/build/bin/Bough.app"
+            --wait --timeout 20m
+          xcrun stapler staple "${{ matrix.pkg_basename }}.dmg"
 
-      # ── Windows: sign with Authenticode ──────────────────────────────────
-      - name: Sign executable (Windows)
-        if: runner.os == 'Windows' && env.WIN_CERT != ''
+      # ── Windows: sign NSIS installer ────────────────────────────────────────
+      - name: Sign Windows installer
+        if: matrix.family == 'windows' && secrets.SIGN_CERTIFICATE != ''
         env:
-          WIN_CERT: ${{ secrets.WIN_CERT }}
-          WIN_CERT_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
+          SIGN_CERTIFICATE: ${{ secrets.SIGN_CERTIFICATE }}
+          SIGN_PASSWORD: ${{ secrets.SIGN_PASSWORD }}
         shell: pwsh
         run: |
-          $certBytes = [Convert]::FromBase64String($env:WIN_CERT)
-          [IO.File]::WriteAllBytes("cert.pfx", $certBytes)
-          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" `
-            sign /f cert.pfx /p $env:WIN_CERT_PASSWORD `
+          # Locate signtool.exe (Windows SDK ships several; prefer the newest arch-agnostic one).
+          $candidates = @(
+            "$env:ProgramFiles(x86)\Windows Kits\10\bin\*\x64\signtool.exe",
+            "$env:ProgramFiles(x86)\Windows Kits\10\bin\*\x86\signtool.exe"
+          )
+          $signtool = Get-ChildItem $candidates -ErrorAction SilentlyContinue |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) {
+            Write-Error "signtool.exe not found. Install Windows SDK first."
+            exit 1
+          }
+          $b64 = "$env:SIGN_CERTIFICATE"
+          [IO.File]::WriteAllBytes("cert.pfx", [Convert]::FromBase64String($b64))
+          & $signtool.FullName sign /f cert.pfx /p "$env:SIGN_PASSWORD" `
             /fd sha256 /tr http://timestamp.digicert.com /td sha256 `
-            "app\build\bin\${{ matrix.artifact_name }}"
+            "app\build\bin\Bough-amd64-installer.exe"
           Remove-Item cert.pfx
 
-      # ── Linux: package as AppImage ────────────────────────────────────────
-      - name: Build AppImage (Linux)
-        if: runner.os == 'Linux'
+      - name: Stage Windows artifact
+        if: matrix.family == 'windows'
         run: |
-          bash scripts/build_appimage.sh "${{ github.ref_name }}" "app/build/bin/Bough"
-          mv "Bough-${{ github.ref_name }}-linux-x86_64.AppImage" \
-             "app/build/bin/${{ matrix.artifact_name }}"
+          Copy-Item "app\build\bin\Bough-amd64-installer.exe" `
+            "${{ matrix.pkg_basename }}.exe"
+        shell: pwsh
 
-      # ── Sign artifact (macOS only — for Sparkle EdDSA) ───────────────────
-      - name: Sign artifact for Sparkle (macOS)
-        if: runner.os == 'macOS'
-        env:
-          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+      # ── Linux: build AppImage ───────────────────────────────────────────────
+      - name: Build AppImage
+        if: matrix.family == 'linux'
         run: |
-          SIGNATURE=$(bash scripts/sign_update.sh "app/build/bin/${{ matrix.artifact_name }}")
-          echo "SPARKLE_SIGNATURE=$SIGNATURE" >> "$GITHUB_ENV"
+          appimagetool="appimagetool-x86_64.AppImage"
+          curl -LfsS -o "$appimagetool" \
+            https://github.com/AppImage/appimagetool/releases/latest/download/$appimagetool
+          chmod +x "$appimagetool"
+          mkdir -p appimagetool_mount && ./"$appimagetool" --appimage-extract &>/dev/null
+          export PATH="$PWD/squashfs-root/usr/bin:$PATH"
+          bash scripts/build_appimage.sh "${{ env.VERSION }}" app/build/bin/Bough
+          rm -rf squashfs-root appimagetool_mount "$appimagetool"
+          cp Bough-${{ env.VERSION }}-linux-x86_64.AppImage \
+            "${{ matrix.pkg_basename }}.AppImage"
 
-      # ── Upload artifact to the GitHub Release ─────────────────────────────
       - name: Upload release artifact
-        uses: softprops/action-gh-release@v2
+        uses: actions/upload-artifact@v4
         with:
-          files: app/build/bin/${{ matrix.artifact_name }}
-          tag_name: ${{ github.ref_name }}
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          name: release-${{ matrix.label }}
+          if-no-files-found: error
+          path: |
+            ${{ matrix.pkg_basename }}.*
+            !*.app
 
-  # ── Generate + deploy appcast ───────────────────────────────────────────────
-  appcast:
-    name: Generate appcast
+  # ────────────────────────── Publish GitHub Release ─────────────────────────
+  publish:
+    name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate appcast.xml
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Flatten artifact files
+        run: |
+          set -e
+          mkdir -p release
+          find dist -type f ! -name '*.app' -exec cp {} release/ \;
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ────────────────────── Appcast (optional auto-update) ──────────────────────
+  # Generates the Sparkle appcast.xml and publishes it to the gh-pages branch,
+  # which hosting the XML at updates.bough.app enables. Optional: skipped when
+  # SPARKLE_PRIVATE_KEY is not configured. Failing here never blocks the release.
+  appcast:
+    name: Generate Appcast
+    needs: publish
+    runs-on: ubuntu-latest
+    if: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate appcast
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-        run: bash scripts/generate_appcast.sh "${{ github.ref_name }}"
+        run: bash scripts/generate_appcast.sh "${{ env.VERSION }}"
 
       - name: Deploy appcast to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./appcast
-          destination_dir: .
-          keep_files: false
-          cname: updates.bough.app
+          publish_branch: gh-pages
+          enable_jekyll: true
