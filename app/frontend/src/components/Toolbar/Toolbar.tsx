@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon, FolderOpen, FolderPlus, Globe, HelpCircle, Loader2 } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useGitStore } from '@/stores/gitStore'
 import { useStatus } from '@/hooks/useStatus'
-import { SelectRepository, OpenRepository, Fetch, Pull, Push, SelectAndInitRepository } from '@wailsjs/go/main/App'
+import { SelectRepository, OpenRepository, Fetch, PullForUI, ResolvePull, Push, SelectAndInitRepository } from '@wailsjs/go/main/App'
 import { parseGitError } from '@/lib/format'
 import { useQueryClient } from '@tanstack/react-query'
 import { ManageRemotesDialog } from '@/components/RemoteManager/ManageRemotesDialog'
 import { KeyboardShortcutsDialog } from '@/components/Help/KeyboardShortcutsDialog'
+
+import { PullStrategyDialog } from './PullStrategyDialog'
+import type { git } from '@wailsjs/go/models'
 
 export default function Toolbar() {
   const { t } = useTranslation()
@@ -19,6 +22,19 @@ export default function Toolbar() {
   const [fetchLoading, setFetchLoading] = useState(false)
   const [pullLoading, setPullLoading] = useState(false)
   const [pushLoading, setPushLoading] = useState(false)
+
+  const [pullChoice, setPullChoice] = useState<git.PullSnapshot | null>(null)
+  const pullGeneration = useRef(0)
+  const pullBusy = useRef(false)
+  const pullRebasing = useRef(false)
+  const currentContext = useRef({ repo: activeRepo, branch: status?.branch })
+  currentContext.current = { repo: activeRepo, branch: status?.branch }
+  useEffect(() => {
+    // A rebase temporarily detaches HEAD; that is not a user branch switch.
+    if (!(pullRebasing.current && status?.branch === 'HEAD')) pullGeneration.current++
+    setPullChoice(null)
+  }, [activeRepo, status?.branch])
+  useEffect(() => () => { pullGeneration.current++ }, [])
 
   // Global '?' shortcut to open help
   useEffect(() => {
@@ -92,16 +108,36 @@ export default function Toolbar() {
     }
   }
 
-  const handlePull = async () => {
+  const handlePull = async (strategy?: 'merge' | 'rebase') => {
+    if (pullBusy.current || !activeRepo || !status?.branch) return
+    const context = { repo: activeRepo, branch: status.branch }
+    const generation = pullGeneration.current
+    const snapshot = pullChoice
+    const isCurrent = () => generation === pullGeneration.current && currentContext.current.repo === context.repo && (currentContext.current.branch === context.branch || (pullRebasing.current && currentContext.current.branch === 'HEAD'))
+    pullBusy.current = true
+    // A configured ordinary pull may rebase as well.
+    pullRebasing.current = strategy !== 'merge'
+    setPullChoice(null)
     setPullLoading(true)
-    setLoadingOperation('Pulling…')
+    setLoadingOperation(t('pull.loading'))
     try {
-      await Pull('', '')
-      showFlash('Pulled successfully')
-      queryClient.invalidateQueries()
+      const result = strategy && snapshot ? await ResolvePull(snapshot, strategy) : await PullForUI(context.repo, context.branch)
+      if (!isCurrent()) return
+      if (result.outcome === 'choice' && result.snapshot) {
+        setPullChoice(result.snapshot)
+      } else if (result.outcome === 'conflict') {
+        setActiveView('changes')
+        showFlash(t('pull.conflict'), 'danger')
+      } else if (result.outcome === 'success') {
+        showFlash(t('pull.success'))
+      }
     } catch (err) {
-      showFlash(parseGitError(err), 'danger')
+      if (isCurrent()) showFlash(parseGitError(err), 'danger')
     } finally {
+      // Failed integrations also change status, refs and operation state.
+      if (isCurrent()) queryClient.invalidateQueries()
+      pullBusy.current = false
+      pullRebasing.current = false
       setPullLoading(false)
       setLoadingOperation(null)
     }
@@ -278,7 +314,7 @@ export default function Toolbar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 4px' }} />
         <IconButton icon={fetchLoading ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />} label="Fetch" onClick={handleFetch} disabled={fetchLoading || pullLoading || pushLoading} />
-        <IconButton icon={pullLoading ? <Loader2 size={14} className="spin" /> : <ArrowDown size={14} />} label="Pull" onClick={handlePull} disabled={fetchLoading || pullLoading || pushLoading} />
+        <IconButton icon={pullLoading ? <Loader2 size={14} className="spin" /> : <ArrowDown size={14} />} label="Pull" onClick={() => handlePull()} disabled={fetchLoading || pullLoading || pushLoading} />
         <IconButton icon={pushLoading ? <Loader2 size={14} className="spin" /> : <ArrowUp size={14} />} label="Push" onClick={handlePush} disabled={fetchLoading || pullLoading || pushLoading} />
         <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
         <IconButton icon={<GitBranch size={14} />} label="Branch" />
@@ -304,6 +340,7 @@ export default function Toolbar() {
       </div>
 
       {remoteDialogOpen && <ManageRemotesDialog onClose={() => setRemoteDialogOpen(false)} />}
+      {pullChoice && pullChoice.repo === activeRepo && pullChoice.branch === branch && <PullStrategyDialog branch={pullChoice.branch} onClose={() => setPullChoice(null)} onChoose={strategy => handlePull(strategy)} />}
       <KeyboardShortcutsDialog />
     </div>
   )

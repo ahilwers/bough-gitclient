@@ -100,6 +100,8 @@ export function PopStash(arg1:number):Promise<void>;
 
 export function Pull(arg1:string,arg2:string):Promise<void>;
 
+export function PullForUI(arg1:string,arg2:string):Promise<git.PullResult>;
+
 export function PullIntoLocalBranch(arg1:string,arg2:string):Promise<void>;
 
 export function Push(arg1:string,arg2:string,arg3:boolean):Promise<void>;
@@ -109,6 +111,8 @@ export function RemoveRemote(arg1:string):Promise<void>;
 export function RemoveWorktree(arg1:string):Promise<void>;
 
 export function RenameRemote(arg1:string,arg2:string):Promise<void>;
+
+export function ResolvePull(arg1:git.PullSnapshot,arg2:string):Promise<git.PullResult>;
 
 export function RevealInFinder(arg1:string):Promise<void>;
 
