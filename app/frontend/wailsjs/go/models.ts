@@ -290,6 +290,65 @@ export namespace git {
 	        this.mergeMessage = source["mergeMessage"];
 	    }
 	}
+	export class PullSnapshot {
+	    repo: string;
+	    branch: string;
+	    head: string;
+	    upstream: string;
+	    target: string;
+	    remote: string;
+	    mergeRef: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PullSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.repo = source["repo"];
+	        this.branch = source["branch"];
+	        this.head = source["head"];
+	        this.upstream = source["upstream"];
+	        this.target = source["target"];
+	        this.remote = source["remote"];
+	        this.mergeRef = source["mergeRef"];
+	    }
+	}
+	export class PullResult {
+	    outcome: string;
+	    snapshot?: PullSnapshot;
+	    detail?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PullResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.outcome = source["outcome"];
+	        this.snapshot = this.convertValues(source["snapshot"], PullSnapshot);
+	        this.detail = source["detail"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class RebaseAction {
 	    action: string;
 	    hash: string;

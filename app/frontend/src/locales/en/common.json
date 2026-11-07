@@ -58,5 +58,18 @@
   "errors": {
     "notARepo": "Not a git repository",
     "generic": "An error occurred"
-  }
+  },
+  "pull": {
+  "title": "Reconcile divergent branches",
+  "description": "Your branch “{{branch}}” and its remote both have new commits. Choose how to combine them.",
+  "merge": "Merge",
+  "rebase": "Rebase",
+  "mergeExplanation": "Keep your existing commits and create a merge commit joining both histories.",
+  "rebaseExplanation": "Replay your local commits on top of the remote branch. This rewrites local commits and changes their IDs. Avoid rebasing commits you have already shared.",
+  "once": "This choice applies only to this pull. Your Git settings will not change. Cancel leaves your commits untouched.",
+  "cancel": "Cancel",
+  "loading": "Pulling…",
+  "success": "Pulled successfully",
+  "conflict": "Pull stopped. Resolve conflicts in Changes, then continue or abort."
+}
 }
