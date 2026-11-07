@@ -24,6 +24,16 @@ jobs:
         run: go test -race -cover ./git/...
         working-directory: app
 
+      - name: Diag
+        if: failure()
+        run: |
+          git --version
+          env | grep -iE "^GIT|^HOME|^RUNNER_" | sed 's/=.*/=<redacted>/'
+          cat /etc/gitconfig 2>/dev/null || true
+          sudo -n cat /home/$(whoami)/.gitconfig 2>/dev/null || true
+          go test -race -v -run 'TestDeleteRemoteUsesOnlyPushDestination|TestDeleteRemoteMultipleFetchURLsKeepTrackingRef|TestDeleteRemoteCleanupPreservesRefreshedTrackingRef' ./git/... 2>&1 | head -80
+        working-directory: app
+
   app-tests:
     name: Wails App Tests and Build
     runs-on: macos-latest
