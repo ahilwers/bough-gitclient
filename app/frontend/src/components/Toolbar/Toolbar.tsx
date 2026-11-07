@@ -82,6 +82,8 @@ export default function Toolbar() {
   const branch = activeRepo ? status?.branch : undefined
   const branchLabel = branch === 'HEAD' ? t('toolbar.detachedHead') : branch
   const branchDescription = branch === 'HEAD' ? branchLabel : t('toolbar.currentBranch', { branch })
+  const pushCount = branch && branch !== 'HEAD' && status && Number.isFinite(status.ahead) ? Math.max(0, status.ahead) : 0
+  const pushDescription = pushCount > 0 ? t('toolbar.pushPending', { count: pushCount }) : undefined
 
   const handleOpenRepo = async (path: string) => {
     try {
@@ -225,11 +227,11 @@ export default function Toolbar() {
       {/* Repo selector dropdown */}
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
-          <Button variant="ghost" style={{ display: 'flex', alignItems: 'center', height: 28, borderRadius: 'var(--r-sm)', maxWidth: 200, gap: 4, paddingLeft: 10, paddingRight: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <Button variant="ghost" title={activeRepo ?? repoName} style={{ display: 'inline-flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', flex: '0 1 auto', minWidth: 44, height: 28, borderRadius: 'var(--r-sm)', maxWidth: 200, gap: 4, paddingLeft: 10, paddingRight: 8, whiteSpace: 'nowrap' }}>
+            <span style={{ flex: '1 1 auto', minWidth: 0, fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {repoName}
             </span>
-            <ChevronDown size={12} style={{ flexShrink: 0, color: 'var(--text-ter)' }} />
+            <ChevronDown size={12} aria-hidden="true" style={{ flexShrink: 0, color: 'var(--text-ter)' }} />
           </Button>
         </DropdownMenu.Trigger>
 
@@ -366,7 +368,7 @@ export default function Toolbar() {
         <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 4px' }} />
         <IconButton icon={fetchLoading ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />} label="Fetch" onClick={handleFetch} disabled={fetchLoading || pullLoading || pushLoading} />
         <IconButton icon={pullLoading ? <Loader2 size={14} className="spin" /> : <ArrowDown size={14} />} label="Pull" onClick={() => handlePull()} disabled={fetchLoading || pullLoading || pushLoading} />
-        <IconButton icon={pushLoading ? <Loader2 size={14} className="spin" /> : <ArrowUp size={14} />} label="Push" onClick={handlePush} disabled={fetchLoading || pullLoading || pushLoading} />
+        <IconButton icon={pushLoading ? <Loader2 size={14} className="spin" /> : <ArrowUp size={14} />} label="Push" description={pushDescription} badge={pushCount} onClick={handlePush} disabled={fetchLoading || pullLoading || pushLoading} />
         <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
         <IconButton icon={<GitBranch size={14} />} label="Branch" onClick={() => openCreateDialog('branch')} disabled={!activeRepo} />
         <IconButton icon={<Layers size={14} />} label="Stash" onClick={() => openCreateDialog('stash')} disabled={!activeRepo} />
@@ -493,20 +495,24 @@ function TabButton({ icon, label, active, badge, onClick }: TabButtonProps) {
 interface IconButtonProps {
   icon: React.ReactNode
   label: string
+  description?: string
+  badge?: number
   onClick?: () => void
   disabled?: boolean
 }
 
-function IconButton({ icon, label, onClick, disabled }: IconButtonProps) {
+function IconButton({ icon, label, description, badge, onClick, disabled }: IconButtonProps) {
   return (
     <Button variant="icon"
       onClick={onClick}
-      title={label}
+      title={description ?? label}
       aria-label={label}
+      aria-description={description}
       disabled={disabled}
-      style={{ width: 30, height: 30 }}
+      style={{ width: 30, height: 30, position: 'relative' }}
     >
       {icon}
+      {badge !== undefined && badge > 0 && <span className="toolbar-icon-badge" aria-hidden="true">{badge > 99 ? '99+' : badge}</span>}
     </Button>
   )
 }

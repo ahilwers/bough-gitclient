@@ -6,6 +6,8 @@
     "fetch": "Fetch",
     "pull": "Pull",
     "push": "Push",
+    "pushPending_one": "Push — {{count}} unpushed commit (compared with upstream)",
+    "pushPending_other": "Push — {{count}} unpushed commits (compared with upstream)",
     "branch": "Branch",
     "currentBranch": "Current branch: {{branch}}",
     "detachedHead": "Detached HEAD",

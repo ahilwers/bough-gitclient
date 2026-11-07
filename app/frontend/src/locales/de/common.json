@@ -4,6 +4,8 @@
     "fetch": "Aktualisieren",
     "pull": "Pull",
     "push": "Push",
+    "pushPending_one": "Push — {{count}} noch nicht gepushter Commit (gegenüber dem Upstream)",
+    "pushPending_other": "Push — {{count}} noch nicht gepushte Commits (gegenüber dem Upstream)",
     "branch": "Branch",
     "currentBranch": "Aktueller Branch: {{branch}}",
     "detachedHead": "Losgelöster HEAD",
