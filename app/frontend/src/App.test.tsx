@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { CreateCommit, Fetch, Pull, Push } from '@wailsjs/go/main/App'
+import { CreateCommit, Fetch, PullForUI, Push } from '@wailsjs/go/main/App'
 import { EventsOn } from '@wailsjs/runtime/runtime'
 import { useGitStore } from '@/stores/gitStore'
 import App from './App'
@@ -49,7 +49,7 @@ describe('unrestricted application access', () => {
     await waitFor(() => expect(Fetch).toHaveBeenCalledWith(''))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Pull' })).toBeEnabled())
     fireEvent.click(screen.getByRole('button', { name: 'Pull' }))
-    await waitFor(() => expect(Pull).toHaveBeenCalledWith('', ''))
+    await waitFor(() => expect(PullForUI).toHaveBeenCalledWith('/repo', 'main'))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Push' })).toBeEnabled())
     fireEvent.click(screen.getByRole('button', { name: 'Push' }))
     await waitFor(() => expect(Push).toHaveBeenCalledWith('', '', false))

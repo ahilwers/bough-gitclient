@@ -202,6 +202,10 @@ export function Pull(arg1, arg2) {
   return window['go']['main']['App']['Pull'](arg1, arg2);
 }
 
+export function PullForUI(arg1, arg2) {
+  return window['go']['main']['App']['PullForUI'](arg1, arg2);
+}
+
 export function PullIntoLocalBranch(arg1, arg2) {
   return window['go']['main']['App']['PullIntoLocalBranch'](arg1, arg2);
 }
@@ -224,6 +228,10 @@ export function RemoveWorktree(arg1) {
 
 export function RenameRemote(arg1, arg2) {
   return window['go']['main']['App']['RenameRemote'](arg1, arg2);
+}
+
+export function ResolvePull(arg1, arg2) {
+  return window['go']['main']['App']['ResolvePull'](arg1, arg2);
 }
 
 export function RevealInFinder(arg1) {

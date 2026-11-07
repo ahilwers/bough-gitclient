@@ -65,5 +65,18 @@
   "errors": {
     "notARepo": "Kein Git-Repository",
     "generic": "Ein Fehler ist aufgetreten"
-  }
+  },
+  "pull": {
+  "title": "Abweichende Branches zusammenführen",
+  "description": "Dein Branch „{{branch}}“ und der Remote-Branch enthalten jeweils neue Commits. Wähle, wie sie zusammengeführt werden sollen.",
+  "merge": "Merge",
+  "rebase": "Rebase",
+  "mergeExplanation": "Behält deine bestehenden Commits und erstellt einen Merge-Commit, der beide Verläufe verbindet.",
+  "rebaseExplanation": "Wendet deine lokalen Commits auf dem Remote-Branch erneut an. Dabei werden lokale Commits umgeschrieben und ihre IDs geändert. Vermeide Rebase bei bereits geteilten Commits.",
+  "once": "Diese Auswahl gilt nur für diesen Pull. Deine Git-Einstellungen bleiben unverändert. Abbrechen lässt deine Commits unberührt.",
+  "cancel": "Abbrechen",
+  "loading": "Pull läuft…",
+  "success": "Pull erfolgreich",
+  "conflict": "Pull angehalten. Löse Konflikte unter Änderungen und fahre dann fort oder brich den Vorgang ab."
+}
 }

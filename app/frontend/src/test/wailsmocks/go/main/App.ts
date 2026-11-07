@@ -57,3 +57,7 @@ export const SaveWindowSize = vi.fn((_width: number, _height: number): Promise<v
 export const GetRecentRepos = vi.fn((): Promise<string[]> => Promise.resolve([]))
 export const GetAppVersion = vi.fn((): Promise<string> => Promise.resolve('0.1.0'))
 export const DiscardFile = vi.fn((_path: string): Promise<void> => Promise.resolve())
+
+import type { git } from '../../../../../wailsjs/go/models'
+export const PullForUI = vi.fn((_repo: string, _branch: string): Promise<git.PullResult> => Promise.resolve({ outcome: 'success' }))
+export const ResolvePull = vi.fn((_snapshot: git.PullSnapshot, _strategy: string): Promise<git.PullResult> => Promise.resolve({ outcome: 'success' }))
