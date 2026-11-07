@@ -90,6 +90,10 @@ export function CreateTag(arg1, arg2) {
   return window['go']['main']['App']['CreateTag'](arg1, arg2);
 }
 
+export function DeleteBranch(arg1) {
+  return window['go']['main']['App']['DeleteBranch'](arg1);
+}
+
 export function DeleteTag(arg1) {
   return window['go']['main']['App']['DeleteTag'](arg1);
 }
@@ -212,6 +216,10 @@ export function OpenRepository(arg1) {
 
 export function PopStash(arg1) {
   return window['go']['main']['App']['PopStash'](arg1);
+}
+
+export function PrepareBranchDeletion(arg1, arg2) {
+  return window['go']['main']['App']['PrepareBranchDeletion'](arg1, arg2);
 }
 
 export function Pull(arg1, arg2) {

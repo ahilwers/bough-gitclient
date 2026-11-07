@@ -22,6 +22,30 @@ export namespace git {
 	        this.behind = source["behind"];
 	    }
 	}
+	export class BranchDeletionInfo {
+	    repoPath: string;
+	    name: string;
+	    remote: string;
+	    ref: string;
+	    oid: string;
+	    destination: string;
+	    configFingerprint: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new BranchDeletionInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.repoPath = source["repoPath"];
+	        this.name = source["name"];
+	        this.remote = source["remote"];
+	        this.ref = source["ref"];
+	        this.oid = source["oid"];
+	        this.destination = source["destination"];
+	        this.configFingerprint = source["configFingerprint"];
+	    }
+	}
 	export class BranchList {
 	    local: Branch[];
 	    remotes: Branch[];
