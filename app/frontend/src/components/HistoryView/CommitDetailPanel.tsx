@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useState, useRef, useCallback } from 'react'
 import { Copy, ChevronRight } from 'lucide-react'
 import { useGitStore } from '@/stores/gitStore'
@@ -129,13 +130,14 @@ export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
           }}>
             {commit.hash}
           </code>
-          <button
+          <Button variant="ghost"
             onClick={copyHash}
             title="Copy full hash"
+            aria-label="Copy full hash"
             style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer', color: copied ? 'var(--success)' : 'var(--text-ter)', borderRadius: 4 }}
           >
             <Copy size={13} />
-          </button>
+          </Button>
         </div>
 
         {/* Full message */}
@@ -232,7 +234,7 @@ interface TabButtonProps {
 
 function TabButton({ label, count, active, onClick }: TabButtonProps) {
   return (
-    <button
+    <Button variant="ghost"
       onClick={onClick}
       style={{
         padding: '3px 10px', border: 'none', borderRadius: 4,
@@ -246,7 +248,7 @@ function TabButton({ label, count, active, onClick }: TabButtonProps) {
       {count !== undefined && count > 0 && (
         <span style={{ fontSize: 10, opacity: 0.8 }}>{count}</span>
       )}
-    </button>
+    </Button>
   )
 }
 

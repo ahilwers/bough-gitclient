@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useState, useMemo } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { X, AlertCircle } from 'lucide-react'
@@ -174,37 +175,19 @@ export function NewWorktreeDialog({ onClose }: Props) {
           {/* Actions */}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 24 }}>
             <Dialog.Close asChild>
-              <button
-                style={{
-                  padding: '7px 14px',
-                  borderRadius: 6,
-                  border: 'none',
-                  background: 'none',
-                  color: 'var(--text-pri)',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                }}
+              <Button
+                variant="secondary"
               >
                 Cancel
-              </button>
+              </Button>
             </Dialog.Close>
-            <button
+            <Button
               onClick={handleSubmit}
               disabled={addMutation.isPending}
-              style={{
-                padding: '7px 14px',
-                borderRadius: 6,
-                border: 'none',
-                background: 'var(--acc)',
-                color: '#fff',
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: addMutation.isPending ? 'not-allowed' : 'pointer',
-                opacity: addMutation.isPending ? 0.6 : 1,
-              }}
+              variant="primary"
             >
               {addMutation.isPending ? 'Creating…' : 'Create'}
-            </button>
+            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

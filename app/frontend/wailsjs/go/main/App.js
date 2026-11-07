@@ -106,6 +106,14 @@ export function Fetch(arg1) {
   return window['go']['main']['App']['Fetch'](arg1);
 }
 
+export function GenerateCommitMessage() {
+  return window['go']['main']['App']['GenerateCommitMessage']();
+}
+
+export function GetAISettings() {
+  return window['go']['main']['App']['GetAISettings']();
+}
+
 export function GetAppVersion() {
   return window['go']['main']['App']['GetAppVersion']();
 }
@@ -236,6 +244,10 @@ export function ResolvePull(arg1, arg2) {
 
 export function RevealInFinder(arg1) {
   return window['go']['main']['App']['RevealInFinder'](arg1);
+}
+
+export function SaveAISettings(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SaveAISettings'](arg1, arg2, arg3);
 }
 
 export function SaveWindowSize(arg1, arg2) {
