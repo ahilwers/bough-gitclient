@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { GetPushInfo, Push, PushWithUpstream } from '@wailsjs/go/main/App'
 import { useGitStore } from '@/stores/gitStore'
 import Toolbar from './Toolbar'
+import i18n from '@/i18n'
 
 function renderToolbar() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
@@ -22,7 +23,37 @@ describe('push upstream confirmation', () => {
     vi.mocked(GetPushInfo).mockResolvedValue(untracked)
     vi.mocked(PushWithUpstream).mockResolvedValue(undefined)
   })
-  afterEach(cleanup)
+  afterEach(async () => {
+    cleanup()
+    await i18n.changeLanguage('en')
+  })
+
+  it('renders German dialog text and accessible controls while preserving the selected upstream', async () => {
+    await i18n.changeLanguage('de')
+    vi.mocked(GetPushInfo).mockResolvedValue({ ...untracked, remotes: ['origin', 'fork'] })
+    renderToolbar()
+    const dialog = await screen.findByRole('dialog', { name: 'Upstream-Branch erstellen?' })
+    expect(dialog).toHaveTextContent('Branch feature/new hat keinen Upstream.')
+    expect(screen.getByRole('button', { name: 'Abbrechen' })).toHaveFocus()
+    const confirm = screen.getByRole('button', { name: 'Upstream erstellen & pushen' })
+    expect(confirm).toBeDisabled()
+    expect(screen.getByRole('option', { name: 'Remote auswählen…' })).toBeInTheDocument()
+    fireEvent.change(screen.getByRole('combobox', { name: 'Remote-Repository' }), { target: { value: 'fork' } })
+    expect(screen.getByText('Upstream-Branch: fork/feature/new')).toBeInTheDocument()
+    expect(PushWithUpstream).not.toHaveBeenCalled()
+    fireEvent.click(confirm)
+    await waitFor(() => expect(PushWithUpstream).toHaveBeenCalledWith('/repo', 'fork', 'feature/new'))
+  })
+
+  it('renders missing-remote guidance in German without allowing a push', async () => {
+    await i18n.changeLanguage('de')
+    vi.mocked(GetPushInfo).mockResolvedValue({ ...untracked, remotes: [] })
+    renderToolbar()
+    expect(await screen.findByRole('dialog')).toHaveTextContent('Keine Remotes konfiguriert.')
+    expect(screen.getByRole('button', { name: 'Upstream erstellen & pushen' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }))
+    expect(PushWithUpstream).not.toHaveBeenCalled()
+  })
 
   it('does not push until explicit confirmation and refreshes after success', async () => {
     const invalidate = renderToolbar()

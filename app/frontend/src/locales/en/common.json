@@ -53,6 +53,18 @@
     "create": "Create Worktree",
     "cancel": "Cancel"
   },
+  "push": {
+    "createUpstream": {
+      "title": "Create Upstream Branch?",
+      "description": "Branch {{branch}} has no upstream. Push it to a remote branch with the same name and track it for future pushes and pulls?",
+      "noRemotes": "No remotes configured. Add one using Manage Remotes before pushing.",
+      "remote": "Remote",
+      "selectRemote": "Select a remote…",
+      "preview": "Upstream: {{upstream}}",
+      "cancel": "Cancel",
+      "confirm": "Create Upstream & Push"
+    }
+  },
   "errors": {
     "notARepo": "Not a git repository",
     "generic": "An error occurred"
