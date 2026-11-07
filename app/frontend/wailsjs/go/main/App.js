@@ -138,6 +138,10 @@ export function GetMergeCommits() {
   return window['go']['main']['App']['GetMergeCommits']();
 }
 
+export function GetPushInfo() {
+  return window['go']['main']['App']['GetPushInfo']();
+}
+
 export function GetRecentRepos() {
   return window['go']['main']['App']['GetRecentRepos']();
 }
@@ -208,6 +212,10 @@ export function PullIntoLocalBranch(arg1, arg2) {
 
 export function Push(arg1, arg2, arg3) {
   return window['go']['main']['App']['Push'](arg1, arg2, arg3);
+}
+
+export function PushWithUpstream(arg1, arg2, arg3) {
+  return window['go']['main']['App']['PushWithUpstream'](arg1, arg2, arg3);
 }
 
 export function RemoveRemote(arg1) {

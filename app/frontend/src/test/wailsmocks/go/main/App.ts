@@ -38,6 +38,8 @@ export const AmendCommit = vi.fn((_message: string): Promise<void> => Promise.re
 export const Fetch = vi.fn((_remote: string): Promise<void> => Promise.resolve())
 export const Pull = vi.fn((_remote: string, _branch: string): Promise<void> => Promise.resolve())
 export const Push = vi.fn((_remote: string, _branch: string, _force: boolean): Promise<void> => Promise.resolve())
+export const GetPushInfo = vi.fn(() => Promise.resolve({ repoPath: '/repo', branch: 'main', upstream: 'origin/main', remotes: ['origin'] }))
+export const PushWithUpstream = vi.fn((_repoPath: string, _remote: string, _branch: string): Promise<void> => Promise.resolve())
 export const StoreCredentials = vi.fn((_url: string, _user: string, _pass: string): Promise<void> => Promise.resolve())
 
 // Branches & worktrees

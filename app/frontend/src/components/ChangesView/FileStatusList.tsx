@@ -129,6 +129,26 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
     containerRef.current?.focus()
   }, [discardConfirm, discardFileMutation, discardStagedMutation])
 
+  const selectFromKeyboard = useCallback((file: FileStatus, staged: boolean) => {
+    onSelectFile(file, staged)
+
+    // A path can appear in both sections. Scroll only its own list, not the
+    // panel or page, and leave focus on the keyboard navigation container.
+    const row = Array.from(containerRef.current?.querySelectorAll<HTMLElement>('[data-file-path]') ?? [])
+      .find(el => el.dataset.filePath === file.path && el.dataset.staged === String(staged))
+    const list = row?.parentElement
+    if (!row || !list) return
+
+    const bounds = row.getBoundingClientRect()
+    const top = list.getBoundingClientRect().top + list.clientTop
+    const bottom = top + list.clientHeight
+    if (bounds.top < top) {
+      list.scrollTop += bounds.top - top
+    } else if (bounds.bottom > bottom) {
+      list.scrollTop += Math.min(bounds.bottom - bottom, bounds.top - top)
+    }
+  }, [onSelectFile])
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.target as HTMLElement).tagName === 'BUTTON') return
     if (contextMenu || discardConfirm) return
@@ -138,14 +158,14 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
       case 'j': {
         e.preventDefault()
         const next = allEntries[Math.min(currentIdx + 1, allEntries.length - 1)]
-        if (next) onSelectFile(next.file, next.staged)
+        if (next) selectFromKeyboard(next.file, next.staged)
         break
       }
       case 'ArrowUp':
       case 'k': {
         e.preventDefault()
         const prev = allEntries[Math.max(currentIdx - 1, 0)]
-        if (prev) onSelectFile(prev.file, prev.staged)
+        if (prev) selectFromKeyboard(prev.file, prev.staged)
         break
       }
       case 's':
@@ -179,19 +199,19 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
       case 'G': {
         e.preventDefault()
         const last = allEntries[allEntries.length - 1]
-        if (last) onSelectFile(last.file, last.staged)
+        if (last) selectFromKeyboard(last.file, last.staged)
         break
       }
       case '[': {
         e.preventDefault()
         const first = allEntries.find(e => !e.staged)
-        if (first) onSelectFile(first.file, false)
+        if (first) selectFromKeyboard(first.file, false)
         break
       }
       case ']': {
         e.preventDefault()
         const first = allEntries.find(e => e.staged)
-        if (first) onSelectFile(first.file, true)
+        if (first) selectFromKeyboard(first.file, true)
         break
       }
       case 'l': {
@@ -209,7 +229,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
         break
       }
     }
-  }, [allEntries, currentIdx, onSelectFile, nextPanel, stageFileMutation, unstageFileMutation, contextMenu, discardConfirm])
+  }, [allEntries, currentIdx, selectFromKeyboard, nextPanel, stageFileMutation, unstageFileMutation, contextMenu, discardConfirm])
 
   return (
     <>
@@ -251,6 +271,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
                 <FileRow
                   key={file.path}
                   file={file}
+                  staged={false}
                   statusCode="!"
                   selected={file.path === selectedFile && !selectedStaged}
                   onSelect={() => handleSelect(file, false)}
@@ -275,6 +296,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
               <FileRow
                 key={file.path}
                 file={file}
+                staged={false}
                 statusCode={file.unstaged || file.staged}
                 selected={file.path === selectedFile && !selectedStaged}
                 onSelect={() => handleSelect(file, false)}
@@ -306,6 +328,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
               <FileRow
                 key={file.path}
                 file={file}
+                staged={true}
                 statusCode={file.staged}
                 selected={file.path === selectedFile && selectedStaged}
                 onSelect={() => handleSelect(file, true)}
@@ -411,6 +434,7 @@ function SectionHeader({ title, count, actionLabel, onAction, accentBg }: Sectio
 
 interface FileRowProps {
   file: FileStatus
+  staged: boolean
   statusCode: string
   selected: boolean
   onSelect: () => void
@@ -420,7 +444,7 @@ interface FileRowProps {
   onAction?: () => void
 }
 
-function FileRow({ file, statusCode, selected, onSelect, onContextMenu, actionIcon, actionTitle, onAction }: FileRowProps) {
+function FileRow({ file, staged, statusCode, selected, onSelect, onContextMenu, actionIcon, actionTitle, onAction }: FileRowProps) {
   const [hovered, setHovered] = useState(false)
 
   const isConflict = statusCode === '!'
@@ -430,6 +454,8 @@ function FileRow({ file, statusCode, selected, onSelect, onContextMenu, actionIc
   return (
     <div
       tabIndex={-1}
+      data-file-path={file.path}
+      data-staged={staged}
       onClick={onSelect}
       onContextMenu={onContextMenu}
       onMouseEnter={() => setHovered(true)}

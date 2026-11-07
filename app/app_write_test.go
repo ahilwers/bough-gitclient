@@ -29,6 +29,8 @@ func TestWriteOperationsWithoutRepository(t *testing.T) {
 		"fetch":               func() error { return app.Fetch("origin") },
 		"pull":                func() error { return app.Pull("origin", "main") },
 		"push":                func() error { return app.Push("origin", "main", false) },
+		"push preflight":      func() error { _, err := app.GetPushInfo(); return err },
+		"create upstream":     func() error { return app.PushWithUpstream("/repo", "origin", "main") },
 		"create branch":       func() error { return app.CreateBranch("branch", "main", false) },
 		"merge":               func() error { return app.MergeBranch("branch") },
 		"cherry-pick":         func() error { return app.CherryPickCommits(nil) },

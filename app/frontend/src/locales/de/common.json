@@ -50,6 +50,18 @@
     "create": "Worktree erstellen",
     "cancel": "Abbrechen"
   },
+  "push": {
+    "createUpstream": {
+      "title": "Upstream-Branch erstellen?",
+      "description": "Branch {{branch}} hat keinen Upstream. Soll er in einen gleichnamigen Remote-Branch gepusht und dieser für zukünftige Pushes und Pulls als Upstream verwendet werden?",
+      "noRemotes": "Keine Remotes konfiguriert. Füge vor dem Pushen über „Remotes verwalten“ einen Remote hinzu.",
+      "remote": "Remote-Repository",
+      "selectRemote": "Remote auswählen…",
+      "preview": "Upstream-Branch: {{upstream}}",
+      "cancel": "Abbrechen",
+      "confirm": "Upstream erstellen & pushen"
+    }
+  },
   "errors": {
     "notARepo": "Kein Git-Repository",
     "generic": "Ein Fehler ist aufgetreten"
