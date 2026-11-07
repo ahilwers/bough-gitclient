@@ -1,3 +1,4 @@
+import { Button } from './Button'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react'
 import { useGitStore } from '@/stores/gitStore'
@@ -55,7 +56,7 @@ export default function FlashNotification() {
           <span style={{ flex: 1 }}>{flash.message}</span>
           {/* Errors show an explicit dismiss button since they live for 6 s */}
           {isError && (
-            <button
+            <Button variant="ghost"
               onClick={clearFlash}
               aria-label="Dismiss"
               style={{
@@ -71,7 +72,7 @@ export default function FlashNotification() {
               }}
             >
               <X size={14} />
-            </button>
+            </Button>
           )}
         </motion.div>
       )}

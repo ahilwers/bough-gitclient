@@ -39,6 +39,12 @@ it('focuses Cancel, explains rewriting and cancels without integration', async (
   await screen.findByRole('dialog')
   expect(screen.getByText(/This rewrites local commits/)).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus()
+  for (const name of ['Cancel', 'Merge', 'Rebase']) {
+    expect(screen.getByRole('button', { name })).toHaveClass('action-button')
+  }
+  // Neither integration strategy is presented as an implicit recommendation.
+  expect(screen.getByRole('button', { name: 'Merge' })).not.toHaveClass('action-button--primary')
+  expect(screen.getByRole('button', { name: 'Rebase' })).not.toHaveClass('action-button--primary')
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(ResolvePull).not.toHaveBeenCalled()
