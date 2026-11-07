@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronDown, History, GitCompare, Sun, Moon, FolderOpen, FolderPlus, Globe, HelpCircle, Loader2 } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useGitStore } from '@/stores/gitStore'
@@ -10,6 +11,7 @@ import { ManageRemotesDialog } from '@/components/RemoteManager/ManageRemotesDia
 import { KeyboardShortcutsDialog } from '@/components/Help/KeyboardShortcutsDialog'
 
 export default function Toolbar() {
+  const { t } = useTranslation()
   const { activeView, setActiveView, activeRepo, recentRepos, setActiveRepo, showFlash, theme, toggleTheme, setHelpDialogOpen, setLoadingOperation } = useGitStore()
   const queryClient = useQueryClient()
   const { data: status } = useStatus()
@@ -34,6 +36,9 @@ export default function Toolbar() {
 
   const changesCount = (status?.files?.length ?? 0)
   const repoName = activeRepo ? activeRepo.split('/').pop() : 'No Repository'
+  const branch = activeRepo ? status?.branch : undefined
+  const branchLabel = branch === 'HEAD' ? t('toolbar.detachedHead') : branch
+  const branchDescription = branch === 'HEAD' ? branchLabel : t('toolbar.currentBranch', { branch })
 
   const handleOpenRepo = async (path: string) => {
     try {
@@ -239,8 +244,25 @@ export default function Toolbar() {
         onClick={() => setActiveView('changes')}
       />
 
-      {/* Spacer / loading label */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* Current branch stays visible in every view, including during Git operations. */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+        {branch && (
+          <div
+            role="status"
+            aria-label={branchDescription}
+            title={branchDescription}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              minWidth: 0, maxWidth: 240, fontSize: 12,
+              color: branch === 'HEAD' ? 'var(--warn)' : 'var(--text-sec)',
+            }}
+          >
+            <GitBranch size={13} aria-hidden="true" style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {branchLabel}
+            </span>
+          </div>
+        )}
         {(fetchLoading || pullLoading || pushLoading) && (
           <span style={{
             display: 'flex', alignItems: 'center', gap: 6,

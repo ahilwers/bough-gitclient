@@ -18,10 +18,24 @@ vi.mock('@/components/shared/CommandPalette', () => ({ default: () => null }))
 describe('unrestricted application access', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    useGitStore.setState({ activeView: 'history', activeRepo: '/repo', recentRepos: [], flash: null })
+    useGitStore.setState({ activeView: 'history', activeRepo: '/repo', recentRepos: [], flash: null, showSidebar: true })
   })
 
   afterEach(() => cleanup())
+
+  it('keeps the current branch visible when switching views with the sidebar hidden', async () => {
+    useGitStore.setState({ showSidebar: false })
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+    render(<QueryClientProvider client={queryClient}><App /></QueryClientProvider>)
+
+    expect(await screen.findByRole('status', { name: 'Current branch: main' })).toHaveTextContent('main')
+    fireEvent.click(screen.getByRole('button', { name: 'Changes' }))
+    expect(screen.getByPlaceholderText('Describe your changes…')).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Current branch: main' })).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'History' }))
+    expect(screen.getByText('History view')).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Current branch: main' })).toBeVisible()
+  })
 
   it('starts without license APIs or revocation subscriptions and permits Git writes', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })

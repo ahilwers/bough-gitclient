@@ -5,6 +5,8 @@
     "pull": "Pull",
     "push": "Push",
     "branch": "Branch",
+    "currentBranch": "Aktueller Branch: {{branch}}",
+    "detachedHead": "Losgelöster HEAD",
     "stash": "Stash",
     "tag": "Tag"
   },
