@@ -154,6 +154,38 @@ export function GetFileDiff(arg1, arg2) {
   return window['go']['main']['App']['GetFileDiff'](arg1, arg2);
 }
 
+export function GetImageAtCommit(arg1, arg2) {
+  return window['go']['main']['App']['GetImageAtCommit'](arg1, arg2);
+}
+
+export function GetImageAtCommitParent(arg1, arg2) {
+  return window['go']['main']['App']['GetImageAtCommitParent'](arg1, arg2);
+}
+
+export function GetImageFromHead(arg1) {
+  return window['go']['main']['App']['GetImageFromHead'](arg1);
+}
+
+export function GetImageFromIndex(arg1) {
+  return window['go']['main']['App']['GetImageFromIndex'](arg1);
+}
+
+export function GetImageFromMergeStage(arg1, arg2) {
+  return window['go']['main']['App']['GetImageFromMergeStage'](arg1, arg2);
+}
+
+export function GetImageFromStash(arg1, arg2) {
+  return window['go']['main']['App']['GetImageFromStash'](arg1, arg2);
+}
+
+export function GetImageFromStashBase(arg1, arg2) {
+  return window['go']['main']['App']['GetImageFromStashBase'](arg1, arg2);
+}
+
+export function GetImageFromWorktree(arg1) {
+  return window['go']['main']['App']['GetImageFromWorktree'](arg1);
+}
+
 export function GetMergeCommits() {
   return window['go']['main']['App']['GetMergeCommits']();
 }

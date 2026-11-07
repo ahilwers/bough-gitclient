@@ -1,6 +1,9 @@
 import { DiffEditor } from '@monaco-editor/react'
 import { useGitStore } from '@/stores/gitStore'
 import { useFileAtCommit } from '@/hooks/useFileAtCommit'
+import { useCommitImageDiff } from '@/hooks/useImageDiff'
+import { ImageDiffView } from '@/components/shared/ImageDiffView'
+import { isImagePath } from '@/lib/images'
 
 const LANGUAGE_MAP: Record<string, string> = {
   js: 'javascript', jsx: 'javascript',
@@ -25,7 +28,29 @@ interface DiffViewerProps {
 
 export function DiffViewer({ commitHash, filePath }: DiffViewerProps) {
   const { theme } = useGitStore()
+  const isImage = isImagePath(filePath)
+
+  // Hooks are called unconditionally so switching between text and image files
+  // keeps the hook order stable for the mounted panel.
   const { current, parent } = useFileAtCommit(commitHash, filePath)
+  const imageDiff = useCommitImageDiff(commitHash, filePath)
+
+  if (isImage) {
+    return (
+      <div style={{ height: '100%', padding: 8, boxSizing: 'border-box' }}>
+        <ImageDiffView
+          left={imageDiff.parent}
+          right={imageDiff.current}
+          leftLabel={`Parent ${commitHash.slice(0, 7)}`}
+          rightLabel={`Commit ${commitHash.slice(0, 7)}`}
+          leftEmptyHint="Image not present in parent"
+          rightEmptyHint="Image not present in this commit"
+          loading={imageDiff.isLoading}
+        />
+      </div>
+    )
+  }
+
   const language = detectLanguage(filePath)
 
   const isLoading = current.isLoading || parent.isLoading

@@ -298,6 +298,20 @@ export namespace git {
 	    }
 	}
 	
+	export class ImageSource {
+	    dataURL: string;
+	    size: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ImageSource(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.dataURL = source["dataURL"];
+	        this.size = source["size"];
+	    }
+	}
 	export class MergeState {
 	    mergingBranch: string;
 	    conflictCount: number;

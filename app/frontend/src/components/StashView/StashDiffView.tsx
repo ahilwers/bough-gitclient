@@ -9,6 +9,8 @@ import { HunkBlock } from '@/components/ChangesView/HunkBlock'
 import type { HunkAction } from '@/components/ChangesView/HunkBlock'
 import { buildHunkPatch } from '@/lib/diffUtils'
 import { parseGitError, formatRelativeDate } from '@/lib/format'
+import { isImagePath } from '@/lib/images'
+import { StashImageDiff } from './StashImageDiff'
 import type { StashEntry, DiffFile, DiffHunk } from '@/lib/types'
 
 interface StashDiffViewProps {
@@ -200,7 +202,9 @@ export function StashDiffView({ entry, onClose }: StashDiffViewProps) {
 
               {/* Hunks */}
               <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-content)' }}>
-                {activeDiffFile.binary ? (
+                {activeDiffFile.binary && isImagePath(activeDiffFile.path) ? (
+                  <StashImageDiff index={entry.index} filePath={activeDiffFile.path} />
+                ) : activeDiffFile.binary ? (
                   <div style={{ padding: 20, fontSize: 12, color: 'var(--text-ter)' }}>Binary file</div>
                 ) : (activeDiffFile.hunks ?? []).length === 0 ? (
                   <div style={{ padding: 20, fontSize: 12, color: 'var(--text-ter)' }}>No changes</div>

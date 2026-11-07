@@ -1,8 +1,10 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, type ReactNode } from 'react'
 import { useFileDiff } from '@/hooks/useFileDiff'
 import { HunkBlock } from './HunkBlock'
 import { ConflictResolutionPanel } from './ConflictResolutionPanel'
+import { WorkingImageDiff } from './WorkingImageDiff'
 import { KeyHints } from '@/components/shared/KeyHints'
+import { isImagePath } from '@/lib/images'
 import type { FileStatus } from '@/lib/types'
 
 function isConflicted(f: FileStatus): boolean {
@@ -135,25 +137,38 @@ export function ChunkDiffPanel({ filePath, staged, fileStatus }: ChunkDiffPanelP
 
   // Untracked file — git diff returns nothing; use --no-index instead
   const isUntracked = fileStatus.staged === '?' && fileStatus.unstaged === ''
+  const isImage = isImagePath(filePath)
 
   const { data: diffFile, isLoading } = useFileDiff(filePath, staged, isUntracked)
 
-  if (isLoading || !diffFile) {
-    return (
+  const hunks = diffFile?.hunks ?? []
+  const totalAdded = hunks.reduce((n, h) => n + (h.lines?.filter(l => l.type === 'add').length ?? 0), 0)
+  const totalRemoved = hunks.reduce((n, h) => n + (h.lines?.filter(l => l.type === 'del').length ?? 0), 0)
+
+  let content: ReactNode
+  if (isImage) {
+    // Images are shown side by side instead of as a text/binary diff.
+    content = <WorkingImageDiff filePath={filePath} staged={staged} isUntracked={isUntracked} />
+  } else if (isLoading || !diffFile) {
+    content = (
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-ter)', fontSize: 12 }}>
         Loading diff…
       </div>
     )
+  } else if (diffFile.binary) {
+    content = <EmptyPanel message="Binary file — diff not available" />
+  } else {
+    content = (
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-content)' }}>
+        {hunks.map((hunk, idx) => (
+          <HunkBlock key={idx} hunk={hunk} filePath={filePath} staged={staged} />
+        ))}
+        {hunks.length === 0 && (
+          <EmptyPanel message="No changes to display" />
+        )}
+      </div>
+    )
   }
-
-  if (diffFile.binary) {
-    return <EmptyPanel message="Binary file — diff not available" />
-  }
-
-  const hunks = diffFile.hunks ?? []
-
-  const totalAdded = hunks.reduce((n, h) => n + (h.lines?.filter(l => l.type === 'add').length ?? 0), 0)
-  const totalRemoved = hunks.reduce((n, h) => n + (h.lines?.filter(l => l.type === 'del').length ?? 0), 0)
 
   return (
     <div
@@ -194,15 +209,7 @@ export function ChunkDiffPanel({ filePath, staged, fileStatus }: ChunkDiffPanelP
         </div>
       </div>
 
-      {/* Hunks */}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-content)' }}>
-        {hunks.map((hunk, idx) => (
-          <HunkBlock key={idx} hunk={hunk} filePath={filePath} staged={staged} />
-        ))}
-        {hunks.length === 0 && (
-          <EmptyPanel message="No changes to display" />
-        )}
-      </div>
+      {content}
 
       {focused && (
         <KeyHints hints={[

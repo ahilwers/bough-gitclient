@@ -79,6 +79,22 @@ export function GetFileContent(arg1:string):Promise<string>;
 
 export function GetFileDiff(arg1:string,arg2:boolean):Promise<git.DiffFile>;
 
+export function GetImageAtCommit(arg1:string,arg2:string):Promise<git.ImageSource>;
+
+export function GetImageAtCommitParent(arg1:string,arg2:string):Promise<git.ImageSource>;
+
+export function GetImageFromHead(arg1:string):Promise<git.ImageSource>;
+
+export function GetImageFromIndex(arg1:string):Promise<git.ImageSource>;
+
+export function GetImageFromMergeStage(arg1:string,arg2:number):Promise<git.ImageSource>;
+
+export function GetImageFromStash(arg1:number,arg2:string):Promise<git.ImageSource>;
+
+export function GetImageFromStashBase(arg1:number,arg2:string):Promise<git.ImageSource>;
+
+export function GetImageFromWorktree(arg1:string):Promise<git.ImageSource>;
+
 export function GetMergeCommits():Promise<Array<git.CommitNode>>;
 
 export function GetPushInfo():Promise<git.PushInfo>;
