@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../shared/Button'
 import * as Dialog from '@radix-ui/react-dialog'
+import { useTranslation } from 'react-i18next'
 import { ChevronRight, GitBranch, Globe, Tag as TagIcon, Archive, Layers, Search, X } from 'lucide-react'
 import { Plus } from 'lucide-react'
 import { useBranches } from '@/hooks/useBranches'
@@ -12,6 +13,7 @@ import { ContextMenu } from '@/components/shared/ContextMenu'
 import { NewWorktreeDialog } from '@/components/WorktreeManager/NewWorktreeDialog'
 import { NewBranchDialog } from '@/components/BranchManager/NewBranchDialog'
 import { MergeConfirmDialog } from '@/components/BranchManager/MergeConfirmDialog'
+import { DeleteBranchDialog } from '@/components/BranchManager/DeleteBranchDialog'
 import { StashDiffView } from '@/components/StashView/StashDiffView'
 import { OpenInFinder } from '@wailsjs/go/main/App'
 import { useStatus } from '@/hooks/useStatus'
@@ -30,6 +32,7 @@ type PendingConfirm =
   | { kind: 'dropStash'; entry: StashEntry }
 
 export default function Sidebar() {
+  const { t, i18n } = useTranslation()
   const [expanded, setExpanded] = useState({
     branches: true,
     remotes: true,
@@ -40,6 +43,7 @@ export default function Sidebar() {
   const [showNewWorktreeDialog, setShowNewWorktreeDialog] = useState(false)
   const [showNewBranchDialog, setShowNewBranchDialog] = useState(false)
   const [mergingBranch, setMergingBranch] = useState<string | null>(null)
+  const [deletingBranch, setDeletingBranch] = useState<{ name: string; remote: string; isRemote: boolean; repo: string; worktree: string | null } | null>(null)
   const [localFilter, setLocalFilter] = useState('')
   const [remoteFilter, setRemoteFilter] = useState('')
   const [tagFilter, setTagFilter] = useState('')
@@ -73,6 +77,12 @@ export default function Sidebar() {
       if (!next.tags)     setTagFilter('')
       return next
     })
+  }
+
+  const beginDelete = (branch: Branch, isRemote: boolean) => {
+    const { activeRepo, activeWorktree } = useGitStore.getState()
+    if (!activeRepo) return
+    setDeletingBranch({ name: branch.name, remote: branch.remote, isRemote, repo: activeRepo, worktree: activeWorktree })
   }
 
   const currentBranch = branches?.local?.find(b => b.isHead)?.name ?? ''
@@ -304,6 +314,8 @@ export default function Sidebar() {
                   { label: `Merge '${b.name}' into '${currentBranch}'`, onClick: () => setMergingBranch(b.name) },
                   { type: 'separator' as const },
                   { label: `Switch to '${b.name}'`, onClick: () => setPending({ kind: 'checkout', branch: b.name }) },
+                  { type: 'separator' as const },
+                  { label: t('deleteBranch.localMenu', { defaultValue: i18n.language.startsWith('de') ? 'Lokalen Branch löschen' : 'Delete local branch' }), destructive: true, onClick: () => beginDelete(b, false) },
                 ]
 
             const item = (
@@ -399,6 +411,10 @@ export default function Sidebar() {
                   ]
               ),
               ...(currentBranch && currentBranch !== localName ? [{ label: `Pull into '${currentBranch}'`, onClick: () => setPending({ kind: 'pullIntoCurrent' as const, remote: b.remote, branch: localName, currentBranch }) }] : []),
+              ...(!b.isHead ? [
+                { type: 'separator' as const },
+                { label: t('deleteBranch.remoteMenu', { defaultValue: i18n.language.startsWith('de') ? 'Remote-Branch löschen' : 'Delete remote branch' }), destructive: true, onClick: () => beginDelete(b, true) },
+              ] : []),
             ]
             return (
               <ContextMenu key={b.name} items={items}>
@@ -556,6 +572,10 @@ export default function Sidebar() {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {deletingBranch && (
+        <DeleteBranchDialog target={deletingBranch} onClose={() => setDeletingBranch(null)} />
+      )}
 
       {showNewBranchDialog && (
         <NewBranchDialog onClose={() => setShowNewBranchDialog(false)} />

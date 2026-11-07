@@ -48,6 +48,8 @@ export interface BranchList { local: BranchInfo[]; remotes: BranchInfo[] }
 export interface WorktreeInfo { path: string; branch: string; head: string; isMain: boolean; isDirty: boolean }
 export const ListBranches = vi.fn((): Promise<BranchList> => Promise.resolve({ local: [], remotes: [] }))
 export const CreateBranch = vi.fn((_name: string, _from: string, _checkoutAfter: boolean): Promise<void> => Promise.resolve())
+export const PrepareBranchDeletion = vi.fn((_name: string, _remote: string): Promise<git.BranchDeletionInfo> => Promise.resolve({ repoPath: '/repo', name: _name, remote: _remote, ref: '', oid: '', destination: '', configFingerprint: '' }))
+export const DeleteBranch = vi.fn((_info: git.BranchDeletionInfo): Promise<void> => Promise.resolve())
 export const CreateStash = vi.fn((_message: string, _includeUntracked: boolean): Promise<void> => Promise.resolve())
 export const CreateTag = vi.fn((_name: string, _target: string): Promise<void> => Promise.resolve())
 export const ListWorktrees = vi.fn((): Promise<WorktreeInfo[]> => Promise.resolve([]))

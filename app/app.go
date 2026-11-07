@@ -302,6 +302,30 @@ func (a *App) ListBranches() (gitpkg.BranchList, error) {
 	return a.repo.ListBranches()
 }
 
+// PrepareBranchDeletion captures the branch and push destination for confirmation.
+func (a *App) PrepareBranchDeletion(name, remote string) (gitpkg.BranchDeletionInfo, error) {
+	a.pullMu.Lock()
+	defer a.pullMu.Unlock()
+	if a.repo == nil {
+		return gitpkg.BranchDeletionInfo{}, gitpkg.ErrNotARepo
+	}
+	return a.repo.PrepareBranchDeletion(name, remote)
+}
+
+// DeleteBranch deletes only the branch described by the confirmed snapshot.
+func (a *App) DeleteBranch(info gitpkg.BranchDeletionInfo) error {
+	a.pullMu.Lock()
+	defer a.pullMu.Unlock()
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.DeleteBranch(info); err != nil {
+		return err
+	}
+	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	return nil
+}
+
 func (a *App) CreateBranch(name, from string, checkoutAfter bool) error {
 	a.pullMu.Lock()
 	defer a.pullMu.Unlock()
