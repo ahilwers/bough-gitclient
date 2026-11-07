@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
@@ -5,10 +6,11 @@ import { CreateCommit, AmendCommit } from '@wailsjs/go/main/App'
 import { useStatus } from '@/hooks/useStatus'
 import { useGitStore } from '@/stores/gitStore'
 import { parseGitError } from '@/lib/format'
+import { AICommitAssistant } from './AICommitAssistant'
 
 export function CommitBox() {
   const queryClient = useQueryClient()
-  const { showFlash, pendingCherryPickMessage, setPendingCherryPickMessage, setCherryPickConflictActive } = useGitStore()
+  const { showFlash, pendingCherryPickMessage, setPendingCherryPickMessage, setCherryPickConflictActive, activeRepo, activeWorktree } = useGitStore()
   const [message, setMessage] = useState('')
   const [amend, setAmend] = useState(false)
   const { data: status } = useStatus()
@@ -95,6 +97,7 @@ export function CommitBox() {
         display: 'flex', flexDirection: 'column', gap: 8,
       }}
     >
+      <AICommitAssistant key={`${activeRepo}:${activeWorktree}`} hasStaged={!!status?.files?.some(file => !!file.staged && file.staged !== ' ')} onApply={setMessage} />
       <textarea
         data-commit-input
         value={message}
@@ -127,24 +130,16 @@ export function CommitBox() {
           Amend last commit
         </label>
 
-        <button
+        <Button variant="primary"
           onClick={() => commitMutation.mutate(message)}
           disabled={disabled}
-          style={{
-            marginLeft: 'auto',
-            padding: '6px 16px', borderRadius: 5, border: 'none',
-            fontSize: 12, fontWeight: 600, cursor: disabled ? 'not-allowed' : 'pointer',
-            background: disabled ? 'var(--bg-badge)' : 'var(--acc)',
-            color: disabled ? 'var(--text-ter)' : 'white',
-            transition: 'background 0.1s',
-            display: 'flex', alignItems: 'center',
-          }}
+          style={{ marginLeft: 'auto' }}
         >
           {commitMutation.isPending
             ? <><Loader2 size={12} className="spin" style={{ marginRight: 5 }} />Committing…</>
             : amend ? 'Amend' : 'Commit'
           }
-        </button>
+        </Button>
       </div>
 
       <p style={{ margin: 0, fontSize: 10, color: 'var(--text-ter)' }}>

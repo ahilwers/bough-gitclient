@@ -60,6 +60,13 @@ Builds embed version via Makefile `LDFLAGS`:
 - Tailwind CSS 4 with CSS custom properties (design tokens in `global.css`)
 - Monaco Editor for diff viewer, Radix UI for components
 
+**Buttons (mandatory):**
+- Use `app/frontend/src/components/shared/Button.tsx` for every application button; do not add raw `<button>` elements outside this shared component.
+- Normal form/dialog actions must be visible at rest: use default `secondary`, explicit `primary` for the most important action, or `danger` for destructive confirmation. Do not make every action primary.
+- Use `ghost` for flat toolbar, tab, menu and list controls; use `icon` for icon-only controls, with an accessible `aria-label` (and optionally a tooltip `title`). Preserve selected-state and row layout semantics.
+- Button owns visual styles and hover/focus/disabled states in `app/frontend/src/index.css`. Do not create individual visual button recipes for normal actions or blanket CSS selectors targeting all native buttons. Local layout/size and selected-state styling for flat controls is allowed.
+- Native props and React 19 refs pass through, so use Button directly inside Radix `asChild` triggers/close controls. The default type is `button`; specify `type="submit"` explicitly when needed.
+
 **Type System:**
 Canonical Go types in `app/git/types.go` mirrored as TypeScript interfaces:
 - `CommitNode`, `DiffFile`, `DiffHunk`, `DiffLine`, `FileStatus`, `WorktreeInfo`, `RepoStatus`

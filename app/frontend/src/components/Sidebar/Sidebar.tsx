@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { ChevronRight, GitBranch, Globe, Tag as TagIcon, Archive, Layers, Search, X } from 'lucide-react'
@@ -235,6 +236,7 @@ export default function Sidebar() {
       >
         <Section
           title="Branches"
+          aria-label="Branches"
           icon={<GitBranch size={13} />}
           expanded={expanded.branches}
           onToggle={() => toggle('branches')}
@@ -365,6 +367,7 @@ export default function Sidebar() {
 
         <Section
           title="Remotes"
+          aria-label="Remotes"
           icon={<Globe size={13} />}
           expanded={expanded.remotes}
           onToggle={() => toggle('remotes')}
@@ -405,6 +408,7 @@ export default function Sidebar() {
 
         <Section
           title="Tags"
+          aria-label="Tags"
           icon={<TagIcon size={13} />}
           expanded={expanded.tags}
           onToggle={() => toggle('tags')}
@@ -436,6 +440,7 @@ export default function Sidebar() {
 
         <Section
           title="Stashes"
+          aria-label="Stashes"
           icon={<Archive size={13} />}
           expanded={expanded.stashes}
           onToggle={() => toggle('stashes')}
@@ -466,6 +471,7 @@ export default function Sidebar() {
 
         <Section
           title="Worktrees"
+          aria-label="Worktrees"
           icon={<Layers size={13} />}
           expanded={expanded.worktrees}
           onToggle={() => toggle('worktrees')}
@@ -524,35 +530,18 @@ export default function Sidebar() {
             )}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <Dialog.Close asChild>
-                <button
-                  style={{
-                    padding: '7px 14px',
-                    borderRadius: 6,
-                    border: 'none',
-                    background: 'none',
-                    color: 'var(--text-pri)',
-                    fontSize: 13,
-                    cursor: 'pointer',
-                  }}
+                <Button
+                  variant="secondary"
                 >
                   Cancel
-                </button>
+                </Button>
               </Dialog.Close>
-              <button
+              <Button
                 onClick={handleConfirm}
-                style={{
-                  padding: '7px 14px',
-                  borderRadius: 6,
-                  border: 'none',
-                  background: confirmDanger ? 'var(--danger)' : 'var(--acc)',
-                  color: '#fff',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                }}
+                variant={confirmDanger ? 'danger' : 'primary'}
               >
                 {confirmLabel}
-              </button>
+              </Button>
             </div>
           </Dialog.Content>
         </Dialog.Portal>
@@ -594,7 +583,9 @@ interface SectionProps {
 function Section({ title, icon, expanded, onToggle, onAdd, filterContent, children }: SectionProps) {
   return (
     <div>
-      <button
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <Button variant="ghost"
+        aria-expanded={expanded}
         onClick={onToggle}
         style={{
           width: '100%',
@@ -624,17 +615,17 @@ function Section({ title, icon, expanded, onToggle, onAdd, filterContent, childr
         />
         {icon}
         <span style={{ flex: 1, textAlign: 'left' }}>{title}</span>
+      </Button>
         {onAdd && (
-          <span
-            role="button"
+          <Button variant="icon"
             aria-label={`Add ${title}`}
-            onClick={(e) => { e.stopPropagation(); onAdd() }}
-            style={{ display: 'flex', alignItems: 'center', color: 'var(--text-ter)' }}
+            onClick={onAdd}
+            style={{ flexShrink: 0, color: 'var(--text-ter)' }}
           >
             <Plus size={12} />
-          </span>
+          </Button>
         )}
-      </button>
+      </div>
 
       {expanded && (
         <>
@@ -768,7 +759,7 @@ function FilterInput({ value, onChange, placeholder }: FilterInputProps) {
         }}
       />
       {value && (
-        <button
+        <Button variant="icon" aria-label="Clear filter"
           onClick={() => onChange('')}
           style={{
             display: 'flex', alignItems: 'center', padding: 0, border: 'none',
@@ -777,7 +768,7 @@ function FilterInput({ value, onChange, placeholder }: FilterInputProps) {
           }}
         >
           <X size={10} />
-        </button>
+        </Button>
       )}
     </div>
   )
@@ -849,6 +840,7 @@ function WorktreeItem({ worktree, isActive, onSwitch, onRemove, onOpenInFinder }
         {worktree.isDirty && (
           <span
             title="Has uncommitted changes"
+            aria-label="Has uncommitted changes"
             style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warn)', flexShrink: 0 }}
           />
         )}

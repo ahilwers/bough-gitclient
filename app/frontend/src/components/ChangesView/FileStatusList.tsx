@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useState, useRef, useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { StageFile, StageFiles, UnstageFile, UnstageFiles, DiscardFile, DiscardStagedFile, RevealInFinder } from '@wailsjs/go/main/App'
@@ -263,6 +264,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', borderBottom: '1px solid var(--border-sub)' }}>
             <SectionHeader
               title="Conflicts"
+              aria-label="Conflicts"
               count={conflictedFiles.length}
               accentBg="color-mix(in srgb, var(--danger) 10%, var(--bg-sidebar))"
             />
@@ -286,6 +288,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, borderBottom: '1px solid var(--border-sub)' }}>
           <SectionHeader
             title="Unstaged"
+            aria-label="Unstaged"
             count={unstagedFiles.length}
             actionLabel="Stage All"
             onAction={() => stageAllMutation.mutate(unstagedFiles.map(f => f.path))}
@@ -318,6 +321,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <SectionHeader
             title="Staged"
+            aria-label="Staged"
             count={stagedFiles.length}
             actionLabel="Unstage All"
             onAction={() => unstageAllMutation.mutate(stagedFiles.map(f => f.path))}
@@ -416,7 +420,7 @@ function SectionHeader({ title, count, actionLabel, onAction, accentBg }: Sectio
         <span style={{ color: 'var(--text-ter)', marginLeft: 4 }}>({count})</span>
       </span>
       {count > 0 && actionLabel && onAction && (
-        <button
+        <Button variant="ghost"
           onClick={onAction}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
@@ -424,7 +428,7 @@ function SectionHeader({ title, count, actionLabel, onAction, accentBg }: Sectio
           }}
         >
           {actionLabel}
-        </button>
+        </Button>
       )}
     </div>
   )
@@ -493,9 +497,10 @@ function FileRow({ file, staged, statusCode, selected, onSelect, onContextMenu, 
       </div>
 
       {onAction && (
-        <button
+        <Button variant="ghost"
           onClick={e => { e.stopPropagation(); onAction() }}
           title={actionTitle}
+          aria-label={actionTitle}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
             width: 20, height: 20, borderRadius: 3, flexShrink: 0,
@@ -505,7 +510,7 @@ function FileRow({ file, staged, statusCode, selected, onSelect, onContextMenu, 
           }}
         >
           {actionIcon}
-        </button>
+        </Button>
       )}
     </div>
   )
@@ -695,34 +700,20 @@ function DiscardConfirmDialog({ filePath, onConfirm, onCancel }: DiscardConfirmD
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button
+          <Button
             ref={el => { cancelRef.current = el; cancelCb(el) }}
             onClick={onCancel}
-            style={{
-              padding: '6px 16px', borderRadius: 6,
-              border: '1px solid var(--border)',
-              background: 'transparent', color: 'var(--text-sec)',
-              fontSize: 12, cursor: 'pointer',
-            }}
-            onFocus={e => { e.currentTarget.style.outline = '2px solid var(--acc)'; e.currentTarget.style.outlineOffset = '2px' }}
-            onBlur={e => { e.currentTarget.style.outline = 'none' }}
+            variant="secondary"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             ref={discardRef}
             onClick={onConfirm}
-            style={{
-              padding: '6px 16px', borderRadius: 6,
-              border: 'none',
-              background: 'var(--danger)', color: 'white',
-              fontSize: 12, fontWeight: 600, cursor: 'pointer',
-            }}
-            onFocus={e => { e.currentTarget.style.outline = '2px solid var(--danger)'; e.currentTarget.style.outlineOffset = '2px' }}
-            onBlur={e => { e.currentTarget.style.outline = 'none' }}
+            variant="danger"
           >
             Discard
-          </button>
+          </Button>
         </div>
 
       </div>

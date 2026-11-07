@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import { useGitStore } from '@/stores/gitStore'
@@ -141,7 +142,7 @@ export function KeyboardShortcutsDialog() {
             <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-pri)' }}>Keyboard Shortcuts</div>
             <div style={{ fontSize: 11, color: 'var(--text-ter)', marginTop: 2 }}>Press <Kbd>?</Kbd> or <Kbd>Esc</Kbd> to close</div>
           </div>
-          <button
+          <Button variant="icon" aria-label="Close keyboard shortcuts"
             ref={closeRef}
             onClick={() => setHelpDialogOpen(false)}
             style={{
@@ -152,7 +153,7 @@ export function KeyboardShortcutsDialog() {
             }}
           >
             <X size={15} />
-          </button>
+          </Button>
         </div>
 
         {/* Content */}

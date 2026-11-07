@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
@@ -215,19 +216,14 @@ export default function ChangesView() {
               : `All conflicts resolved — commit to finish merging '${mergeState.mergingBranch}'`
             }
           </span>
-          <button
+          <Button variant="secondary"
             onClick={() => abortMutation.mutate()}
             disabled={abortMutation.isPending}
-            style={{
-              padding: '4px 10px', borderRadius: 5, border: '1px solid var(--border)',
-              background: 'transparent', color: 'var(--text-sec)', fontSize: 11,
-              cursor: abortMutation.isPending ? 'not-allowed' : 'pointer', flexShrink: 0,
-              display: 'flex', alignItems: 'center', gap: 5,
-            }}
+            style={{ flexShrink: 0 }}
           >
             {abortMutation.isPending && <Loader2 size={11} className="spin" />}
             Abort Merge
-          </button>
+          </Button>
         </div>
       )}
 
@@ -257,21 +253,16 @@ export default function ChangesView() {
               : 'All conflicts resolved — commit to finish cherry-pick'
             }
           </span>
-          <button
+          <Button variant="secondary"
             onClick={() => abortCherryPickMutation.mutate(undefined, {
               onSuccess: () => setSelectedFile(null),
             })}
             disabled={abortCherryPickMutation.isPending}
-            style={{
-              padding: '4px 10px', borderRadius: 5, border: '1px solid var(--border)',
-              background: 'transparent', color: 'var(--text-sec)', fontSize: 11,
-              cursor: abortCherryPickMutation.isPending ? 'not-allowed' : 'pointer', flexShrink: 0,
-              display: 'flex', alignItems: 'center', gap: 5,
-            }}
+            style={{ flexShrink: 0 }}
           >
             {abortCherryPickMutation.isPending && <Loader2 size={11} className="spin" />}
             Abort Cherry-pick
-          </button>
+          </Button>
         </div>
       )}
 
@@ -300,33 +291,23 @@ export default function ChangesView() {
             }
           </span>
           {rebaseState.conflictCount === 0 && (
-            <button
+            <Button variant="primary"
               onClick={() => rebaseContinueMutation.mutate()}
               disabled={rebaseContinueMutation.isPending}
-              style={{
-                padding: '4px 10px', borderRadius: 5, border: 'none',
-                background: 'var(--acc)', color: 'white', fontSize: 11,
-                cursor: rebaseContinueMutation.isPending ? 'not-allowed' : 'pointer',
-                flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-              }}
+              style={{ flexShrink: 0 }}
             >
               {rebaseContinueMutation.isPending && <Loader2 size={11} className="spin" />}
               Continue
-            </button>
+            </Button>
           )}
-          <button
+          <Button variant="secondary"
             onClick={() => rebaseAbortMutation.mutate()}
             disabled={rebaseAbortMutation.isPending}
-            style={{
-              padding: '4px 10px', borderRadius: 5, border: '1px solid var(--border)',
-              background: 'transparent', color: 'var(--text-sec)', fontSize: 11,
-              cursor: rebaseAbortMutation.isPending ? 'not-allowed' : 'pointer',
-              flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5,
-            }}
+            style={{ flexShrink: 0 }}
           >
             {rebaseAbortMutation.isPending && <Loader2 size={11} className="spin" />}
             Abort Rebase
-          </button>
+          </Button>
         </div>
       )}
 

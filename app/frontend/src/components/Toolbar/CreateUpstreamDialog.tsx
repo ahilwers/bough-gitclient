@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as Dialog from '@radix-ui/react-dialog'
@@ -51,12 +52,12 @@ export function CreateUpstreamDialog({ info, onConfirm, onClose }: Props) {
           {remote && <p style={{ fontSize: 12, color: 'var(--text-sec)', marginTop: 12 }}>{t('push.createUpstream.preview', { upstream: `${remote}/${info.branch}` })}</p>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 24 }}>
             <Dialog.Close asChild>
-              <button ref={cancelRef} style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: 'none', color: 'var(--text-pri)', fontSize: 13, cursor: 'pointer' }}>{t('push.createUpstream.cancel')}</button>
+              <Button ref={cancelRef} variant="secondary">{t('push.createUpstream.cancel')}</Button>
             </Dialog.Close>
-            <button disabled={!remote} onClick={() => onConfirm(remote)}
-              style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: 'var(--acc)', color: '#fff', fontSize: 13, fontWeight: 500, cursor: remote ? 'pointer' : 'not-allowed', opacity: remote ? 1 : 0.6 }}>
+            <Button disabled={!remote} onClick={() => onConfirm(remote)}
+              variant="primary">
               {t('push.createUpstream.confirm')}
-            </button>
+            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

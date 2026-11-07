@@ -1,3 +1,4 @@
+import { Button } from '../shared/Button'
 import { useRef, useCallback, useState, useEffect, useMemo } from 'react'
 import { useGitStore } from '@/stores/gitStore'
 import { useCommits } from '@/hooks/useCommits'
@@ -442,17 +443,13 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
               onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
             />
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button
+              <Button
                 onClick={() => setRewordCommit(null)}
-                style={{
-                  padding: '6px 14px', borderRadius: 5,
-                  border: '1px solid var(--border)', background: 'transparent',
-                  color: 'var(--text-sec)', fontSize: 12, cursor: 'pointer',
-                }}
+                variant="secondary"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   if (rewordMessage.trim()) {
                     rebaseStartMutation.mutate(
@@ -462,16 +459,10 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
                   }
                 }}
                 disabled={!rewordMessage.trim() || rebaseStartMutation.isPending}
-                style={{
-                  padding: '6px 14px', borderRadius: 5, border: 'none',
-                  background: !rewordMessage.trim() || rebaseStartMutation.isPending ? 'var(--bg-badge)' : 'var(--acc)',
-                  color: !rewordMessage.trim() || rebaseStartMutation.isPending ? 'var(--text-ter)' : 'white',
-                  fontSize: 12, fontWeight: 600,
-                  cursor: !rewordMessage.trim() || rebaseStartMutation.isPending ? 'not-allowed' : 'pointer',
-                }}
+                variant="primary"
               >
                 {rebaseStartMutation.isPending ? 'Rewording…' : 'Reword'}
-              </button>
+              </Button>
             </div>
             <p style={{ margin: 0, fontSize: 10, color: 'var(--text-ter)' }}>
               Press{' '}
@@ -521,28 +512,20 @@ export function CommitList({ limit = 500, all = true, searchQuery = '' }: Commit
               {' '}and all its changes will be permanently removed from history.
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button
+              <Button
                 autoFocus
                 onClick={() => setDropCommit(null)}
-                style={{
-                  padding: '6px 14px', borderRadius: 5,
-                  border: '1px solid var(--border)', background: 'transparent',
-                  color: 'var(--text-sec)', fontSize: 12, cursor: 'pointer',
-                }}
+                variant="secondary"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={confirmDrop}
                 disabled={rebaseStartMutation.isPending}
-                style={{
-                  padding: '6px 14px', borderRadius: 5, border: 'none',
-                  background: 'var(--danger)', color: 'white',
-                  fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                }}
+                variant="danger"
               >
                 {rebaseStartMutation.isPending ? 'Dropping…' : 'Drop Commit'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
