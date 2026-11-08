@@ -18,7 +18,7 @@
 # Requires:
 #   - appimagetool (https://github.com/AppImage/AppImageKit/releases)
 #     available on PATH or at /usr/local/bin/appimagetool
-#   - The compiled Bough binary (default: app/build/bin/Bough)
+#   - The compiled Bough binary (default: app/bin/Bough)
 #   - An icon at app/build/appicon.png
 #
 # Output:
@@ -26,7 +26,7 @@
 set -euo pipefail
 
 VERSION="${1:?Usage: build_appimage.sh <version> [binary-path]}"
-BINARY="${2:-app/build/bin/Bough}"
+BINARY="${2:-app/bin/Bough}"
 APPDIR="Bough.AppDir"
 OUTPUT="Bough-${VERSION}-linux-x86_64.AppImage"
 
