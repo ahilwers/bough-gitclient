@@ -171,7 +171,33 @@ tasks:
         fi
       - cp "{{.BIN_DIR}}/{{.APP_NAME}}" "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/MacOS"
       - cp build/darwin/Info.plist "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents"
+      - task: patch:app:version
       - task: '{{if eq OS "darwin"}}codesign:adhoc{{else}}codesign:skip{{end}}'
+
+  # The committed Info.plist holds a placeholder version. Overwrite the
+  # *packaged* copy (never the source plist, so custom keys like the Sparkle
+  # ones survive) with the version passed as VERSION=... by the Makefile/CI.
+  patch:app:version:
+    summary: Writes the build version into the packaged Info.plist
+    internal: true
+    vars:
+      BUNDLE: '{{.BUNDLE | default (printf "%s/%s.app" .BIN_DIR .APP_NAME)}}'
+    cmds:
+      - |
+        VERSION='{{trimPrefix "v" .VERSION}}'
+        # Only write a real release version (e.g. 1.2.3). Development builds
+        # derived from git describe (0.1.0-3-gabc123, abc1234-dirty, dev) keep
+        # the value from the committed plist.
+        case "$VERSION" in
+          ''|*[!0-9.]*|.*|*..*|*.) exit 0 ;;
+          *.*) ;;
+          *) exit 0 ;;
+        esac
+        PLIST="{{.BUNDLE}}/Contents/Info.plist"
+        /usr/libexec/PlistBuddy \
+          -c "Set :CFBundleShortVersionString $VERSION" \
+          -c "Set :CFBundleVersion $VERSION" \
+          "$PLIST"
 
   codesign:adhoc:
     summary: Ad-hoc signs the app bundle (macOS only)
@@ -200,6 +226,9 @@ tasks:
         fi
       - cp "{{.BIN_DIR}}/{{.APP_NAME}}" "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/MacOS"
       - cp "build/darwin/Info.dev.plist" "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Contents/Info.plist"
+      - task: patch:app:version
+        vars:
+          BUNDLE: '{{.BIN_DIR}}/{{.APP_NAME}}.dev.app'
       - xattr -cr "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app"
       - codesign --force --deep --sign - "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app"
       - codesign --verify --deep --strict "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app"

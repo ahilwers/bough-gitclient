@@ -30,7 +30,7 @@ dev: install-wails3
 
 ## build-wails: Build the full Wails v3 application (outputs to app/bin/).
 build-wails: install-wails3
-	cd app && wails3 build LD_FLAGS="$(LD_FLAGS)"
+	cd app && wails3 build VERSION="$(VERSION)" LD_FLAGS="$(LD_FLAGS)"
 
 ## build: Build the Go binary only (no frontend embedding), useful for backend tests.
 build:

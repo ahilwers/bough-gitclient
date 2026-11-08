@@ -11,7 +11,10 @@ info:
   description: "A beautiful Git GUI client" # The application description
   copyright: "Copyright 2026" # Copyright text
   comments: "A beautiful Git GUI client" # Comments
-  version: "0.1.0" # The application version
+  version: "0.1.0" # The application version. This is only the placeholder used
+  #                  by dev builds; release builds override the packaged
+  #                  Info.plist / Windows version metadata with the version
+  #                  passed as VERSION=... by the Makefile / CI.
 
 # Dev mode configuration
 dev_mode:

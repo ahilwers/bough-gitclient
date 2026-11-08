@@ -145,6 +145,12 @@ Bough-v0.1.0-windows-x64.exe
 Bough-v0.1.0-linux-x86_64.AppImage
 ```
 
+The tag is the single source of truth for the released version: CI passes it to the build as
+`VERSION=…`, which the packaging tasks write into the macOS `Info.plist`
+(`CFBundleShortVersionString`/`CFBundleVersion`) and the Windows exe version metadata, in addition
+to embedding it in the binary (`-X main.version`). The values committed under `app/build/` are only
+placeholders for development builds.
+
 ---
 
 ## 8. Verify that "nothing complains"

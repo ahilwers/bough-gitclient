@@ -108,7 +108,25 @@ tasks:
     summary: Generates Windows `.syso` file
     dir: build
     cmds:
-      - wails3 generate syso -arch {{.ARCH}} -icon windows/icon.ico -manifest windows/wails.exe.manifest -info windows/info.json -out ../wails_windows_{{.ARCH}}.syso
+      # The committed info.json carries a placeholder version. Substitute the
+      # build version into a temporary copy (never the source file) so the
+      # resulting .exe properties show the released version.
+      - |
+        INFO=windows/info.json
+        VERSION='{{trimPrefix "v" .VERSION}}'
+        TMP=""
+        case "$VERSION" in
+          ''|*[!0-9.]*|.*|*..*|*.) ;;
+          *.*)
+            TMP="$(mktemp)"
+            sed -e "s/\"file_version\": *\"[^\"]*\"/\"file_version\": \"$VERSION\"/" \
+                -e "s/\"ProductVersion\": *\"[^\"]*\"/\"ProductVersion\": \"$VERSION\"/" \
+                "$INFO" > "$TMP"
+            INFO="$TMP"
+            ;;
+        esac
+        wails3 generate syso -arch {{.ARCH}} -icon windows/icon.ico -manifest windows/wails.exe.manifest -info "$INFO" -out ../wails_windows_{{.ARCH}}.syso
+        if [ -n "$TMP" ]; then rm -f "$TMP"; fi
     vars:
       ARCH: '{{.ARCH | default ARCH}}'
 

@@ -152,6 +152,7 @@ jobs:
           wails3 build \
             GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
             EXTRA_TAGS="$EXTRA_TAGS" \
+            VERSION="${{ env.VERSION }}" \
             LD_FLAGS="-w -s -X main.version=${{ env.VERSION }} -X main.buildDate=${{ env.BUILD_DATE }}"
         working-directory: app
 
@@ -163,7 +164,7 @@ jobs:
           export PATH="$(go env GOPATH)/bin:$PATH"
           case "${{ matrix.family }}" in
             darwin)
-              wails3 task darwin:package GOOS=darwin ARCH=${{ matrix.goarch }}
+              wails3 task darwin:package GOOS=darwin ARCH=${{ matrix.goarch }} VERSION="${{ env.VERSION }}"
               ;;
             windows)
               # The choco-deployed NSIS is usually not on the runner PATH;

@@ -22,6 +22,15 @@ The `darwin` directory holds files specific to macOS builds:
 - `Info.dev.plist` - used for the dev bundle created by `wails3 task run`.
 - `icons.icns`, `Assets.car`, `dmg-*` - application icon and DMG artwork.
 
+**Version handling:** the committed plists and `windows/info.json` carry a
+placeholder version from `config.yml`. Release builds pass
+`VERSION=<tag>` (see the `Makefile` and the release workflow); the
+`darwin:patch:app:version` and `windows:generate:syso` tasks then write
+that version into the *packaged* bundle/exe, leaving the committed files
+untouched so custom keys (e.g. the Sparkle `SUPublicEDKey`) survive.
+Do not run `wails3 update build-assets` without re-applying those custom
+keys — it regenerates the plists from the templates and overwrites them.
+
 ## Windows
 
 The `windows` directory contains the manifest, icon and NSIS/MSIX packaging
