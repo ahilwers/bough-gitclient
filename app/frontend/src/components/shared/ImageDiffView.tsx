@@ -134,9 +134,19 @@ function scaleToFit(dims: { w: number; h: number }, availW: number, availH: numb
 
 function useMeasuredSize(dataURL: string | undefined) {
   const [dims, setDims] = useState<{ w: number; h: number } | null>(null)
+  const [seenURL, setSeenURL] = useState<string | undefined>(undefined)
 
-  // Reset when a new image arrives so its onLoad fires again.
-  useEffect(() => { setDims(null) }, [dataURL])
+  // Reset the previous dimensions *during render*, before the browser commits
+  // the new src. A passive-effect reset races the browser's image load: when a
+  // commit is switched while the diff is already on screen, the <img> keeps its
+  // DOM identity and the new (possibly cached) image can fire `load` before
+  // React runs the reset effect. The onLoad handler would then still be
+  // detached and the new image would stay hidden forever. Resetting here
+  // guarantees the handler is attached by the time the new src is committed.
+  if (seenURL !== dataURL) {
+    setSeenURL(dataURL)
+    setDims(null)
+  }
 
   return {
     dims,
@@ -188,7 +198,7 @@ function Pane({ label, src, size, dims, onLoad, width, height, emptyHint, accent
             src={src}
             alt={label}
             draggable={false}
-            onLoad={dims === null ? onLoad : undefined}
+            onLoad={onLoad}
             style={{
               // Hidden until natural dimensions are known, then placed at the
               // computed common scale (width+height keep relative sizes true).

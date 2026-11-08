@@ -10,7 +10,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { render, fireEvent, screen } from '@testing-library/react'
+import { render, fireEvent, screen, act } from '@testing-library/react'
+import { createRoot } from 'react-dom/client'
+import { flushSync } from 'react-dom'
 import { ImageDiffView } from './ImageDiffView'
 
 // Minimal ResizeObserver polyfill — jsdom does not implement it.
@@ -81,5 +83,52 @@ describe('ImageDiffView', () => {
       <ImageDiffView left={undefined} right={undefined} leftLabel="A" rightLabel="B" loading />
     )
     expect(screen.getByText('Loading images…')).toBeInTheDocument()
+  })
+
+  it('displays the new image when its load event fires before React flushes effects', async () => {
+    // Regression test: switching a commit while already on the Diff tab swaps
+    // the image src on an already-mounted <img>. The browser can fire `load`
+    // for the new (cached) image before React runs passive effects, and the
+    // new image would stay hidden forever. The dims reset must therefore
+    // happen during render, with the onLoad handler always attached.
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    const root = createRoot(container)
+
+    // Initial render with image A; simulate the browser loading it.
+    act(() => {
+      root.render(<ImageDiffView left={png1} right={null} leftLabel="Parent" rightLabel="Commit" />)
+    })
+    const img = container.querySelector('img')!
+    Object.defineProperty(img, 'naturalWidth', { value: 100, configurable: true })
+    Object.defineProperty(img, 'naturalHeight', { value: 50, configurable: true })
+    act(() => {
+      fireEvent.load(img)
+    })
+    expect(screen.getByText('100 × 50 px')).toBeInTheDocument()
+
+    // Swap to image B. flushSync commits the new src synchronously but leaves
+    // React's passive effects pending — like selecting a new commit on the
+    // Diff tab when its image data is already cached.
+    flushSync(() => {
+      root.render(<ImageDiffView left={png2} right={null} leftLabel="Parent" rightLabel="Commit" />)
+    })
+    const img2 = container.querySelector('img')!
+    expect(img2).toBe(img) // same <img> element, only the src changed
+
+    // The browser fires `load` for the new src before React runs the reset
+    // effect — this is the race that used to leave the image hidden.
+    Object.defineProperty(img2, 'naturalWidth', { value: 200, configurable: true })
+    Object.defineProperty(img2, 'naturalHeight', { value: 100, configurable: true })
+    fireEvent.load(img2)
+
+    // Flush React's pending passive effects.
+    await act(async () => {})
+
+    // The new image must be measured and visible.
+    expect(screen.getByText('200 × 100 px')).toBeInTheDocument()
+    expect(img2.style.visibility).toBe('visible')
+
+    container.remove()
   })
 })

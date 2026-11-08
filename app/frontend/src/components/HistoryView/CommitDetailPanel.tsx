@@ -28,10 +28,21 @@ export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
   const { setSelectedCommit } = useGitStore()
   const [activeTab, setActiveTab] = useState<'files' | 'diff'>('files')
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [shownHash, setShownHash] = useState(commitHash)
   const [copied, setCopied] = useState(false)
   const [focused, setFocused] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Start fresh whenever the displayed commit changes: clear the file
+  // selection and land on the Files tab, so the panel never shows a diff for
+  // a file that belonged to the previously selected commit. (Done during
+  // render so the stale diff is never committed to the screen.)
+  if (shownHash !== commitHash) {
+    setShownHash(commitHash)
+    setActiveTab('files')
+    setSelectedFile(null)
+  }
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.target as HTMLElement).tagName === 'BUTTON') return
