@@ -26,14 +26,14 @@ A cross-platform, native Git GUI client for macOS (primary), Windows, and Linux.
 
 ## Development Commands
 
-Requires Go 1.27+ and Node.js 22. Wails v2.17.1 is pinned as a Go tool in `app/go.mod`; no global CLI installation is needed. All Wails commands must be run from `app/`:
+Requires Go 1.27+ and Node.js 22. Wails v3.0.0 is pinned as a Go tool in `app/go.mod`; no global CLI installation is needed. All Wails commands must be run from `app/`:
 
 ```bash
 # Start dev server (hot reload, Go + frontend)
-cd app && go tool wails dev
+cd app && go tool wails3 dev
 
-# Production build  →  app/build/bin/Bough.app
-cd app && go tool wails build
+# Production build  →  app/bin/Bough
+cd app && go tool wails3 build
 
 # Download pinned Go dependencies (including the Wails tool)
 cd app && go mod download

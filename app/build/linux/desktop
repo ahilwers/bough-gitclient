@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Bough
+Comment=A beautiful Git GUI client
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/bough %u
+Terminal=false
+Type=Application
+Icon=bough
+Categories=Utility;
+StartupWMClass=bough
+
+ 

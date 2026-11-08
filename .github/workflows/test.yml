@@ -60,8 +60,18 @@ jobs:
         run: npm ci
         working-directory: app/frontend
 
+      - name: Build wails3 CLI tool
+        run: go build -o "$(go env GOPATH)/bin/wails3" github.com/wailsapp/wails/v3/cmd/wails3
+        working-directory: app
+
       - name: Build Wails app with generated bindings
-        run: go tool wails build
+        # Remove the placeholder dist so the v3 Taskfile cache rebuilds the real
+        # frontend bundle (its `generates` check would otherwise treat the
+        # Go-test placeholder as up to date).
+        run: |
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          rm -rf frontend/dist
+          wails3 build
         working-directory: app
 
   frontend-tests:

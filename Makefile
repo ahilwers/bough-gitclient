@@ -1,25 +1,46 @@
-.PHONY: build build-wails dev test test-frontend clean
+.PHONY: build build-wails dev install-wails3 test test-frontend test-e2e clean generate-bindings help
 
 # Embed version from the nearest git tag (falls back to commit hash).
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 BUILD_DATE ?= $(shell date -u +%Y-%m-%d)
-LDFLAGS  := -X main.version=$(VERSION) -X main.buildDate=$(BUILD_DATE)
+
+# wails3 is pinned as a Go tool in app/go.mod. Wails v3's CLI resolves nested
+# `wails3` invocations from PATH (its Taskfiles call `wails3 ...` directly), so
+# we build the pinned CLI into GOPATH/bin and prepend it to PATH.
+GO_BIN := $(shell go env GOPATH)/bin
+export PATH := $(GO_BIN):$(PATH)
+
+# The version ldflags are folded into the platform Taskfiles via the
+# LD_FLAGS variable (defaults to "-w -s" strip flags).
+LD_FLAGS := -w -s -X main.version=$(VERSION) -X main.buildDate=$(BUILD_DATE)
+
+## install-wails3: Build the wails3 CLI pinned in app/go.mod into GOPATH/bin.
+install-wails3:
+	@if [ ! -x "$(GO_BIN)/wails3" ] || [ "$$(wails3 version 2>/dev/null)" != "v3.0.0" ]; then \
+		cd app && go build -o "$(GO_BIN)/wails3" github.com/wailsapp/wails/v3/cmd/wails3; \
+	fi
 
 # ── Development ───────────────────────────────────────────────────────────────
 
-## dev: Start Wails dev server with hot reload (Go + React).
-dev:
-	cd app && go tool wails dev
+## dev: Start the Wails v3 dev server with hot reload (Go + React).
+dev: install-wails3
+	cd app && wails3 dev
 
 # ── Production builds ─────────────────────────────────────────────────────────
 
-## build-wails: Build the full Wails application (outputs to app/build/bin/).
-build-wails:
-	cd app && go tool wails build -ldflags "$(LDFLAGS)"
+## build-wails: Build the full Wails v3 application (outputs to app/bin/).
+build-wails: install-wails3
+	cd app && wails3 build LD_FLAGS="$(LD_FLAGS)"
 
 ## build: Build the Go binary only (no frontend embedding), useful for backend tests.
 build:
-	cd app && go build -ldflags "$(LDFLAGS)" -o ../bin/bough ./...
+	cd app && go build -ldflags "-X main.version=$(VERSION)" -o ../bin/bough ./...
+
+# ── Bindings ──────────────────────────────────────────────────────────────────
+
+## generate-bindings: Regenerate the frontend bindings from the Go services.
+generate-bindings: install-wails3
+	cd app && wails3 generate bindings -ts -i -clean
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
@@ -41,9 +62,9 @@ test-e2e:
 generate-keys:
 	./scripts/generate_keys.sh .secrets
 
-## appimage: Build a Linux AppImage for the current version.
-appimage:
-	./scripts/build_appimage.sh $(VERSION)
+## appimage: Build a Linux AppImage via the Wails v3 Linux task (run on Linux).
+appimage: install-wails3
+	cd app && wails3 task linux:create:appimage GOOS=linux ARCH=amd64
 
 ## appcast: Generate appcast.xml for the current git tag.
 appcast:
@@ -53,7 +74,7 @@ appcast:
 
 ## clean: Remove build output and AppDir staging directories.
 clean:
-	rm -rf app/build/bin bin *.AppImage Bough.AppDir appcast
+	rm -rf app/bin app/build/bin bin *.AppImage Bough.AppDir appcast
 
 help:
 	@grep -E '^## ' Makefile | sed 's/## /  /'

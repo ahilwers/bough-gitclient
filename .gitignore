@@ -39,6 +39,9 @@ bin/
 Bough.AppDir/
 appcast/
 
+# Wails v3 task-runner cache
+.task/
+
 # Editor/IDE
 # .idea/
 # .vscode/

@@ -178,7 +178,7 @@ Bough-v0.1.0-linux-x86_64.AppImage
 - [ ] Apple Developer account + Developer ID certificate + API key present
 - [ ] All `APPLE_*` secrets set
 - [ ] `npm ci` + `npm run build` green locally (frontend)
-- [ ] `cd app && go tool wails build` green locally
+- [ ] `cd app && go tool wails3 build` green locally
 - [ ] Tag `v0.1.0` created and pushed
 - [ ] Release files under GitHub Releases
 - [ ] macOS app opens without a warning (tested)
