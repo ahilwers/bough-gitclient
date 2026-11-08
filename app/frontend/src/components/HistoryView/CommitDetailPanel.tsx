@@ -99,10 +99,13 @@ export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
   }, [])
 
   // Find commit metadata from already-loaded list (no extra network call)
-  const { data: commits = [] } = useCommits()
+  const { data: commits = [], isLoading: commitsLoading } = useCommits()
   const commit = commits.find(c => c.hash === commitHash) ?? null
 
-  const { data: files = [], isLoading: filesLoading } = useCommitFiles(commitHash)
+  // Only query the commit's files once its metadata is actually available;
+  // calling GetCommitDiff on a hash that is not part of the loaded history
+  // (e.g. a stale selection from a previous repository) would fail noisily.
+  const { data: files = [], isLoading: filesLoading } = useCommitFiles(commit ? commitHash : null)
 
   function copyHash() {
     navigator.clipboard.writeText(commitHash).catch(() => {})
@@ -118,7 +121,7 @@ export function CommitDetailPanel({ commitHash }: CommitDetailPanelProps) {
   if (!commit) {
     return (
       <div style={{ flex: 1, borderLeft: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-panel)', color: 'var(--text-ter)', fontSize: 12 }}>
-        Loading…
+        {commitsLoading ? 'Loading…' : 'Select a commit to view details'}
       </div>
     )
   }

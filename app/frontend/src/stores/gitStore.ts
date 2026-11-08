@@ -159,6 +159,16 @@ export const useGitStore = create<GitStore>()(
       setActiveRepo: (path) => set((s) => ({
         activeRepo: path,
         recentRepos: [path, ...s.recentRepos.filter(r => r !== path)].slice(0, 10),
+        // Repository switch invalidates all per-repo selection state: a stale
+        // commit/file selection from the previous repo would otherwise trigger
+        // failing backend calls ("object not found").
+        selectedCommit: null,
+        selectedFile: null,
+        selectedCommits: [],
+        activeWorktree: null,
+        worktrees: [],
+        pendingCherryPickMessage: null,
+        cherryPickConflictActive: false,
       })),
       setRecentRepos: (repos) => set({ recentRepos: repos }),
 

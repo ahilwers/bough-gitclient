@@ -13,10 +13,12 @@ import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { GetCommits } from '@bindings/bough/app'
 import { Events } from '@wailsio/runtime'
+import { useGitStore } from '@/stores/gitStore'
 import type { CommitNode } from '@/lib/types'
 
 export function useCommits(limit = 500, all = true) {
   const queryClient = useQueryClient()
+  const { activeRepo } = useGitStore()
 
   const query = useQuery({
     queryKey: ['commits', limit, all],
@@ -24,6 +26,7 @@ export function useCommits(limit = 500, all = true) {
       const result = await GetCommits(limit, all)
       return (result || []) as CommitNode[]
     },
+    enabled: !!activeRepo,
     staleTime: 30_000,
   })
 

@@ -11,14 +11,17 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ListRemotes, AddRemote, UpdateRemote, RenameRemote, RemoveRemote } from '@bindings/bough/app'
+import { useGitStore } from '@/stores/gitStore'
 import type { Remote } from '@/lib/types'
 
 export function useRemotes() {
   const queryClient = useQueryClient()
+  const activeRepo = useGitStore(s => s.activeRepo)
 
   const query = useQuery({
     queryKey: ['remotes'],
     queryFn: async () => (await ListRemotes()) as Remote[],
+    enabled: !!activeRepo,
     staleTime: 30_000,
   })
 

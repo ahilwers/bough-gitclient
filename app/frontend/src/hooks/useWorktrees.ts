@@ -24,10 +24,12 @@ import type { WorktreeInfo } from '@/lib/types'
 export function useWorktrees() {
   const queryClient = useQueryClient()
   const setActiveWorktree = useGitStore(s => s.setActiveWorktree)
+  const activeRepo = useGitStore(s => s.activeRepo)
 
   const query = useQuery({
     queryKey: ['worktrees'],
     queryFn: async () => (await ListWorktrees()) as WorktreeInfo[],
+    enabled: !!activeRepo,
     staleTime: 30_000,
   })
 

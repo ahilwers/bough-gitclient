@@ -13,14 +13,17 @@ import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { GetStatus } from '@bindings/bough/app'
 import { Events } from '@wailsio/runtime'
+import { useGitStore } from '@/stores/gitStore'
 import type { RepoStatus } from '@/lib/types'
 
 export function useStatus() {
   const queryClient = useQueryClient()
+  const { activeRepo } = useGitStore()
 
   const query = useQuery({
     queryKey: ['status'],
     queryFn: async () => (await GetStatus()) as RepoStatus,
+    enabled: !!activeRepo,
     staleTime: 1_000,
     refetchInterval: 3_000,
     refetchIntervalInBackground: false,

@@ -13,14 +13,17 @@ import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ListStashes, ApplyStash, PopStash, DropStash } from '@bindings/bough/app'
 import { Events } from '@wailsio/runtime'
+import { useGitStore } from '@/stores/gitStore'
 import type { StashEntry } from '@/lib/types'
 
 export function useStashes() {
   const queryClient = useQueryClient()
+  const activeRepo = useGitStore(s => s.activeRepo)
 
   const query = useQuery({
     queryKey: ['stashes'],
     queryFn: async () => (await ListStashes()) as StashEntry[],
+    enabled: !!activeRepo,
     staleTime: 30_000,
   })
 

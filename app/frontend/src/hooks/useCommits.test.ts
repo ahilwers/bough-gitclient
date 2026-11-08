@@ -13,6 +13,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createWrapper } from '@/test/queryWrapper'
 import { useCommits } from './useCommits'
+import { useGitStore } from '@/stores/gitStore'
 import { GetCommits } from '@bindings/bough/app'
 import { Events } from '@wailsio/runtime'
 import type { CommitNode } from '@/lib/types'
@@ -36,6 +37,8 @@ const makeCommit = (overrides: Partial<CommitNode> = {}): CommitNode => ({
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(Events.On).mockReturnValue(vi.fn())
+  // The hook only queries the backend when a repo is open.
+  useGitStore.setState({ activeRepo: '/repo' })
 })
 
 describe('useCommits', () => {

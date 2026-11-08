@@ -13,6 +13,7 @@ import { renderHook, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createWrapper } from '@/test/queryWrapper'
 import { useWorktrees } from './useWorktrees'
+import { useGitStore } from '@/stores/gitStore'
 import {
   ListWorktrees,
   AddWorktree,
@@ -34,6 +35,8 @@ const makeWorktree = (overrides: Partial<WorktreeInfo> = {}): WorktreeInfo => ({
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(Events.On).mockReturnValue(vi.fn())
+  // The hook only queries the backend when a repo is open.
+  useGitStore.setState({ activeRepo: '/repo' })
 })
 
 describe('useWorktrees', () => {

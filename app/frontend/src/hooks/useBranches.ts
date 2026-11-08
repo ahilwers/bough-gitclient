@@ -13,14 +13,17 @@ import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ListBranches, CheckoutBranch, CheckoutRemoteBranch, PullIntoLocalBranch, Pull, CreateBranch, MergeBranch } from '@bindings/bough/app'
 import { Events } from '@wailsio/runtime'
+import { useGitStore } from '@/stores/gitStore'
 import type { BranchList } from '@/lib/types'
 
 export function useBranches() {
   const queryClient = useQueryClient()
+  const activeRepo = useGitStore(s => s.activeRepo)
 
   const query = useQuery({
     queryKey: ['branches'],
     queryFn: async () => (await ListBranches()) as BranchList,
+    enabled: !!activeRepo,
     staleTime: 30_000,
   })
 
