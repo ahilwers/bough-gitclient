@@ -14,6 +14,7 @@ Please take a moment to read this guide and the repository's
 - [Feature requests](#feature-requests)
 - [Development setup](#development-setup)
 - [Pull request process](#pull-request-process)
+- [Branch protection and review requirements](#branch-protection-and-review-requirements)
 - [Code conventions](#code-conventions)
 - [Tests and verification](#tests-and-verification)
 - [License and sign-off](#license-and-sign-off)
@@ -90,6 +91,31 @@ For frontend-only work, run commands from `app/frontend/` (`npm install`, `npm r
    component tests. The repo convention is tests written with the code, not after.
 5. **Run the verification steps** below before pushing.
 6. **Rebase** on the latest `main` and resolve conflicts before requesting review.
+7. **Request a review** — pull requests need at least one approving review from a maintainer (see
+   below).
+
+## Branch protection and review requirements
+
+The `main` branch is protected by GitHub rulesets. This protects the project's default branch and
+release tags, and ensures every change is reviewed before it lands:
+
+- **Pull requests only** — no direct pushes to `main`. Every change must go through a pull request.
+- **Required review** — at least **one approving review** from a maintainer with write access is
+  required before a pull request can be merged.
+- **Status checks** — the CI jobs **Go Backend Tests**, **Wails App Tests and Build**, and
+  **Frontend Tests (Vitest)** must pass.
+- **Branch up to date** — pull requests must be based on the latest `main`; after you push new
+  commits, update your branch so it is up to date before merging.
+- **No force pushes** — force pushing to `main` is blocked, and the branch cannot be deleted via the
+  normal interface.
+- **Resolve review threads** — all review conversations must be resolved before merging. New commits
+  push dismiss stale approvals, so update your branch and get review again.
+
+Release tags (`refs/tags/*`) are also protected: only maintainers can create tags, and existing tags
+cannot be deleted or rewritten.
+
+These rules are enforced by GitHub, so don't try to work around them by force pushing or merging
+directly to `main` — open a pull request instead.
 
 ## Code conventions
 
