@@ -28,7 +28,8 @@ describe('repository selector layout', () => {
     useGitStore.setState({ activeRepo: `/projects/${name}` })
     renderToolbar()
     const button = screen.getByRole('button', { name })
-    expect(button).toHaveStyle({ display: 'inline-flex', flexDirection: 'row', flexWrap: 'nowrap', whiteSpace: 'nowrap', minWidth: '44px', maxWidth: '200px' })
+    expect(button.style.display).toBe('inline-flex')
+    expect(button).toHaveStyle({ flexDirection: 'row', flexWrap: 'nowrap', whiteSpace: 'nowrap', minWidth: '44px', maxWidth: '200px' })
     const label = button.querySelector('span')!
     expect(label).toHaveTextContent(name)
     expect(label).toHaveStyle({ flex: '1 1 auto', minWidth: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })
