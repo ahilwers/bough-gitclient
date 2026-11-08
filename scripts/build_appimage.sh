@@ -92,7 +92,20 @@ else
 fi
 
 # ── Build AppImage ────────────────────────────────────────────────────────────
-ARCH=x86_64 "$APPIMAGETOOL" "$APPDIR" "$OUTPUT"
+# ── Build AppImage ────────────────────────────────────────────────────────
+# appimagetool normally fetches the type2 runtime from GitHub release assets
+# on its own (without retry). Allow pre-fetching it so a transient GitHub
+# asset-CDN failure does not abort the build — pass it via --runtime-file.
+RUNTIME="${APPIMAGE_RUNTIME:-}"
+if [ -n "$RUNTIME" ]; then
+    if [ ! -f "$RUNTIME" ]; then
+        echo "Error: runtime file not found at $RUNTIME" >&2
+        exit 1
+    fi
+    ARCH=x86_64 "$APPIMAGETOOL" --runtime-file "$RUNTIME" "$APPDIR" "$OUTPUT"
+else
+    ARCH=x86_64 "$APPIMAGETOOL" "$APPDIR" "$OUTPUT"
+fi
 
 echo ""
 echo "Built: $OUTPUT"
