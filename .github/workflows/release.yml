@@ -148,7 +148,13 @@ jobs:
           # wails3 is built into $(go env GOPATH)/bin by the step above.
           export PATH="$(go env GOPATH)/bin:$PATH"
           # Ubuntu 24.04 only has webkit2gtk 4.1: build with the webkit2_41 tag.
-          if [ "${{ matrix.family }}" = "linux" ]; then EXTRA_TAGS=webkit2_41; fi
+          # macOS ships the Liquid Glass backdrop, which needs Wails' private
+          # WebKit API for webview transparency (not App Store compatible).
+          case "${{ matrix.family }}" in
+            linux) EXTRA_TAGS=webkit2_41 ;;
+            macos) EXTRA_TAGS=liquidglass,private_mac_apis ;;
+            *)     EXTRA_TAGS="" ;;
+          esac
           wails3 build \
             GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
             EXTRA_TAGS="$EXTRA_TAGS" \
@@ -164,7 +170,8 @@ jobs:
           export PATH="$(go env GOPATH)/bin:$PATH"
           case "${{ matrix.family }}" in
             darwin)
-              wails3 task darwin:package GOOS=darwin ARCH=${{ matrix.goarch }} VERSION="${{ env.VERSION }}"
+              # Package rebuilds via the `build` dep, so it needs the same tags.
+              wails3 task darwin:package GOOS=darwin ARCH=${{ matrix.goarch }} VERSION="${{ env.VERSION }}" EXTRA_TAGS=liquidglass,private_mac_apis
               ;;
             windows)
               # The choco-deployed NSIS is usually not on the runner PATH;

@@ -14,6 +14,18 @@ export PATH := $(GO_BIN):$(PATH)
 # LD_FLAGS variable (defaults to "-w -s" strip flags).
 LD_FLAGS := -w -s -X main.version=$(VERSION) -X main.buildDate=$(BUILD_DATE)
 
+# Go build tags forwarded to Wails (`EXTRA_TAGS` in the v3 Taskfiles).
+#
+# macOS builds get the native Liquid Glass backdrop by default. It needs Wails'
+# private WebKit API for webview transparency, so an App Store build must opt
+# out with `EXTRA_TAGS=` (or pass its own tag list, e.g. EXTRA_TAGS=gtk4).
+GLASS_TAGS :=
+ifeq ($(shell go env GOOS),darwin)
+GLASS_TAGS := liquidglass,private_mac_apis
+endif
+
+TAGS := $(if $(filter undefined,$(origin EXTRA_TAGS)),$(GLASS_TAGS),$(EXTRA_TAGS))
+
 ## install-wails3: Build the wails3 CLI pinned in app/go.mod into GOPATH/bin.
 install-wails3:
 	@if [ ! -x "$(GO_BIN)/wails3" ] || [ "$$(wails3 version 2>/dev/null)" != "v3.0.0" ]; then \
@@ -24,13 +36,14 @@ install-wails3:
 
 ## dev: Start the Wails v3 dev server with hot reload (Go + React).
 dev: install-wails3
-	cd app && wails3 dev
+	cd app && EXTRA_TAGS="$(TAGS)" wails3 dev
 
 # ── Production builds ─────────────────────────────────────────────────────────
 
 ## build-wails: Build the full Wails v3 application (outputs to app/bin/).
+## macOS includes the Liquid Glass backdrop; use EXTRA_TAGS= to build without it.
 build-wails: install-wails3
-	cd app && wails3 build VERSION="$(VERSION)" LD_FLAGS="$(LD_FLAGS)"
+	cd app && wails3 build VERSION="$(VERSION)" LD_FLAGS="$(LD_FLAGS)" $(if $(TAGS),EXTRA_TAGS="$(TAGS)")
 
 ## build: Build the Go binary only (no frontend embedding), useful for backend tests.
 build:
