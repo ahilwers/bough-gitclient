@@ -103,14 +103,14 @@ jobs:
         run: npm ci
         working-directory: app/frontend
 
-      # Wails needs GTK/WebKit dev libs to build the Linux binary.
-      # ubuntu-24.04 (noble) only ships webkit2gtk 4.1, so we use the
-      # `webkit2_41` Wails build tag (see -tags below).
+      # Wails v3 on Linux builds against GTK4 / WebKitGTK 6.0 (the v2-era
+      # webkit2_41 tag no longer exists). Both the CLI and the app need the
+      # same pkg-config files, so install them before anything is compiled.
       - name: Install Linux build dependencies
         if: matrix.family == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev \
+          sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev \
             libsoup-3.0-dev libayatana-appindicator3-dev librsvg2-dev libglib2.0-dev
 
       # Wails builds the NSIS installer with makensis, which is not preinstalled
@@ -125,7 +125,9 @@ jobs:
         working-directory: app
 
       - name: Build wails3 CLI tool
-        run: go build -o "$(go env GOPATH)/bin/wails3" github.com/wailsapp/wails/v3/cmd/wails3
+        # GOEXE appends .exe on Windows; without it the Taskfiles cannot find
+        # the CLI (`exec: "wails3": executable file not found in $PATH`).
+        run: go build -o "$(go env GOPATH)/bin/wails3$(go env GOEXE)" github.com/wailsapp/wails/v3/cmd/wails3
         working-directory: app
 
       # Inject the Sparkle EdDSA public key into Info.plist if provided.
@@ -147,11 +149,9 @@ jobs:
         run: |
           # wails3 is built into $(go env GOPATH)/bin by the step above.
           export PATH="$(go env GOPATH)/bin:$PATH"
-          # Ubuntu 24.04 only has webkit2gtk 4.1: build with the webkit2_41 tag.
           # macOS ships the Liquid Glass backdrop, which needs Wails' private
           # WebKit API for webview transparency (not App Store compatible).
           case "${{ matrix.family }}" in
-            linux) EXTRA_TAGS=webkit2_41 ;;
             macos) EXTRA_TAGS=liquidglass,private_mac_apis ;;
             *)     EXTRA_TAGS="" ;;
           esac
@@ -169,7 +169,7 @@ jobs:
           # wails3 CLI binary is built into $(go env GOPATH)/bin above.
           export PATH="$(go env GOPATH)/bin:$PATH"
           case "${{ matrix.family }}" in
-            darwin)
+            macos)
               # Package rebuilds via the `build` dep, so it needs the same tags.
               wails3 task darwin:package GOOS=darwin ARCH=${{ matrix.goarch }} VERSION="${{ env.VERSION }}" EXTRA_TAGS=liquidglass,private_mac_apis
               ;;
