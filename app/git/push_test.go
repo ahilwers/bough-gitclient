@@ -87,6 +87,60 @@ func TestCreateUpstreamPush(t *testing.T) {
 	}
 }
 
+func TestCreateUpstreamPushesTags(t *testing.T) {
+	dir := initRepo(t)
+	remote := t.TempDir()
+	pushGit(t, remote, "init", "--bare")
+	pushGit(t, dir, "remote", "add", "origin", remote)
+	// Both a lightweight tag and an annotated tag must reach the remote when
+	// the branch is first published.
+	pushGit(t, dir, "tag", "v1.0")
+	pushGit(t, dir, "tag", "-a", "v1.1", "-m", "release")
+	repo, err := git.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := repo.GetPushInfo()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.PushWithUpstream(info.RepoPath, "origin", info.Branch); err != nil {
+		t.Fatal(err)
+	}
+	got := pushGit(t, remote, "for-each-ref", "--format=%(refname)")
+	if !strings.Contains(got, "refs/heads/"+info.Branch) ||
+		!strings.Contains(got, "refs/tags/v1.0") ||
+		!strings.Contains(got, "refs/tags/v1.1") {
+		t.Fatalf("remote refs missing tag/branch: %q", got)
+	}
+}
+
+func TestPushTrackedAdvancesUpstreamAndPushesTags(t *testing.T) {
+	dir := initRepo(t)
+	remote := t.TempDir()
+	pushGit(t, remote, "init", "--bare")
+	pushGit(t, dir, "remote", "add", "origin", remote)
+	branch := pushGit(t, dir, "symbolic-ref", "--short", "HEAD")
+	pushGit(t, dir, "push", "-u", "origin", "HEAD:refs/heads/"+branch)
+	pushGit(t, dir, "commit", "--allow-empty", "-m", "next")
+	pushGit(t, dir, "tag", "v3.0")
+	pushGit(t, dir, "tag", "-a", "v3.1", "-m", "release")
+	repo, err := git.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.PushTracked(false); err != nil {
+		t.Fatal(err)
+	}
+	if got := pushGit(t, remote, "rev-parse", "refs/heads/"+branch); got != pushGit(t, dir, "rev-parse", "HEAD") {
+		t.Fatal("tracked push did not advance upstream")
+	}
+	refs := pushGit(t, remote, "for-each-ref", "--format=%(refname)")
+	if !strings.Contains(refs, "refs/tags/v3.0") || !strings.Contains(refs, "refs/tags/v3.1") {
+		t.Fatalf("remote refs missing tags: %q", refs)
+	}
+}
+
 func TestCreateUpstreamRejectsStaleOrInvalidConfirmation(t *testing.T) {
 	for _, scenario := range []string{"repository", "branch", "detached", "upstream", "no remotes", "unknown remote"} {
 		t.Run(scenario, func(t *testing.T) {

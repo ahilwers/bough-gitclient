@@ -76,7 +76,48 @@ func (r *Repository) PushWithUpstream(repoPath, remote, branch string) error {
 		return fmt.Errorf("select a configured remote before creating an upstream")
 	}
 	ref := plumbing.NewBranchReferenceName(branch).String()
-	_, err = CLI(r.Path, "push", "--set-upstream", "--", remote, ref+":"+ref)
+	// --tags publishes every local tag alongside the branch. An ordinary push
+	// only carries tags when named explicitly, and --follow-tags would skip
+	// the lightweight tags this app creates.
+	_, err = CLI(r.Path, "push", "--set-upstream", "--tags", "--", remote, ref+":"+ref)
+	if IsAuthError(err) {
+		return ErrAuthFailed
+	}
+	return err
+}
+
+// PushTracked performs the default push: the current branch to its configured
+// upstream, plus all local tags. The branch is named explicitly (never via
+// push.default or remote.*.push) so that --tags adds tags on top of the branch
+// push rather than replacing it. Errors if the branch has no upstream, mirroring
+// the confirmation guard in the frontend.
+func (r *Repository) PushTracked(force bool) error {
+	head, err := r.repo.Head()
+	if err != nil {
+		return err
+	}
+	if !head.Name().IsBranch() {
+		return fmt.Errorf("cannot push from detached HEAD; check out a branch first")
+	}
+	branch := head.Name().Short()
+	cfg, err := r.repo.Config()
+	if err != nil {
+		return err
+	}
+	b := cfg.Branches[branch]
+	if b == nil || b.Remote == "" || b.Merge == "" {
+		return fmt.Errorf("branch %q has no upstream; confirm creation before pushing", branch)
+	}
+	// --tags publishes every local tag alongside the branch. An ordinary push
+	// only carries tags when named explicitly, and --follow-tags would skip
+	// the lightweight tags this app creates.
+	args := []string{"push", "--tags"}
+	if force {
+		args = append(args, "--force-with-lease")
+	}
+	src := plumbing.NewBranchReferenceName(branch).String()
+	args = append(args, b.Remote, src+":"+b.Merge.String())
+	_, err = CLI(r.Path, args...)
 	if IsAuthError(err) {
 		return ErrAuthFailed
 	}

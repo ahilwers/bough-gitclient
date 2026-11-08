@@ -106,3 +106,77 @@ func TestWriteOperationsWithoutLicense(t *testing.T) {
 		t.Fatalf("commit hash = %q, HEAD = %q", hash, got)
 	}
 }
+
+// Local tags must be pushed along with the branch for both the default push
+// (empty remote/branch, which the CLI helper strips into a bare `git push`)
+// and the explicit create-upstream path.
+func TestPushPublishesTags(t *testing.T) {
+	dir := t.TempDir()
+	remote := t.TempDir()
+	runGit := func(args ...string) string {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = dir
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+		return strings.TrimSpace(string(out))
+	}
+	runGit("init")
+	runGit("config", "user.name", "Test User")
+	runGit("config", "user.email", "test@example.com")
+	if err := os.WriteFile(filepath.Join(dir, "example.txt"), []byte("hello\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	remoteGit := func(args ...string) string {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = remote
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git (remote) %v: %v\n%s", args, err, out)
+		}
+		return strings.TrimSpace(string(out))
+	}
+	remoteGit("init", "--bare")
+
+	repo, err := gitpkg.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	watcher, err := gitpkg.NewWatcher()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(watcher.Close)
+	app := &App{repo: repo, watcher: watcher}
+
+	if err := app.StageFile("example.txt"); err != nil {
+		t.Fatalf("stage: %v", err)
+	}
+	if _, err := app.CreateCommit("Initial commit"); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	runGit("remote", "add", "origin", remote)
+	canonical := runGit("branch", "--show-current")
+	info, err := app.GetPushInfo()
+	if err != nil {
+		t.Fatalf("push info: %v", err)
+	}
+	if err := app.PushWithUpstream(info.RepoPath, "origin", info.Branch); err != nil {
+		t.Fatalf("create upstream: %v", err)
+	}
+	// Default push of an already-tracked branch must carry tags too.
+	runGit("tag", "v2.0")
+	runGit("tag", "-a", "v2.1", "-m", "release")
+	if err := app.Push("", "", false); err != nil {
+		t.Fatalf("default push: %v", err)
+	}
+	refs := remoteGit("for-each-ref", "--format=%(refname)")
+	for _, want := range []string{"refs/heads/" + canonical, "refs/tags/v2.0", "refs/tags/v2.1"} {
+		if !strings.Contains(refs, want) {
+			t.Fatalf("remote refs missing %q: %q", want, refs)
+		}
+	}
+}

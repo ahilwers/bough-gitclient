@@ -13,7 +13,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -331,17 +330,14 @@ func (a *App) Push(remote, branch string, force bool) error {
 		return gitpkg.ErrNotARepo
 	}
 	if remote == "" && branch == "" {
-		// Recheck just before a default push: autoSetupRemote must not publish
-		// an untracked branch if it changed after the frontend preflight.
-		info, err := a.repo.GetPushInfo()
-		if err != nil {
-			return err
-		}
-		if info.Upstream == "" {
-			return fmt.Errorf("branch %q has no upstream; confirm creation before pushing", info.Branch)
-		}
+		// Default push of the tracked branch plus all local tags. PushTracked
+		// rechecks the upstream just before pushing so autoSetupRemote must not
+		// publish an untracked branch if it changed after the frontend preflight.
+		return a.repo.PushTracked(force)
 	}
-	args := []string{"push", remote, branch}
+	// --tags adds all local tags to an explicit branch push. The branch is named
+	// explicitly so the flag cannot replace the branch refspec with tags-only.
+	args := []string{"push", remote, branch, "--tags"}
 	if force {
 		args = append(args, "--force-with-lease")
 	}
