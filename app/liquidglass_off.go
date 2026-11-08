@@ -9,7 +9,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//go:build !darwin || !liquidglass
+//go:build !darwin || !liquidglass || !private_mac_apis
 
 package main
 

@@ -9,7 +9,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//go:build darwin && liquidglass
+//go:build darwin && liquidglass && private_mac_apis
 
 package main
 
@@ -24,9 +24,10 @@ const glassFlagScript = `document.documentElement.dataset.glass = 'true'`
 //
 // macOS 26+ renders a native NSGlassEffectView; older versions fall back to a
 // translucent NSVisualEffectView. The webview only becomes transparent - and
-// therefore lets the glass through - when the binary is also built with the
-// `private_mac_apis` tag, because Wails needs a private WebKit property for
-// that. Without it the glass stays hidden behind an opaque webview.
+// therefore lets the glass through - when the binary is built with Wails'
+// `private_mac_apis` tag, because that needs a private WebKit property. Both
+// tags are therefore required: with `liquidglass` alone the window would turn
+// its CSS chrome translucent over an opaque webview, which looks broken.
 func applyLiquidGlassWindow(opts *application.WebviewWindowOptions) {
 	// A transparent native window background is required for the glass layer
 	// to be visible around the content.
