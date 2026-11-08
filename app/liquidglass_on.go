@@ -39,5 +39,13 @@ func applyLiquidGlassWindow(opts *application.WebviewWindowOptions) {
 		CornerRadius: 12,
 	}
 
+	// Extend the webview under the titlebar so the top chrome is glass too,
+	// while keeping the native traffic lights. Dragging is handled in CSS
+	// (--wails-draggable on .app-toolbar) instead of
+	// Mac.InvisibleTitleBarHeight, because that one starts a native window
+	// drag on every mouse-down in the strip and would swallow clicks on the
+	// toolbar controls.
+	opts.Mac.TitleBar = application.MacTitleBarHidden
+
 	opts.JS = glassFlagScript
 }

@@ -225,6 +225,7 @@ export default function Toolbar() {
 
   return (
     <div
+      className="app-toolbar"
       style={{
         height: 44,
         background: 'var(--bg-toolbar)',
@@ -233,7 +234,7 @@ export default function Toolbar() {
         display: 'flex',
         alignItems: 'center',
         gap: 4,
-        padding: '0 8px',
+        padding: '0 var(--toolbar-pad-right, 8px) 0 var(--toolbar-pad-left, 8px)',
       }}
     >
       {/* Repo selector dropdown */}
