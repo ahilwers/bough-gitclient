@@ -80,7 +80,7 @@ jobs:
             family: linux
             goos: linux
             goarch: amd64
-            artifact: app/bin/Bough-x86_64.AppImage
+            artifact: app/bin/bough-x86_64.AppImage
             pkg_basename: Bough-${{ github.ref_name }}-linux-x86_64
 
     steps:
@@ -286,7 +286,9 @@ jobs:
         if: matrix.family == 'linux'
         shell: bash
         run: |
-          mv app/bin/Bough-x86_64.AppImage "${{ matrix.pkg_basename }}.AppImage"
+          # `wails3 generate appimage` lowercases the binary name, so the file
+          # is bough-x86_64.AppImage even though APP_NAME is "Bough".
+          mv app/bin/*-x86_64.AppImage "${{ matrix.pkg_basename }}.AppImage"
 
       # AppImage, .app bundle and .exe installer are produced by the Wails
       # v3 `Package` task above (app/bin/*).
