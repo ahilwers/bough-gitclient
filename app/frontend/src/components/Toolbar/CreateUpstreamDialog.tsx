@@ -13,10 +13,10 @@ import { Button } from '../shared/Button'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as Dialog from '@radix-ui/react-dialog'
-import type { git } from '@wailsjs/go/models'
+import type { PushInfo } from '@bindings/bough/git'
 
 interface Props {
-  info: git.PushInfo
+  info: PushInfo
   onConfirm: (remote: string) => void
   onClose: () => void
 }
@@ -24,7 +24,8 @@ interface Props {
 export function CreateUpstreamDialog({ info, onConfirm, onClose }: Props) {
   const { t } = useTranslation()
   // With multiple remotes, require a deliberate selection instead of assuming origin.
-  const [remote, setRemote] = useState(info.remotes.length === 1 ? info.remotes[0] : '')
+  const remotes = info.remotes ?? []
+  const [remote, setRemote] = useState(remotes.length === 1 ? remotes[0] : '')
   const cancelRef = useRef<HTMLButtonElement>(null)
 
   return (
@@ -48,7 +49,7 @@ export function CreateUpstreamDialog({ info, onConfirm, onClose }: Props) {
           <Dialog.Description style={{ fontSize: 12, color: 'var(--text-sec)', marginBottom: 20 }}>
             {t('push.createUpstream.description', { branch: info.branch })}
           </Dialog.Description>
-          {info.remotes.length === 0 ? (
+          {remotes.length === 0 ? (
             <p style={{ fontSize: 12, color: 'var(--text-sec)' }}>{t('push.createUpstream.noRemotes')}</p>
           ) : (
             <label style={{ display: 'grid', gap: 6, fontSize: 12, color: 'var(--text-pri)' }}>
@@ -56,7 +57,7 @@ export function CreateUpstreamDialog({ info, onConfirm, onClose }: Props) {
               <select aria-label={t('push.createUpstream.remote')} value={remote} onChange={event => setRemote(event.target.value)}
                 style={{ padding: 7, background: 'var(--bg-content)', color: 'var(--text-pri)', border: '1px solid var(--border)', borderRadius: 6 }}>
                 <option value="" disabled>{t('push.createUpstream.selectRemote')}</option>
-                {info.remotes.map(name => <option key={name} value={name}>{name}</option>)}
+                {remotes.map(name => <option key={name} value={name}>{name}</option>)}
               </select>
             </label>
           )}

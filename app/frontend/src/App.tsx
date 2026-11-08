@@ -11,8 +11,8 @@
 
 import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { EventsOn } from '@wailsjs/runtime/runtime'
-import { SaveWindowSize, GetRecentRepos } from '@wailsjs/go/main/App'
+import { Events } from '@wailsio/runtime'
+import { SaveWindowSize, GetRecentRepos } from '@bindings/bough/app'
 import { useGitStore } from '@/stores/gitStore'
 import { useKeyboard } from '@/hooks/useKeyboard'
 import Toolbar from '@/components/Toolbar/Toolbar'
@@ -22,9 +22,14 @@ import ChangesView from '@/components/ChangesView/ChangesView'
 import FlashNotification from '@/components/shared/FlashNotification'
 import ProgressBar from '@/components/shared/ProgressBar'
 import CommandPalette from '@/components/shared/CommandPalette'
+import { AboutDialog } from '@/components/About/AboutDialog'
+import { KeyboardShortcutsDialog } from '@/components/Help/KeyboardShortcutsDialog'
 
 export default function App() {
-  const { activeView, showSidebar, resolvedTheme, syncSystemTheme } = useGitStore()
+  const {
+    activeView, showSidebar, resolvedTheme, syncSystemTheme,
+    setAboutDialogOpen, setHelpDialogOpen,
+  } = useGitStore()
   const queryClient = useQueryClient()
   const resizeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -43,7 +48,7 @@ export default function App() {
 
   // Central repo:changed handler — invalidates all data queries
   useEffect(() => {
-    const unsubscribe = EventsOn('repo:changed', () => {
+    const unsubscribe = Events.On('repo:changed', () => {
       queryClient.invalidateQueries({ queryKey: ['commits'] })
       queryClient.invalidateQueries({ queryKey: ['status'] })
       queryClient.invalidateQueries({ queryKey: ['branches'] })
@@ -51,6 +56,17 @@ export default function App() {
     })
     return unsubscribe
   }, [queryClient])
+
+  // Native menu entries are handled in the frontend: macOS puts "About Bough"
+  // in the application menu, Windows/Linux in the Help menu.
+  useEffect(() => {
+    const offAbout = Events.On('app:about', () => setAboutDialogOpen(true))
+    const offShortcuts = Events.On('app:keyboard-shortcuts', () => setHelpDialogOpen(true))
+    return () => {
+      offAbout()
+      offShortcuts()
+    }
+  }, [setAboutDialogOpen, setHelpDialogOpen])
 
   // Seed recent repos from the Go backend once on mount.
   useEffect(() => {
@@ -94,6 +110,7 @@ export default function App() {
       <CommandPalette />
       <ProgressBar />
       <FlashNotification />
+      <AboutDialog />
     </div>
   )
 }

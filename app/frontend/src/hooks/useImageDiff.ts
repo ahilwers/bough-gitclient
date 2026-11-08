@@ -20,8 +20,8 @@ import {
   GetImageFromStash,
   GetImageFromStashBase,
   GetImageFromWorktree,
-} from '@wailsjs/go/main/App'
-import { EventsOn } from '@wailsjs/runtime/runtime'
+} from '@bindings/bough/app'
+import { Events } from '@wailsio/runtime'
 
 /**
  * Images for the commit-history diff: `parent` is the version in the first
@@ -101,7 +101,7 @@ export function useWorkingImageDiff(filePath: string | null, staged: boolean, is
   })
 
   useEffect(() => {
-    const unsubscribe = EventsOn('repo:changed', () => {
+    const unsubscribe = Events.On('repo:changed', () => {
       queryClient.invalidateQueries({ queryKey: ['image-diff'] })
     })
     return unsubscribe

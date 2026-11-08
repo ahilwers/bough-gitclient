@@ -54,15 +54,18 @@ on your machine, and no account is required.
 
 ## Building from source
 
-**Prerequisites:** Go 1.27+, Node.js 22. Wails v2.17.1 is pinned as a Go tool in `app/go.mod` — use
-`go tool wails` from `app/`, not a globally installed CLI.
+**Prerequisites:** Go 1.27+, Node.js 22. Wails v3.0.0 is pinned as a Go tool in `app/go.mod` — use the
+`wails3` CLI (`go tool wails3` from `app/`, or `make install-wails3` to put it on PATH).
 
 ```bash
 # Development (live hot reload, Go + React)
-make dev                     # or: cd app && go tool wails dev
+make dev                     # or: cd app && go tool wails3 dev
 
-# Production build → app/build/bin/Bough.app
-make build-wails             # or: cd app && go tool wails build
+# Production build → app/bin/Bough
+make build-wails             # or: cd app && go tool wails3 build
+
+# Regenerate frontend bindings from the Go service methods
+make generate-bindings
 
 # Tests
 make test                    # Go backend tests (race detector)
@@ -83,9 +86,10 @@ npm test         # Vitest unit tests
 ## Repository structure
 
 ```
-app/          Desktop application (Wails 2 · Go backend · React frontend)
+app/          Desktop application (Wails 3 · Go backend · React frontend)
   ├── git/        Go Git backend (go-git reads, CLI-git writes)
   ├── update/     Auto-update integration (Sparkle / WinSparkle / AppImageUpdate)
+  ├── build/      Wails v3 build assets (config.yml, per-platform taskfiles)
   └── frontend/   React 19 + TypeScript UI
 docs/         Architecture and design documents
 scripts/      Build and utility scripts

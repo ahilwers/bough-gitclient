@@ -77,6 +77,10 @@ interface GitStore {
   helpDialogOpen: boolean
   setHelpDialogOpen: (open: boolean) => void
 
+  // About dialog (opened from the native application/Help menu)
+  aboutDialogOpen: boolean
+  setAboutDialogOpen: (open: boolean) => void
+
   // Long-running operation indicator (null = idle, string = label shown in progress bar)
   loadingOperation: string | null
   setLoadingOperation: (op: string | null) => void
@@ -130,6 +134,7 @@ const initialState = {
   pendingCherryPickMessage: null as string | null,
   cherryPickConflictActive: false,
   helpDialogOpen: false,
+  aboutDialogOpen: false,
   loadingOperation: null as string | null,
 }
 
@@ -159,6 +164,16 @@ export const useGitStore = create<GitStore>()(
       setActiveRepo: (path) => set((s) => ({
         activeRepo: path,
         recentRepos: [path, ...s.recentRepos.filter(r => r !== path)].slice(0, 10),
+        // Repository switch invalidates all per-repo selection state: a stale
+        // commit/file selection from the previous repo would otherwise trigger
+        // failing backend calls ("object not found").
+        selectedCommit: null,
+        selectedFile: null,
+        selectedCommits: [],
+        activeWorktree: null,
+        worktrees: [],
+        pendingCherryPickMessage: null,
+        cherryPickConflictActive: false,
       })),
       setRecentRepos: (repos) => set({ recentRepos: repos }),
 
@@ -174,6 +189,7 @@ export const useGitStore = create<GitStore>()(
       setCherryPickConflictActive: (v) => set({ cherryPickConflictActive: v }),
 
       setHelpDialogOpen: (helpDialogOpen) => set({ helpDialogOpen }),
+      setAboutDialogOpen: (aboutDialogOpen) => set({ aboutDialogOpen }),
       setLoadingOperation: (loadingOperation) => set({ loadingOperation }),
 
       showFlash: (message, type = 'success', durationMs) => {

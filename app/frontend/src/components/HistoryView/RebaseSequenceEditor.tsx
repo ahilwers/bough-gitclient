@@ -12,7 +12,7 @@
 import { Button } from '../shared/Button'
 import { useEffect, useRef, useState } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
-import { CommitsOnRemote } from '@wailsjs/go/main/App'
+import { CommitsOnRemote } from '@bindings/bough/app'
 import { useRebase } from '@/hooks/useRebase'
 import type { CommitNode, RebaseAction } from '@/lib/types'
 

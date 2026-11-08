@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MsixPackagingToolTemplate
+    xmlns="http://schemas.microsoft.com/msix/packaging/msixpackagingtool/template/2022">
+    <Settings
+        AllowTelemetry="false"
+        ApplyACLsToPackageFiles="true"
+        GenerateCommandLineFile="true"
+        AllowPromptForPassword="false">
+    </Settings>
+    <Installer
+        Path="bough"
+        Arguments=""
+        InstallLocation="C:\Program Files\Achim Hilwers\Bough">
+    </Installer>
+    <PackageInformation
+        PackageName="Bough"
+        PackageDisplayName="Bough"
+        PublisherName="CN=Achim Hilwers"
+        PublisherDisplayName="Achim Hilwers"
+        Version="0.1.0.0"
+        PackageDescription="A beautiful Git GUI client">
+        <Capabilities>
+            <Capability Name="runFullTrust" />
+            
+        </Capabilities>
+        <Applications>
+            <Application
+                Id="net.hilwers.bough"
+                Description="A beautiful Git GUI client"
+                DisplayName="Bough"
+                ExecutableName="bough"
+                EntryPoint="Windows.FullTrustApplication">
+                
+            </Application>
+        </Applications>
+        <Resources>
+            <Resource Language="en-us" />
+        </Resources>
+        <Dependencies>
+            <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+        </Dependencies>
+        <Properties>
+            <Framework>false</Framework>
+            <DisplayName>Bough</DisplayName>
+            <PublisherDisplayName>Achim Hilwers</PublisherDisplayName>
+            <Description>A beautiful Git GUI client</Description>
+            <Logo>Assets\AppIcon.png</Logo>
+        </Properties>
+    </PackageInformation>
+    <SaveLocation PackagePath="bough.msix" />
+    <PackageIntegrity>
+        <CertificatePath></CertificatePath>
+    </PackageIntegrity>
+</MsixPackagingToolTemplate>

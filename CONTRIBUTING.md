@@ -65,10 +65,10 @@ Platform-specific system packages (Xcode Command Line Tools on macOS, `libgtk-3-
 
 ```bash
 # Development server with hot reload (Go + React)
-make dev                     # or: cd app && go tool wails dev
+make dev                     # or: cd app && go tool wails3 dev
 
-# Production build → app/build/bin/Bough.app
-make build-wails             # or: cd app && go tool wails build
+# Production build → app/bin/Bough
+make build-wails             # or: cd app && go tool wails3 build
 
 # Tests
 make test                    # Go backend (race detector)

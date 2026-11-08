@@ -17,7 +17,7 @@ import i18n from '@/i18n'
 import { CreateStashDialog } from './CreateStashDialog'
 
 const api = vi.hoisted(() => ({ CreateStash: vi.fn() }))
-vi.mock('@wailsjs/go/main/App', () => api)
+vi.mock('@bindings/bough/app', () => api)
 
 function openDialog() {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } })

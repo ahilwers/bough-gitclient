@@ -2,18 +2,35 @@
 
 ## About
 
-This is the official Wails React-TS template.
+Bough is a Wails v3 desktop application (Go backend + React/TypeScript frontend).
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+The Wails v3 project configuration lives in `build/config.yml`. The `wails3` CLI
+(`wails3 dev`, `wails3 build`, `wails3 generate bindings`, …) is pinned as a Go
+tool in `go.mod` (`tool github.com/wailsapp/wails/v3/cmd/wails3`). From this
+directory you can always run `go tool wails3 …`; the top-level `Makefile`
+builds that same CLI into `$(go env GOPATH)/bin` so the Taskfiles' nested
+`wails3` invocations resolve from PATH.
 
 ## Live Development
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+To run in live development mode with hot reload of both Go and React:
+
+```bash
+wails3 dev
+```
+
+(or `make dev` from the repository root). This starts the Vite dev server and a
+watch task that rebuilds and reruns the app on changes; the frontend
+dev-server URL is injected via the `FRONTEND_DEVSERVER_URL` environment
+variable.
 
 ## Building
 
-To build a redistributable, production mode package, use `wails build`.
+To build a redistributable, production-mode package:
+
+```bash
+wails3 build
+wails3 package          # .app bundle (macOS) / NSIS installer (Windows)
+```
+
+Binaries are written to `bin/` from this directory.

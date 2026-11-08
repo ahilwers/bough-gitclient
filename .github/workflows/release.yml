@@ -50,33 +50,37 @@ jobs:
           # macOS Intel (x86_64)  — only remaining Intel label, valid until ~Aug 2027
           - label: macOS (Intel)
             os: macos-15-intel
-            platform: darwin/amd64
             family: macos
-            artifact: app/build/bin/Bough
+            goos: darwin
+            goarch: amd64
+            artifact: app/bin/Bough.app
             pkg_basename: Bough-${{ github.ref_name }}-macos-intel
 
           # macOS Apple Silicon (arm64) — macos-latest currently maps to macOS 26 (arm64)
           - label: macOS (Apple Silicon)
             os: macos-latest
-            platform: darwin/arm64
             family: macos
-            artifact: app/build/bin/Bough
+            goos: darwin
+            goarch: arm64
+            artifact: app/bin/Bough.app
             pkg_basename: Bough-${{ github.ref_name }}-macos-arm64
 
           # Windows x64 (NSIS installer)
           - label: Windows (x64)
             os: windows-latest
-            platform: windows/amd64
             family: windows
-            artifact: app/build/bin/Bough.exe
+            goos: windows
+            goarch: amd64
+            artifact: app/bin/Bough-amd64-installer.exe
             pkg_basename: Bough-${{ github.ref_name }}-windows-x64
 
           # Linux x86_64 (AppImage)
           - label: Linux (x86_64)
             os: ubuntu-latest
-            platform: linux/amd64
             family: linux
-            artifact: app/build/bin/Bough
+            goos: linux
+            goarch: amd64
+            artifact: app/bin/Bough-x86_64.AppImage
             pkg_basename: Bough-${{ github.ref_name }}-linux-x86_64
 
     steps:
@@ -120,6 +124,10 @@ jobs:
         run: go mod download
         working-directory: app
 
+      - name: Build wails3 CLI tool
+        run: go build -o "$(go env GOPATH)/bin/wails3" github.com/wailsapp/wails/v3/cmd/wails3
+        working-directory: app
+
       # Inject the Sparkle EdDSA public key into Info.plist if provided.
       # Needed only for the macOS auto-update to verify cast signatures.
       - name: Set Sparkle public key
@@ -137,22 +145,39 @@ jobs:
         # available on all hosted runners).
         shell: bash
         run: |
-          EXTRA=()
-          # Generate the NSIS installer on Windows (Bough-amd64-installer.exe).
-          if [ "${{ matrix.family }}" = "windows" ]; then
-            # The choco-deployed NSIS is usually not on the runner PATH; locate
-            # makensis and prepend its directory so Wails can build the installer.
-            MAKENSIS_DIR="$(dirname "$(command -v makensis || echo '/c/Program Files (x86)/NSIS/makensis.exe')")"
-            export PATH="$MAKENSIS_DIR:$PATH"
-            EXTRA+=(-nsis)
-          fi
+          # wails3 is built into $(go env GOPATH)/bin by the step above.
+          export PATH="$(go env GOPATH)/bin:$PATH"
           # Ubuntu 24.04 only has webkit2gtk 4.1: build with the webkit2_41 tag.
-          if [ "${{ matrix.family }}" = "linux" ]; then EXTRA+=(-tags webkit2_41); fi
-          go tool wails build \
-            -clean \
-            -platform ${{ matrix.platform }} \
-            "${EXTRA[@]}" \
-            -ldflags "-X main.version=${{ env.VERSION }} -X main.buildDate=${{ env.BUILD_DATE }}"
+          if [ "${{ matrix.family }}" = "linux" ]; then EXTRA_TAGS=webkit2_41; fi
+          wails3 build \
+            GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
+            EXTRA_TAGS="$EXTRA_TAGS" \
+            VERSION="${{ env.VERSION }}" \
+            LD_FLAGS="-w -s -X main.version=${{ env.VERSION }} -X main.buildDate=${{ env.BUILD_DATE }}"
+        working-directory: app
+
+      - name: Package (Wails)
+        shell: bash
+        run: |
+          # Build the per-platform distributable with the v3 Taskfiles. The
+          # wails3 CLI binary is built into $(go env GOPATH)/bin above.
+          export PATH="$(go env GOPATH)/bin:$PATH"
+          case "${{ matrix.family }}" in
+            darwin)
+              wails3 task darwin:package GOOS=darwin ARCH=${{ matrix.goarch }} VERSION="${{ env.VERSION }}"
+              ;;
+            windows)
+              # The choco-deployed NSIS is usually not on the runner PATH;
+              # locate makensis and prepend its directory.
+              MAKENSIS_DIR="$(dirname "$(command -v makensis || echo '/c/Program Files (x86)/NSIS/makensis.exe')")"
+              export PATH="$MAKENSIS_DIR:$PATH"
+              wails3 task windows:package GOOS=windows ARCH=${{ matrix.goarch }} FORMAT=nsis
+              ;;
+            linux)
+              # Only the AppImage is shipped; skip the deb/rpm/aur wrappers.
+              wails3 task linux:create:appimage GOOS=linux ARCH=${{ matrix.goarch }}
+              ;;
+          esac
         working-directory: app
 
       # ── macOS: sign, package to DMG, notarize, staple ───────────────────────
@@ -182,7 +207,7 @@ jobs:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         run: |
           set -euxo pipefail
-          cd app/build/bin
+          cd app/bin
           if [ -n "$APPLE_SIGNING_IDENTITY" ]; then
             codesign --force --options runtime --timestamp \
               --sign "$APPLE_SIGNING_IDENTITY" Bough.app
@@ -196,7 +221,7 @@ jobs:
             codesign --force --sign "$APPLE_SIGNING_IDENTITY" \
               "${{ matrix.pkg_basename }}.dmg"
           fi
-          mv "${{ matrix.pkg_basename }}.dmg" ../../../
+          mv "${{ matrix.pkg_basename }}.dmg" ../../
 
       - name: Notarize & staple macOS
         if: matrix.family == 'macos' && env.HAS_APPLE_API == 'true'
@@ -240,64 +265,24 @@ jobs:
           [IO.File]::WriteAllBytes("cert.pfx", [Convert]::FromBase64String($b64))
           & $signtool.FullName sign /f cert.pfx /p "$env:SIGN_PASSWORD" `
             /fd sha256 /tr http://timestamp.digicert.com /td sha256 `
-            "app\build\bin\Bough-amd64-installer.exe"
+            "app\bin\Bough-amd64-installer.exe"
           Remove-Item cert.pfx
 
       - name: Stage Windows artifact
         if: matrix.family == 'windows'
         run: |
-          Copy-Item "app\build\bin\Bough-amd64-installer.exe" `
+          Copy-Item "app\bin\Bough-amd64-installer.exe" `
             "${{ matrix.pkg_basename }}.exe"
         shell: pwsh
 
-      # ── Linux: build AppImage ───────────────────────────────────────────────
-      - name: Build AppImage
+      - name: Stage Linux artifact
         if: matrix.family == 'linux'
+        shell: bash
         run: |
-          appimagetool="appimagetool-x86_64.AppImage"
-          # Fetch appimagetool from the rolling `continuous` release. Retry a
-          # few times for short-lived CDN blips, but fail fast on a sustained
-          # GitHub asset outage instead of burning build time in a long loop.
-          url="https://github.com/AppImage/appimagetool/releases/latest/download/${appimagetool}"
-          for attempt in $(seq 1 3); do
-            if curl -LfsS --retry 2 --retry-all-errors --retry-delay 2 \
-                -o "$appimagetool" "$url"; then
-              break
-            fi
-            echo "appimagetool download failed (attempt $attempt); retrying in 5s…" >&2
-            sleep 5
-          done
-          if [ ! -s "$appimagetool" ]; then
-            echo "::error::could not download appimagetool" >&2
-            exit 1
-          fi
-          chmod +x "$appimagetool"
-          mkdir -p appimagetool_mount && ./"$appimagetool" --appimage-extract &>/dev/null
-          export PATH="$PWD/squashfs-root/usr/bin:$PATH"
-          # Pre-fetch the type2 runtime too: appimagetool downloads it from the
-          # same GitHub asset CDN on its own (with no retry), which fails while
-          # that CDN is flaky. Our own retry avoids aborting the build.
-          runtime="runtime-x86_64"
-          runtime_url="https://github.com/AppImage/type2-runtime/releases/download/continuous/${runtime}"
-          for attempt in $(seq 1 3); do
-            if curl -LfsS --retry 2 --retry-all-errors --retry-delay 2 \
-                -o "$runtime" "$runtime_url"; then
-              break
-            fi
-            echo "type2-runtime download failed (attempt $attempt); retrying in 5s…" >&2
-            sleep 5
-          done
-          if [ ! -s "$runtime" ]; then
-            echo "::error::could not download type2-runtime" >&2
-            exit 1
-          fi
-          chmod +x "$runtime"
-          export APPIMAGE_RUNTIME="$PWD/$runtime"
-          bash scripts/build_appimage.sh "${{ env.VERSION }}" app/build/bin/Bough
-          rm -rf squashfs-root appimagetool_mount "$appimagetool" "$runtime"
-          # build_appimage.sh already outputs Bough-<ver>-linux-x86_64.AppImage,
-          # which matches pkg_basename — no rename/copy needed (they would be
-          # the same file).
+          mv app/bin/Bough-x86_64.AppImage "${{ matrix.pkg_basename }}.AppImage"
+
+      # AppImage, .app bundle and .exe installer are produced by the Wails
+      # v3 `Package` task above (app/bin/*).
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4

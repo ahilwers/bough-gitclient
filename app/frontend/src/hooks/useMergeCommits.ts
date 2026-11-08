@@ -11,15 +11,15 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { GetMergeCommits } from '@wailsjs/go/main/App'
-import { EventsOn } from '@wailsjs/runtime/runtime'
+import { GetMergeCommits } from '@bindings/bough/app'
+import { Events } from '@wailsio/runtime'
 import type { CommitNode } from '@/lib/types'
 
 export function useMergeCommits(enabled: boolean) {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    const unsubscribe = EventsOn('repo:changed', () => {
+    const unsubscribe = Events.On('repo:changed', () => {
       queryClient.invalidateQueries({ queryKey: ['mergeCommits'] })
     })
     return unsubscribe

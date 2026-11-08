@@ -13,13 +13,14 @@ import { renderHook, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createWrapper } from '@/test/queryWrapper'
 import { useWorktrees } from './useWorktrees'
+import { useGitStore } from '@/stores/gitStore'
 import {
   ListWorktrees,
   AddWorktree,
   RemoveWorktree,
   SwitchWorktree,
-} from '@wailsjs/go/main/App'
-import { EventsOn } from '@wailsjs/runtime/runtime'
+} from '@bindings/bough/app'
+import { Events } from '@wailsio/runtime'
 import type { WorktreeInfo } from '@/lib/types'
 
 const makeWorktree = (overrides: Partial<WorktreeInfo> = {}): WorktreeInfo => ({
@@ -33,7 +34,9 @@ const makeWorktree = (overrides: Partial<WorktreeInfo> = {}): WorktreeInfo => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(EventsOn).mockReturnValue(vi.fn())
+  vi.mocked(Events.On).mockReturnValue(vi.fn())
+  // The hook only queries the backend when a repo is open.
+  useGitStore.setState({ activeRepo: '/repo' })
 })
 
 describe('useWorktrees', () => {
@@ -67,12 +70,12 @@ describe('useWorktrees', () => {
     const { result } = renderHook(() => useWorktrees(), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-    expect(EventsOn).toHaveBeenCalledWith('repo:worktrees-changed', expect.any(Function))
+    expect(Events.On).toHaveBeenCalledWith('repo:worktrees-changed', expect.any(Function))
   })
 
   it('unsubscribes from event on unmount', async () => {
     const unsub = vi.fn()
-    vi.mocked(EventsOn).mockReturnValue(unsub)
+    vi.mocked(Events.On).mockReturnValue(unsub)
     vi.mocked(ListWorktrees).mockResolvedValue([])
 
     const { result, unmount } = renderHook(() => useWorktrees(), { wrapper: createWrapper() })

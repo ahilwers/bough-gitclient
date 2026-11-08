@@ -1,35 +1,47 @@
 # Build Directory
 
-The build directory is used to house all the build files and assets for your application. 
+This directory contains the Wails v3 build assets for the application.
 
 The structure is:
 
-* bin - Output directory
+* bin - Output directory (by default `app/bin`)
 * darwin - macOS specific files
 * windows - Windows specific files
+* linux - Linux specific files
+* docker - Cross-compilation Dockerfiles
+* config.yml - Project configuration used by the `wails3` CLI and by
+  `wails3 update build-assets` to regenerate the platform assets.
+  After editing, run `wails3 task common:update:build-assets` from `app/`.
+* Taskfile.yml - Common tasks shared by the per-platform Taskfiles.
 
 ## Mac
 
-The `darwin` directory holds files specific to Mac builds.
-These may be customised and used as part of the build. To return these files to the default state, simply delete them
-and
-build with `wails build`.
+The `darwin` directory holds files specific to macOS builds:
 
-The directory contains the following files:
+- `Info.plist` - used for release builds via `wails3 build`/`package`.
+- `Info.dev.plist` - used for the dev bundle created by `wails3 task run`.
+- `icons.icns`, `Assets.car`, `dmg-*` - application icon and DMG artwork.
 
-- `Info.plist` - the main plist file used for Mac builds. It is used when building using `wails build`.
-- `Info.dev.plist` - same as the main plist file but used when building using `wails dev`.
+**Version handling:** the committed plists and `windows/info.json` carry a
+placeholder version from `config.yml`. Release builds pass
+`VERSION=<tag>` (see the `Makefile` and the release workflow); the
+`darwin:patch:app:version` and `windows:generate:syso` tasks then write
+that version into the *packaged* bundle/exe, leaving the committed files
+untouched so custom keys (e.g. the Sparkle `SUPublicEDKey`) survive.
+Do not run `wails3 update build-assets` without re-applying those custom
+keys — it regenerates the plists from the templates and overwrites them.
 
 ## Windows
 
-The `windows` directory contains the manifest and rc files used when building with `wails build`.
-These may be customised for your application. To return these files to the default state, simply delete them and
-build with `wails build`.
+The `windows` directory contains the manifest, icon and NSIS/MSIX packaging
+files used by the `wails3` build and packaging tasks.
 
-- `icon.ico` - The icon used for the application. This is used when building using `wails build`. If you wish to
-  use a different icon, simply replace this file with your own. If it is missing, a new `icon.ico` file
-  will be created using the `appicon.png` file in the build directory.
-- `installer/*` - The files used to create the Windows installer. These are used when building using `wails build`.
-- `info.json` - Application details used for Windows builds. The data here will be used by the Windows installer,
-  as well as the application itself (right click the exe -> properties -> details)
-- `wails.exe.manifest` - The main application manifest file.
+- `icon.ico` - The application icon.
+- `info.json` - Application details used for Windows builds.
+- `wails.exe.manifest` - The application manifest.
+- `nsis/` - NSIS installer template used by `wails3 task package`.
+
+## Linux
+
+The `linux` directory contains the desktop entry, AppImage script and nfpm
+(debian/rpm/aur) packaging configuration used by the `wails3` build tasks.

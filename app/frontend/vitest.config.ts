@@ -23,8 +23,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
-      // Redirect all @wailsjs imports to mocks in tests
-      '@wailsjs': path.resolve(import.meta.dirname, 'src/test/wailsmocks'),
+      // Redirect all @bindings imports to mocks in tests
+      '@bindings': path.resolve(import.meta.dirname, 'src/test/wailsmocks/bindings'),
+      // The real @wailsio/runtime package initialises browser bridges at import
+      // time; tests use a lightweight stub instead.
+      '@wailsio/runtime': path.resolve(import.meta.dirname, 'src/test/wailsmocks/wailsio-runtime.ts'),
     },
   },
 })

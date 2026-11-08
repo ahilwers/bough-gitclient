@@ -145,6 +145,12 @@ Bough-v0.1.0-windows-x64.exe
 Bough-v0.1.0-linux-x86_64.AppImage
 ```
 
+The tag is the single source of truth for the released version: CI passes it to the build as
+`VERSION=…`, which the packaging tasks write into the macOS `Info.plist`
+(`CFBundleShortVersionString`/`CFBundleVersion`) and the Windows exe version metadata, in addition
+to embedding it in the binary (`-X main.version`). The values committed under `app/build/` are only
+placeholders for development builds.
+
 ---
 
 ## 8. Verify that "nothing complains"
@@ -178,7 +184,7 @@ Bough-v0.1.0-linux-x86_64.AppImage
 - [ ] Apple Developer account + Developer ID certificate + API key present
 - [ ] All `APPLE_*` secrets set
 - [ ] `npm ci` + `npm run build` green locally (frontend)
-- [ ] `cd app && go tool wails build` green locally
+- [ ] `cd app && go tool wails3 build` green locally
 - [ ] Tag `v0.1.0` created and pushed
 - [ ] Release files under GitHub Releases
 - [ ] macOS app opens without a warning (tested)

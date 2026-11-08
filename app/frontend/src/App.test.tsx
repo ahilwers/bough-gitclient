@@ -12,8 +12,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { CreateCommit, Fetch, PullForUI, Push } from '@wailsjs/go/main/App'
-import { EventsOn } from '@wailsjs/runtime/runtime'
+import { CreateCommit, Fetch, PullForUI, Push } from '@bindings/bough/app'
+import { Events } from '@wailsio/runtime'
 import { useGitStore } from '@/stores/gitStore'
 import App from './App'
 
@@ -53,7 +53,7 @@ describe('unrestricted application access', () => {
     render(<QueryClientProvider client={queryClient}><App /></QueryClientProvider>)
 
     expect(screen.getByText('History view')).toBeInTheDocument()
-    expect(vi.mocked(EventsOn).mock.calls.map(([event]) => event)).not.toContain('license:revoked')
+    expect(vi.mocked(Events.On).mock.calls.map(([event]) => event)).not.toContain('license:revoked')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Fetch' }))

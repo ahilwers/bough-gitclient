@@ -12,7 +12,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { CreateBranch, GetStatus, ListBranches } from '@wailsjs/go/main/App'
+import { CreateBranch, GetStatus, ListBranches } from '@bindings/bough/app'
 import { useGitStore } from '@/stores/gitStore'
 import Toolbar from './Toolbar'
 import CommandPalette from '@/components/shared/CommandPalette'

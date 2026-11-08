@@ -10,7 +10,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { useQuery } from '@tanstack/react-query'
-import { GetFileAtCommit, GetFileAtCommitParent } from '@wailsjs/go/main/App'
+import { GetFileAtCommit, GetFileAtCommitParent } from '@bindings/bough/app'
 
 /**
  * Returns the file content at a commit and at its first parent.
