@@ -136,6 +136,24 @@
     --shadow-lg:      0 8px 30px rgba(0,0,0,0.60);
   }
 
+  /* Native Liquid Glass window backdrop (macOS, built with -tags liquidglass).
+     Only the window chrome turns translucent so the glass shows through; the
+     working surfaces (content, panels, inputs) stay opaque for readability.
+     The flag is set on <html> by the Go build; regular builds never set it. */
+  html[data-glass="true"] {
+    --bg-window:   transparent;
+    --bg-titlebar: rgba(255, 255, 255, 0.28);
+    --bg-toolbar:  rgba(255, 255, 255, 0.40);
+    --bg-sidebar:  rgba(255, 255, 255, 0.22);
+  }
+
+  html[data-theme="dark"][data-glass="true"] {
+    --bg-window:   transparent;
+    --bg-titlebar: rgba(44, 44, 46, 0.45);
+    --bg-toolbar:  rgba(37, 37, 39, 0.55);
+    --bg-sidebar:  rgba(32, 32, 34, 0.40);
+  }
+
   * { box-sizing: border-box; }
 
   body {

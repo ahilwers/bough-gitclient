@@ -69,6 +69,10 @@ func main() {
 		// is set; macOS always uses the global menu bar.
 		UseApplicationMenu: true,
 	}
+	// Opt-in native macOS Liquid Glass backdrop (`-tags liquidglass`). No-op in
+	// regular builds and on other platforms.
+	applyLiquidGlassWindow(&windowOpts)
+
 	// Restore a persisted window position (size is set above). On first launch
 	// the OS centres the window.
 	if ws.HasPos {
