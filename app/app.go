@@ -19,7 +19,7 @@ import (
 	"sync"
 
 	gitpkg "bough/git"
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 // App holds application state and exposes methods to the frontend via Wails IPC.
@@ -27,18 +27,21 @@ type App struct {
 	aiMu    sync.Mutex // Serializes AI settings writes and generation.
 	pullMu  sync.Mutex // Serializes pull validation/integration with repository and branch switches.
 	ctx     context.Context
+	app     *application.App // Set in main.go; used for events, dialogs and window queries.
 	repo    *gitpkg.Repository
 	watcher *gitpkg.Watcher
 }
 
 func NewApp() *App { return &App{} }
 
-func (a *App) startup(ctx context.Context) {
+// ServiceStartup replaces the v2 OnStartup hook. Signature is part of the
+// application.ServiceStartup interface, so it stays out of the frontend bindings.
+func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
 	a.ctx = ctx
-
-	// Restore window position (size is already set via options.App in main.go).
-	if ws := loadWindowState(); ws.HasPos {
-		wailsruntime.WindowSetPosition(ctx, ws.X, ws.Y)
+	if a.app == nil {
+		// Allow standalone construction (e.g. in tests) to lazily resolve the
+		// application handle.
+		a.app = application.Get()
 	}
 
 	// Ensure SSH_AUTH_SOCK is set for macOS .app bundles launched via launchd
@@ -46,18 +49,45 @@ func (a *App) startup(ctx context.Context) {
 
 	// Auto-configure OS-native credential helper if none is set
 	if err := gitpkg.EnsureCredentialHelper(); err != nil {
-		wailsruntime.LogWarning(ctx, "Could not configure credential helper: "+err.Error())
+		a.logWarn("Could not configure credential helper: " + err.Error())
 	}
 
 	var err error
 	a.watcher, err = gitpkg.NewWatcher()
 	if err != nil {
-		wailsruntime.LogError(ctx, "Failed to create watcher: "+err.Error())
-		return
+		a.logError("Failed to create watcher: " + err.Error())
+		return nil
 	}
 	a.watcher.OnChange(func(path string) {
-		wailsruntime.EventsEmit(ctx, "repo:changed", path)
+		a.emitRepoChanged(path)
 	})
+	return nil
+}
+
+// --- Wails v3 runtime helpers (nil-safe so tests can construct App directly) ---
+
+func (a *App) emitRepoChanged(path string) {
+	if a.app != nil {
+		a.app.Event.Emit("repo:changed", path)
+	}
+}
+
+func (a *App) emitWorktreesChanged() {
+	if a.app != nil {
+		a.app.Event.Emit("repo:worktrees-changed")
+	}
+}
+
+func (a *App) logWarn(msg string) {
+	if a.app != nil {
+		a.app.Logger.Warn(msg)
+	}
+}
+
+func (a *App) logError(msg string) {
+	if a.app != nil {
+		a.app.Logger.Error(msg)
+	}
 }
 
 // --- Repository ---
@@ -399,7 +429,7 @@ func (a *App) DeleteBranch(info gitpkg.BranchDeletionInfo) error {
 	if err := a.repo.DeleteBranch(info); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -412,7 +442,7 @@ func (a *App) CreateBranch(name, from string, checkoutAfter bool) error {
 	if err := a.repo.CreateBranch(name, from, checkoutAfter); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -423,7 +453,7 @@ func (a *App) MergeBranch(from string) error {
 	if err := a.repo.MergeBranch(from); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -434,7 +464,7 @@ func (a *App) AbortMerge() error {
 	if err := a.repo.AbortMerge(); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -445,7 +475,7 @@ func (a *App) CheckoutOurs(filePath string) error {
 	if err := a.repo.CheckoutOurs(filePath); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -456,7 +486,7 @@ func (a *App) CheckoutTheirs(filePath string) error {
 	if err := a.repo.CheckoutTheirs(filePath); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -468,7 +498,7 @@ func (a *App) OpenMergeToolForFile(filePath string) error {
 	// When the tool exits, emit repo:changed so the UI refreshes.
 	go func() {
 		_ = a.repo.OpenMergeToolForFile(filePath)
-		wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+		a.emitRepoChanged(a.repo.Path)
 	}()
 	return nil
 }
@@ -487,7 +517,7 @@ func (a *App) AcceptBoth(filePath string) error {
 	if err := a.repo.AcceptBoth(filePath); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -504,7 +534,7 @@ func (a *App) CherryPickCommits(hashes []string) error {
 	}
 	err := a.repo.CherryPickCommits(hashes)
 	// Always emit repo:changed — even a conflicted pick modifies the working tree and index.
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return err
 }
 
@@ -515,7 +545,7 @@ func (a *App) AbortCherryPick() error {
 	if err := a.repo.AbortCherryPick(); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -526,7 +556,7 @@ func (a *App) StartInteractiveRebase(actions []gitpkg.RebaseAction) error {
 		return gitpkg.ErrNotARepo
 	}
 	err := a.repo.StartInteractiveRebase(actions)
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return err
 }
 
@@ -535,7 +565,7 @@ func (a *App) ContinueRebase() error {
 		return gitpkg.ErrNotARepo
 	}
 	err := a.repo.ContinueRebase()
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return err
 }
 
@@ -546,7 +576,7 @@ func (a *App) AbortRebase() error {
 	if err := a.repo.AbortRebase(); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -566,7 +596,7 @@ func (a *App) CheckoutBranch(branch string) error {
 	if err := a.repo.CheckoutBranch(branch); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -579,7 +609,7 @@ func (a *App) CheckoutRemoteBranch(remoteBranch string) error {
 	if err := a.repo.CheckoutRemoteBranch(remoteBranch); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -592,7 +622,7 @@ func (a *App) PullIntoLocalBranch(remote, localBranch string) error {
 	if err := a.repo.PullIntoLocalBranch(remote, localBranch); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -612,7 +642,7 @@ func (a *App) CheckoutTag(tag string) error {
 	if err := a.repo.CheckoutTag(tag); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -623,7 +653,7 @@ func (a *App) DeleteTag(tag string) error {
 	if err := a.repo.DeleteTag(tag); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -643,7 +673,7 @@ func (a *App) ApplyStashHunk(patch string) error {
 	if err := a.repo.ApplyStashHunk(patch); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -654,7 +684,7 @@ func (a *App) ApplyStashFile(index int, filePath string) error {
 	if err := a.repo.ApplyStashFile(index, filePath); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -672,7 +702,7 @@ func (a *App) ApplyStash(index int) error {
 	if err := a.repo.ApplyStash(index); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -683,7 +713,7 @@ func (a *App) PopStash(index int) error {
 	if err := a.repo.PopStash(index); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -694,7 +724,7 @@ func (a *App) DropStash(index int) error {
 	if err := a.repo.DropStash(index); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -716,7 +746,7 @@ func (a *App) AddWorktree(path, branch string) error {
 	}
 	// Also watch the new worktree directory so HEAD changes are detected.
 	_ = a.watcher.Watch(path)
-	wailsruntime.EventsEmit(a.ctx, "repo:worktrees-changed")
+	a.emitWorktreesChanged()
 	return nil
 }
 
@@ -728,7 +758,7 @@ func (a *App) RemoveWorktree(wtPath string) error {
 		return err
 	}
 	_ = a.watcher.Unwatch(wtPath)
-	wailsruntime.EventsEmit(a.ctx, "repo:worktrees-changed")
+	a.emitWorktreesChanged()
 	return nil
 }
 
@@ -746,7 +776,7 @@ func (a *App) SwitchWorktree(wtPath string) error {
 	}
 	a.repo.SwitchPath(wtPath)
 	_ = a.watcher.Watch(wtPath)
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", wtPath)
+	a.emitRepoChanged(wtPath)
 	return nil
 }
 
@@ -796,9 +826,12 @@ func (a *App) GetAppVersion() string {
 // next launch restores them. Called by the frontend on a debounced resize event.
 // Position is read from the Go runtime so the frontend doesn't need to supply it.
 func (a *App) SaveWindowSize(width, height int) {
-	x, y := wailsruntime.WindowGetPosition(a.ctx)
+	var x, y int
+	if a.app != nil {
+		x, y = a.app.Window.Current().Position()
+	}
 	if err := saveWindowState(width, height, x, y); err != nil {
-		wailsruntime.LogWarning(a.ctx, "Could not save window state: "+err.Error())
+		a.logWarn("Could not save window state: " + err.Error())
 	}
 }
 
@@ -808,9 +841,13 @@ func (a *App) SaveWindowSize(width, height int) {
 // selects a path, opens it as the active repository. Returns the resolved
 // repository path on success or an empty string if the dialog was cancelled.
 func (a *App) SelectRepository() (string, error) {
-	path, err := wailsruntime.OpenDirectoryDialog(a.ctx, wailsruntime.OpenDialogOptions{
-		Title: "Select Git Repository",
-	})
+	if a.app == nil {
+		return "", nil
+	}
+	path, err := a.app.Dialog.OpenFile().
+		SetTitle("Select Git Repository").
+		CanChooseDirectories(true).
+		PromptForSingleSelection()
 	if err != nil || path == "" {
 		return "", err
 	}
@@ -822,10 +859,14 @@ func (a *App) SelectRepository() (string, error) {
 // Returns the resolved repository path on success, or an empty string if the
 // dialog was cancelled.
 func (a *App) SelectAndInitRepository() (string, error) {
-	path, err := wailsruntime.OpenDirectoryDialog(a.ctx, wailsruntime.OpenDialogOptions{
-		Title:                "Select Folder for New Repository",
-		CanCreateDirectories: true,
-	})
+	if a.app == nil {
+		return "", nil
+	}
+	path, err := a.app.Dialog.OpenFile().
+		SetTitle("Select Folder for New Repository").
+		CanChooseDirectories(true).
+		CanCreateDirectories(true).
+		PromptForSingleSelection()
 	if err != nil || path == "" {
 		return "", err
 	}

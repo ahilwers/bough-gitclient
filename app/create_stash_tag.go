@@ -13,7 +13,6 @@ package main
 
 import (
 	gitpkg "bough/git"
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // CreateStash saves the current worktree changes in a new stash.
@@ -26,7 +25,7 @@ func (a *App) CreateStash(message string, includeUntracked bool) error {
 	if err := a.repo.CreateStash(message, includeUntracked); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
 
@@ -40,6 +39,6 @@ func (a *App) CreateTag(name string, target string) error {
 	if err := a.repo.CreateTag(name, target); err != nil {
 		return err
 	}
-	wailsruntime.EventsEmit(a.ctx, "repo:changed", a.repo.Path)
+	a.emitRepoChanged(a.repo.Path)
 	return nil
 }
