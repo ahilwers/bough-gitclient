@@ -84,7 +84,12 @@ describe('push upstream confirmation', () => {
     const dialog = await screen.findByRole('dialog')
     if (method === 'Cancel') fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     else if (method === 'Escape') fireEvent.keyDown(dialog, { key: 'Escape' })
-    else fireEvent.pointerDown(dialog.previousElementSibling!)
+    else {
+      const outside = dialog.previousElementSibling!
+      fireEvent.pointerDown(outside)
+      fireEvent.pointerUp(outside)
+      fireEvent.click(outside)
+    }
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(Push).not.toHaveBeenCalled()
     expect(PushWithUpstream).not.toHaveBeenCalled()

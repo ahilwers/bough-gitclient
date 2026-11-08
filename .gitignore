@@ -47,3 +47,6 @@ appcast/
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# Wails frontend checksum cache (regenerated automatically on build/dev)
+app/frontend/package.json.md5
