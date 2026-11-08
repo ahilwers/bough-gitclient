@@ -118,7 +118,10 @@ tasks:
         case "$VERSION" in
           ''|*[!0-9.]*|.*|*..*|*.) ;;
           *.*)
-            TMP="$(mktemp)"
+            # Write the copy next to info.json rather than using mktemp: on the
+            # Windows runner mktemp returns an MSYS path that the native wails3
+            # binary cannot resolve ("The system cannot find the path specified").
+            TMP="windows/info.versioned.json"
             sed -e "s/\"file_version\": *\"[^\"]*\"/\"file_version\": \"$VERSION\"/" \
                 -e "s/\"ProductVersion\": *\"[^\"]*\"/\"ProductVersion\": \"$VERSION\"/" \
                 "$INFO" > "$TMP"
