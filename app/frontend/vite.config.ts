@@ -12,14 +12,23 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import wails from '@wailsio/runtime/plugins/vite'
 import path from 'node:path'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), wails('./bindings')],
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
       '@bindings': path.resolve(import.meta.dirname, './bindings'),
     },
+  },
+  server: {
+    // Bind to IPv4: the Wails v3 dev proxy (and most tooling) resolves
+    // 127.0.0.1 explicitly, while Vite otherwise defaults to ::1 on macOS.
+    // The reference template sets this for the same reason.
+    host: '127.0.0.1',
+    port: Number(process.env.WAILS_VITE_PORT) || 9245,
+    strictPort: true,
   },
 })
