@@ -44,6 +44,10 @@ func main() {
 	// dialogs and read the window without a v3 runtime context.
 	svc.app = app
 
+	// Native menu bar: "About Bough" lives in the application menu on macOS and
+	// in the Help menu elsewhere.
+	app.Menu.Set(buildApplicationMenu(app))
+
 	ws := loadWindowState()
 
 	windowOpts := application.WebviewWindowOptions{
@@ -61,6 +65,9 @@ func main() {
 		Windows: application.WindowsWindow{
 			Theme: application.SystemDefault,
 		},
+		// On Windows/Linux a window only shows the application menu when this
+		// is set; macOS always uses the global menu bar.
+		UseApplicationMenu: true,
 	}
 	// Restore a persisted window position (size is set above). On first launch
 	// the OS centres the window.

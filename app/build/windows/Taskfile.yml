@@ -113,7 +113,7 @@ tasks:
       # resulting .exe properties show the released version.
       - |
         INFO=windows/info.json
-        VERSION='{{trimPrefix "v" .VERSION}}'
+        VERSION='{{trimPrefix "v" (.VERSION | default "")}}'
         TMP=""
         case "$VERSION" in
           ''|*[!0-9.]*|.*|*..*|*.) ;;

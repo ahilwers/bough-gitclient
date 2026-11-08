@@ -184,7 +184,7 @@ tasks:
       BUNDLE: '{{.BUNDLE | default (printf "%s/%s.app" .BIN_DIR .APP_NAME)}}'
     cmds:
       - |
-        VERSION='{{trimPrefix "v" .VERSION}}'
+        VERSION='{{trimPrefix "v" (.VERSION | default "")}}'
         # Only write a real release version (e.g. 1.2.3). Development builds
         # derived from git describe (0.1.0-3-gabc123, abc1234-dirty, dev) keep
         # the value from the committed plist.
