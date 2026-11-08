@@ -12,8 +12,14 @@ on:
     tags:
       - "v*.*.*"
   # Allow manual triggering from the Actions tab (build/test without publishing a
-  # real release). For these manual runs the publish job creates a DRAFT release.
+  # real release). To also create a DRAFT release, pass a tag name via the `tag`
+  # input; without one, publishing is skipped.
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to create a DRAFT release for (e.g. v0.1.0); leave empty to only build artifacts"
+        required: false
+        default: ""
 
 concurrency:
   group: release-${{ github.ref }}
@@ -324,10 +330,14 @@ jobs:
           find dist -type f ! -name '*.app' -exec cp {} release/ \;
 
       - name: Publish release
+        if: >
+          github.event_name == 'push' ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
         uses: softprops/action-gh-release@v2
         with:
-          # Manual (workflow_dispatch) runs create a DRAFT release so they can be
-          # checked before anything is published. Tag runs publish for real.
+          # Tag runs publish for real; manual runs that supply a tag create a DRAFT
+          # release so they can be checked before anything is published.
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.tag }}
           draft: ${{ github.event_name == 'workflow_dispatch' }}
           generate_release_notes: true
           files: release/*
