@@ -11,8 +11,8 @@
 
 import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { EventsOn } from '@wailsjs/runtime/runtime'
-import { SaveWindowSize, GetRecentRepos } from '@wailsjs/go/main/App'
+import { Events } from '@wailsio/runtime'
+import { SaveWindowSize, GetRecentRepos } from '@bindings/bough/app'
 import { useGitStore } from '@/stores/gitStore'
 import { useKeyboard } from '@/hooks/useKeyboard'
 import Toolbar from '@/components/Toolbar/Toolbar'
@@ -43,7 +43,7 @@ export default function App() {
 
   // Central repo:changed handler — invalidates all data queries
   useEffect(() => {
-    const unsubscribe = EventsOn('repo:changed', () => {
+    const unsubscribe = Events.On('repo:changed', () => {
       queryClient.invalidateQueries({ queryKey: ['commits'] })
       queryClient.invalidateQueries({ queryKey: ['status'] })
       queryClient.invalidateQueries({ queryKey: ['branches'] })

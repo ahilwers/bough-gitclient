@@ -11,8 +11,8 @@
 
 import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { GetFileDiff, GetUntrackedFileDiff } from '@wailsjs/go/main/App'
-import { EventsOn } from '@wailsjs/runtime/runtime'
+import { GetFileDiff, GetUntrackedFileDiff } from '@bindings/bough/app'
+import { Events } from '@wailsio/runtime'
 import type { DiffFile } from '@/lib/types'
 
 export function useFileDiff(filePath: string | null, staged: boolean, isUntracked = false) {
@@ -33,7 +33,7 @@ export function useFileDiff(filePath: string | null, staged: boolean, isUntracke
   })
 
   useEffect(() => {
-    const unsubscribe = EventsOn('repo:changed', () => {
+    const unsubscribe = Events.On('repo:changed', () => {
       queryClient.invalidateQueries({ queryKey: ['diff'] })
     })
     return unsubscribe

@@ -16,8 +16,8 @@ import {
   AddWorktree as AddWorktreeAPI,
   RemoveWorktree as RemoveWorktreeAPI,
   SwitchWorktree,
-} from '@wailsjs/go/main/App'
-import { EventsOn } from '@wailsjs/runtime/runtime'
+} from '@bindings/bough/app'
+import { Events } from '@wailsio/runtime'
 import { useGitStore } from '@/stores/gitStore'
 import type { WorktreeInfo } from '@/lib/types'
 
@@ -34,7 +34,7 @@ export function useWorktrees() {
   // Invalidate the list whenever the Go backend emits a worktrees-changed event
   // (fired after AddWorktree and RemoveWorktree).
   useEffect(() => {
-    const unsub = EventsOn('repo:worktrees-changed', () => {
+    const unsub = Events.On('repo:worktrees-changed', () => {
       queryClient.invalidateQueries({ queryKey: ['worktrees'] })
     })
     return () => { if (typeof unsub === 'function') unsub() }

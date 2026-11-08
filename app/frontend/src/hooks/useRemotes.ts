@@ -10,7 +10,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ListRemotes, AddRemote, UpdateRemote, RenameRemote, RemoveRemote } from '@wailsjs/go/main/App'
+import { ListRemotes, AddRemote, UpdateRemote, RenameRemote, RemoveRemote } from '@bindings/bough/app'
 import type { Remote } from '@/lib/types'
 
 export function useRemotes() {

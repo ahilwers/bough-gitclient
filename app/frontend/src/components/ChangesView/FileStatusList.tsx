@@ -12,7 +12,7 @@
 import { Button } from '../shared/Button'
 import { useState, useRef, useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { StageFile, StageFiles, UnstageFile, UnstageFiles, DiscardFile, DiscardStagedFile, RevealInFinder } from '@wailsjs/go/main/App'
+import { StageFile, StageFiles, UnstageFile, UnstageFiles, DiscardFile, DiscardStagedFile, RevealInFinder } from '@bindings/bough/app'
 import { useStatus } from '@/hooks/useStatus'
 import { useGitStore } from '@/stores/gitStore'
 import { parseGitError } from '@/lib/format'

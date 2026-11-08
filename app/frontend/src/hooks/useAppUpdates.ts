@@ -10,7 +10,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { useQuery } from '@tanstack/react-query'
-import { GetAppVersion } from '@wailsjs/go/main/App'
+import { GetAppVersion } from '@bindings/bough/app'
 
 const APPCAST_URL = 'https://updates.bough.app/appcast.xml'
 

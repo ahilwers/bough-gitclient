@@ -12,7 +12,7 @@
 import { Button } from '../shared/Button'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { GetFileContent, CheckoutOurs, CheckoutTheirs, AcceptBoth, StageFile, OpenMergeToolForFile } from '@wailsjs/go/main/App'
+import { GetFileContent, CheckoutOurs, CheckoutTheirs, AcceptBoth, StageFile, OpenMergeToolForFile } from '@bindings/bough/app'
 import { ChevronRight } from 'lucide-react'
 import { useMergeCommits } from '@/hooks/useMergeCommits'
 import { useCherryPick } from '@/hooks/useCherryPick'

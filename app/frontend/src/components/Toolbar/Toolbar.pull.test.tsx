@@ -12,7 +12,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { GetStatus, PullForUI, ResolvePull } from '@wailsjs/go/main/App'
+import { GetStatus, PullForUI, ResolvePull } from '@bindings/bough/app'
 import { useGitStore } from '@/stores/gitStore'
 import Toolbar from './Toolbar'
 import i18n from '@/i18n'

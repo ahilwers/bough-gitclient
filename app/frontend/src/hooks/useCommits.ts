@@ -11,8 +11,8 @@
 
 import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { GetCommits } from '@wailsjs/go/main/App'
-import { EventsOn } from '@wailsjs/runtime/runtime'
+import { GetCommits } from '@bindings/bough/app'
+import { Events } from '@wailsio/runtime'
 import type { CommitNode } from '@/lib/types'
 
 export function useCommits(limit = 500, all = true) {
@@ -29,7 +29,7 @@ export function useCommits(limit = 500, all = true) {
 
   // Invalidate when the repo changes on disk (watcher fires 'repo:changed')
   useEffect(() => {
-    const unsubscribe = EventsOn('repo:changed', () => {
+    const unsubscribe = Events.On('repo:changed', () => {
       queryClient.invalidateQueries({ queryKey: ['commits'] })
     })
     return unsubscribe

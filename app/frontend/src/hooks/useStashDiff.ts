@@ -10,7 +10,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { useQuery } from '@tanstack/react-query'
-import { GetStashDiff } from '@wailsjs/go/main/App'
+import { GetStashDiff } from '@bindings/bough/app'
 import type { DiffFile } from '@/lib/types'
 
 export function useStashDiff(index: number | null) {

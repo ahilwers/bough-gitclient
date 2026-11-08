@@ -11,8 +11,8 @@
 
 import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ListStashes, ApplyStash, PopStash, DropStash } from '@wailsjs/go/main/App'
-import { EventsOn } from '@wailsjs/runtime/runtime'
+import { ListStashes, ApplyStash, PopStash, DropStash } from '@bindings/bough/app'
+import { Events } from '@wailsio/runtime'
 import type { StashEntry } from '@/lib/types'
 
 export function useStashes() {
@@ -25,7 +25,7 @@ export function useStashes() {
   })
 
   useEffect(() => {
-    const unsub = EventsOn('repo:changed', () => {
+    const unsub = Events.On('repo:changed', () => {
       queryClient.invalidateQueries({ queryKey: ['stashes'] })
     })
     return () => { if (typeof unsub === 'function') unsub() }

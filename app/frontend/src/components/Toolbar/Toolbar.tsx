@@ -17,7 +17,7 @@ import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronD
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useGitStore } from '@/stores/gitStore'
 import { useStatus } from '@/hooks/useStatus'
-import { SelectRepository, OpenRepository, Fetch, PullForUI, ResolvePull, Push, GetPushInfo, PushWithUpstream, SelectAndInitRepository } from '@wailsjs/go/main/App'
+import { SelectRepository, OpenRepository, Fetch, PullForUI, ResolvePull, Push, GetPushInfo, PushWithUpstream, SelectAndInitRepository } from '@bindings/bough/app'
 import { CreateUpstreamDialog } from './CreateUpstreamDialog'
 import { parseGitError } from '@/lib/format'
 import { useQueryClient } from '@tanstack/react-query'
@@ -28,7 +28,7 @@ import { CreateStashDialog } from '@/components/StashView/CreateStashDialog'
 import { CreateTagDialog } from '@/components/TagManager/CreateTagDialog'
 
 import { PullStrategyDialog } from './PullStrategyDialog'
-import type { git } from '@wailsjs/go/models'
+import type { PullSnapshot, PushInfo } from '@bindings/bough/git'
 
 export default function Toolbar() {
   const { t } = useTranslation()
@@ -39,7 +39,7 @@ export default function Toolbar() {
   const [fetchLoading, setFetchLoading] = useState(false)
   const [pullLoading, setPullLoading] = useState(false)
   const [pushLoading, setPushLoading] = useState(false)
-  const [upstreamInfo, setUpstreamInfo] = useState<git.PushInfo | null>(null)
+  const [upstreamInfo, setUpstreamInfo] = useState<PushInfo | null>(null)
   const [createDialog, setCreateDialog] = useState<{ kind: 'branch' | 'stash' | 'tag'; repo: string; worktree: string | null } | null>(null)
 
   const openCreateDialog = (kind: 'branch' | 'stash' | 'tag') => {
@@ -62,7 +62,7 @@ export default function Toolbar() {
 
   useEffect(() => { setUpstreamInfo(null) }, [activeRepo])
 
-  const [pullChoice, setPullChoice] = useState<git.PullSnapshot | null>(null)
+  const [pullChoice, setPullChoice] = useState<PullSnapshot | null>(null)
   const pullGeneration = useRef(0)
   const pullBusy = useRef(false)
   const pullRebasing = useRef(false)

@@ -11,7 +11,17 @@
 
 import { vi } from 'vitest'
 
-// Types mirroring wailsjs/go/models.ts
+import type {
+  BranchDeletionInfo,
+  PullResult,
+  PullSnapshot,
+  RebaseAction,
+  Remote,
+  StashEntry,
+  Tag,
+} from '../../../../../bindings/bough/git'
+
+// Types mirroring bindings/bough/git/models.ts
 export interface GraphLine { fromCol: number; toCol: number; color: number; isMerge: boolean }
 export interface Ref { name: string; type: string; isHead: boolean }
 export interface CommitNode {
@@ -68,8 +78,9 @@ export interface BranchList { local: BranchInfo[]; remotes: BranchInfo[] }
 export interface WorktreeInfo { path: string; branch: string; head: string; isMain: boolean; isDirty: boolean }
 export const ListBranches = vi.fn((): Promise<BranchList> => Promise.resolve({ local: [], remotes: [] }))
 export const CreateBranch = vi.fn((_name: string, _from: string, _checkoutAfter: boolean): Promise<void> => Promise.resolve())
-export const PrepareBranchDeletion = vi.fn((_name: string, _remote: string): Promise<git.BranchDeletionInfo> => Promise.resolve({ repoPath: '/repo', name: _name, remote: _remote, ref: '', oid: '', destination: '', configFingerprint: '' }))
-export const DeleteBranch = vi.fn((_info: git.BranchDeletionInfo): Promise<void> => Promise.resolve())
+export const PrepareBranchDeletion = vi.fn((_name: string, _remote: string): Promise<BranchDeletionInfo> =>
+  Promise.resolve({ repoPath: '/repo', name: _name, remote: _remote, ref: '', oid: '', destination: '', configFingerprint: '' }))
+export const DeleteBranch = vi.fn((_info: BranchDeletionInfo): Promise<void> => Promise.resolve())
 export const CreateStash = vi.fn((_message: string, _includeUntracked: boolean): Promise<void> => Promise.resolve())
 export const CreateTag = vi.fn((_name: string, _target: string): Promise<void> => Promise.resolve())
 export const ListWorktrees = vi.fn((): Promise<WorktreeInfo[]> => Promise.resolve([]))
@@ -86,6 +97,43 @@ export const GetRecentRepos = vi.fn((): Promise<string[]> => Promise.resolve([])
 export const GetAppVersion = vi.fn((): Promise<string> => Promise.resolve('0.1.0'))
 export const DiscardFile = vi.fn((_path: string): Promise<void> => Promise.resolve())
 
-import type { git } from '../../../../../wailsjs/go/models'
-export const PullForUI = vi.fn((_repo: string, _branch: string): Promise<git.PullResult> => Promise.resolve({ outcome: 'success' }))
-export const ResolvePull = vi.fn((_snapshot: git.PullSnapshot, _strategy: string): Promise<git.PullResult> => Promise.resolve({ outcome: 'success' }))
+export const PullForUI = vi.fn((_repo: string, _branch: string): Promise<PullResult> => Promise.resolve({ outcome: 'success' }))
+export const ResolvePull = vi.fn((_snapshot: PullSnapshot, _strategy: string): Promise<PullResult> => Promise.resolve({ outcome: 'success' }))
+
+// Remaining bound methods (kept in sync with bindings/bough/app.ts so tests
+// that exercise an un-mocked import path never resolve undefined).
+export const AbortCherryPick = vi.fn((): Promise<void> => Promise.resolve())
+export const AbortMerge = vi.fn((): Promise<void> => Promise.resolve())
+export const AbortRebase = vi.fn((): Promise<void> => Promise.resolve())
+export const AcceptBoth = vi.fn((_filePath: string): Promise<void> => Promise.resolve())
+export const AddRemote = vi.fn((_name: string, _url: string): Promise<void> => Promise.resolve())
+export const ApplyStash = vi.fn((_index: number): Promise<void> => Promise.resolve())
+export const ApplyStashFile = vi.fn((_index: number, _filePath: string): Promise<void> => Promise.resolve())
+export const ApplyStashHunk = vi.fn((_patch: string): Promise<void> => Promise.resolve())
+export const CheckoutBranch = vi.fn((_branch: string): Promise<void> => Promise.resolve())
+export const CheckoutOurs = vi.fn((_filePath: string): Promise<void> => Promise.resolve())
+export const CheckoutRemoteBranch = vi.fn((_remoteBranch: string): Promise<void> => Promise.resolve())
+export const CheckoutTag = vi.fn((_tag: string): Promise<void> => Promise.resolve())
+export const CheckoutTheirs = vi.fn((_filePath: string): Promise<void> => Promise.resolve())
+export const CherryPickCommits = vi.fn((_hashes: string[] | null): Promise<void> => Promise.resolve())
+export const CommitsOnRemote = vi.fn((_hashes: string[] | null): Promise<string[] | null> => Promise.resolve(null))
+export const ContinueRebase = vi.fn((): Promise<void> => Promise.resolve())
+export const DeleteTag = vi.fn((_tag: string): Promise<void> => Promise.resolve())
+export const DiscardStagedFile = vi.fn((_filePath: string): Promise<void> => Promise.resolve())
+export const DropStash = vi.fn((_index: number): Promise<void> => Promise.resolve())
+export const GetFileContent = vi.fn((_filePath: string): Promise<string> => Promise.resolve(''))
+export const GetMergeCommits = vi.fn((): Promise<CommitNode[]> => Promise.resolve([]))
+export const GetStashDiff = vi.fn((_index: number): Promise<DiffFile[]> => Promise.resolve([]))
+export const ListRemotes = vi.fn((): Promise<Remote[]> => Promise.resolve([]))
+export const ListStashes = vi.fn((): Promise<StashEntry[]> => Promise.resolve([]))
+export const ListTags = vi.fn((): Promise<Tag[]> => Promise.resolve([]))
+export const MergeBranch = vi.fn((_from: string): Promise<void> => Promise.resolve())
+export const OpenMergeToolForFile = vi.fn((_filePath: string): Promise<void> => Promise.resolve())
+export const PopStash = vi.fn((_index: number): Promise<void> => Promise.resolve())
+export const PullIntoLocalBranch = vi.fn((_remote: string, _localBranch: string): Promise<void> => Promise.resolve())
+export const RemoveRemote = vi.fn((_name: string): Promise<void> => Promise.resolve())
+export const RenameRemote = vi.fn((_oldName: string, _newName: string): Promise<void> => Promise.resolve())
+export const RevealInFinder = vi.fn((_relativePath: string): Promise<void> => Promise.resolve())
+export const SelectAndInitRepository = vi.fn((): Promise<string> => Promise.resolve(''))
+export const StartInteractiveRebase = vi.fn((_actions: RebaseAction[] | null): Promise<void> => Promise.resolve())
+export const UpdateRemote = vi.fn((_name: string, _url: string): Promise<void> => Promise.resolve())

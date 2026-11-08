@@ -11,8 +11,8 @@
 
 import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ListTags, CheckoutTag, DeleteTag } from '@wailsjs/go/main/App'
-import { EventsOn } from '@wailsjs/runtime/runtime'
+import { ListTags, CheckoutTag, DeleteTag } from '@bindings/bough/app'
+import { Events } from '@wailsio/runtime'
 import type { Tag } from '@/lib/types'
 
 export function useTags() {
@@ -25,7 +25,7 @@ export function useTags() {
   })
 
   useEffect(() => {
-    const unsub = EventsOn('repo:changed', () => {
+    const unsub = Events.On('repo:changed', () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] })
     })
     return () => { if (typeof unsub === 'function') unsub() }

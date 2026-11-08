@@ -19,7 +19,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
-      '@wailsjs': path.resolve(import.meta.dirname, './wailsjs'),
+      '@bindings': path.resolve(import.meta.dirname, './bindings'),
     },
   },
 })

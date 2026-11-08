@@ -13,8 +13,8 @@ import { useEffect, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { PrepareBranchDeletion, DeleteBranch } from '@wailsjs/go/main/App'
-import type { git } from '@wailsjs/go/models'
+import { PrepareBranchDeletion, DeleteBranch } from '@bindings/bough/app'
+import type { BranchDeletionInfo } from '@bindings/bough/git'
 import { useGitStore } from '@/stores/gitStore'
 import { parseGitError } from '@/lib/format'
 import { Button } from '../shared/Button'
@@ -31,7 +31,7 @@ export function DeleteBranchDialog({ target, onClose }: { target: Target; onClos
   const { t, i18n } = useTranslation()
   const tr = (key: string, en: string, de: string) => t(`deleteBranch.${key}`, { defaultValue: i18n.language.startsWith('de') ? de : en })
   const client = useQueryClient()
-  const [info, setInfo] = useState<git.BranchDeletionInfo | null>(null)
+  const [info, setInfo] = useState<BranchDeletionInfo | null>(null)
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const busy = useRef(false)

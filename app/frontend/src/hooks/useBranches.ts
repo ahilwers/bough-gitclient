@@ -11,8 +11,8 @@
 
 import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ListBranches, CheckoutBranch, CheckoutRemoteBranch, PullIntoLocalBranch, Pull, CreateBranch, MergeBranch } from '@wailsjs/go/main/App'
-import { EventsOn } from '@wailsjs/runtime/runtime'
+import { ListBranches, CheckoutBranch, CheckoutRemoteBranch, PullIntoLocalBranch, Pull, CreateBranch, MergeBranch } from '@bindings/bough/app'
+import { Events } from '@wailsio/runtime'
 import type { BranchList } from '@/lib/types'
 
 export function useBranches() {
@@ -25,7 +25,7 @@ export function useBranches() {
   })
 
   useEffect(() => {
-    const unsubscribe = EventsOn('repo:changed', () => {
+    const unsubscribe = Events.On('repo:changed', () => {
       queryClient.invalidateQueries({ queryKey: ['branches'] })
     })
     return unsubscribe

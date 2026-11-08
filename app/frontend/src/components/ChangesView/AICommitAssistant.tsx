@@ -11,12 +11,12 @@
 
 import { Button } from '../shared/Button'
 import { useEffect, useState } from 'react'
-import { GenerateCommitMessage, GetAISettings, SaveAISettings } from '@wailsjs/go/main/App'
-import type { main } from '@wailsjs/go/models'
+import { GenerateCommitMessage, GetAISettings, SaveAISettings } from '@bindings/bough/app'
+import type { AISettings } from '@bindings/bough/models'
 
 // No credentials are kept in localStorage or returned by the Go settings API.
 export function AICommitAssistant({ hasStaged, onApply }: { hasStaged: boolean; onApply: (message: string) => void }) {
-  const [settings, setSettings] = useState<main.AISettings | null>(null)
+  const [settings, setSettings] = useState<AISettings | null>(null)
   const [open, setOpen] = useState(false)
   const [key, setKey] = useState('')
   const [removeKey, setRemoveKey] = useState(false)

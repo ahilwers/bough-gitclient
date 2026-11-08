@@ -12,7 +12,7 @@
 import { Button } from '../shared/Button'
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { StageHunk, UnstageHunk, DiscardHunk } from '@wailsjs/go/main/App'
+import { StageHunk, UnstageHunk, DiscardHunk } from '@bindings/bough/app'
 import { useGitStore } from '@/stores/gitStore'
 import { buildHunkPatch } from '@/lib/diffUtils'
 import { parseGitError } from '@/lib/format'

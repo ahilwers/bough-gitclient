@@ -10,7 +10,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { StartInteractiveRebase, ContinueRebase, AbortRebase } from '@wailsjs/go/main/App'
+import { StartInteractiveRebase, ContinueRebase, AbortRebase } from '@bindings/bough/app'
 import { useGitStore } from '@/stores/gitStore'
 import { parseGitError } from '@/lib/format'
 import type { RebaseAction } from '@/lib/types'

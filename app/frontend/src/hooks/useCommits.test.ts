@@ -13,8 +13,8 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createWrapper } from '@/test/queryWrapper'
 import { useCommits } from './useCommits'
-import { GetCommits } from '@wailsjs/go/main/App'
-import { EventsOn } from '@wailsjs/runtime/runtime'
+import { GetCommits } from '@bindings/bough/app'
+import { Events } from '@wailsio/runtime'
 import type { CommitNode } from '@/lib/types'
 
 const makeCommit = (overrides: Partial<CommitNode> = {}): CommitNode => ({
@@ -35,7 +35,7 @@ const makeCommit = (overrides: Partial<CommitNode> = {}): CommitNode => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(EventsOn).mockReturnValue(vi.fn())
+  vi.mocked(Events.On).mockReturnValue(vi.fn())
 })
 
 describe('useCommits', () => {
@@ -75,12 +75,12 @@ describe('useCommits', () => {
     const { result } = renderHook(() => useCommits(), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-    expect(EventsOn).toHaveBeenCalledWith('repo:changed', expect.any(Function))
+    expect(Events.On).toHaveBeenCalledWith('repo:changed', expect.any(Function))
   })
 
   it('calls the unsubscribe function on unmount', async () => {
     const unsubscribe = vi.fn()
-    vi.mocked(EventsOn).mockReturnValue(unsubscribe)
+    vi.mocked(Events.On).mockReturnValue(unsubscribe)
     vi.mocked(GetCommits).mockResolvedValue([])
 
     const { result, unmount } = renderHook(() => useCommits(), { wrapper: createWrapper() })

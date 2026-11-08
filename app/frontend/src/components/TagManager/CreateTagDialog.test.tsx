@@ -16,7 +16,7 @@ import { useGitStore } from '@/stores/gitStore'
 import { CreateTagDialog } from './CreateTagDialog'
 
 const api = vi.hoisted(() => ({ GetCommits: vi.fn(), CreateTag: vi.fn() }))
-vi.mock('@wailsjs/go/main/App', () => api)
+vi.mock('@bindings/bough/app', () => api)
 
 const head = 'a'.repeat(40)
 const oldSelection = 'b'.repeat(40)

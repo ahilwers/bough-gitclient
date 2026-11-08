@@ -12,9 +12,9 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { AICommitAssistant } from './AICommitAssistant'
-import { GenerateCommitMessage, GetAISettings, SaveAISettings } from '@wailsjs/go/main/App'
+import { GenerateCommitMessage, GetAISettings, SaveAISettings } from '@bindings/bough/app'
 
-vi.mock('@wailsjs/go/main/App', () => ({ GenerateCommitMessage: vi.fn(), GetAISettings: vi.fn(), SaveAISettings: vi.fn() }))
+vi.mock('@bindings/bough/app', () => ({ GenerateCommitMessage: vi.fn(), GetAISettings: vi.fn(), SaveAISettings: vi.fn() }))
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(GetAISettings).mockResolvedValue({ provider: 'openrouter', baseURL: 'https://openrouter.ai/api/v1', model: 'test', hasAPIKey: true })

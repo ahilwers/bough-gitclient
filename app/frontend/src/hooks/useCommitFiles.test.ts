@@ -13,7 +13,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createWrapper } from '@/test/queryWrapper'
 import { useCommitFiles } from './useCommitFiles'
-import { GetCommitDiff } from '@wailsjs/go/main/App'
+import { GetCommitDiff } from '@bindings/bough/app'
 import type { DiffFile } from '@/lib/types'
 
 const makeDiffFile = (path: string): DiffFile => ({

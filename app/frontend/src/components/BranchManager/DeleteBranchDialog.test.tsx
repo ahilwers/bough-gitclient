@@ -17,7 +17,7 @@ import { DeleteBranchDialog } from './DeleteBranchDialog'
 import i18n from '@/i18n'
 
 const api = vi.hoisted(() => ({ PrepareBranchDeletion: vi.fn(), DeleteBranch: vi.fn() }))
-vi.mock('@wailsjs/go/main/App', () => api)
+vi.mock('@bindings/bough/app', () => api)
 const local = { name: 'topic', remote: '', isRemote: false, repo: '/repo', worktree: '/repo' }
 const remote = { ...local, name: 'origin/topic', remote: 'origin', isRemote: true }
 const snapshot = (target = local) => ({ repoPath: '/repo', name: target.name, remote: target.remote, ref: 'refs/heads/topic', oid: 'a'.repeat(40), destination: target.isRemote ? 'origin (example.com)' : 'Local branch', configFingerprint: '' })
