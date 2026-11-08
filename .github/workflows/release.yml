@@ -249,7 +249,10 @@ jobs:
         if: matrix.family == 'linux'
         run: |
           appimagetool="appimagetool-x86_64.AppImage"
-          curl -LfsS -o "$appimagetool" \
+          # releases/latest/download occasionally 504s from a CDN edge; retry
+          # on transient failures so a flaky download does not kill the build.
+          curl -LfsS --retry 5 --retry-all-errors --retry-delay 2 \
+            -o "$appimagetool" \
             https://github.com/AppImage/appimagetool/releases/latest/download/$appimagetool
           chmod +x "$appimagetool"
           mkdir -p appimagetool_mount && ./"$appimagetool" --appimage-extract &>/dev/null
