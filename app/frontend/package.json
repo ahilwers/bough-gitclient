@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:mock": "VITE_MOCK_BACKEND=true vite",
     "build": "tsc && vite build",
+    "build:dev": "tsc && vite build --minify false --mode development",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
