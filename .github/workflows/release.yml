@@ -249,11 +249,25 @@ jobs:
         if: matrix.family == 'linux'
         run: |
           appimagetool="appimagetool-x86_64.AppImage"
-          # releases/latest/download occasionally 504s from a CDN edge; retry
-          # on transient failures so a flaky download does not kill the build.
-          curl -LfsS --retry 5 --retry-all-errors --retry-delay 2 \
-            -o "$appimagetool" \
-            https://github.com/AppImage/appimagetool/releases/latest/download/$appimagetool
+          # Fetch appimagetool from the rolling `continuous` release. That asset
+          # is frequently re-uploaded and GitHub release-asset CDNs occasionally
+          # 504 (gateway time-out) while a fresh build uploads. Retry hard with
+          # backoff so a transient edge blip does not fail the whole build.
+          url="https://github.com/AppImage/appimagetool/releases/latest/download/${appimagetool}"
+          for attempt in $(seq 1 10); do
+            if curl -LfsS --retry 3 --retry-all-errors --retry-delay 5 \
+                -o "$appimagetool" "$url"; then
+              echo "downloaded ${appimagetool} on attempt $attempt"
+              break
+            fi
+            wait=$((attempt * 10))
+            echo "appimagetool download failed (attempt $attempt); retrying in ${wait}s…" >&2
+            sleep "$wait"
+          done
+          if [ ! -s "$appimagetool" ]; then
+            echo "::error::could not download appimagetool after retries" >&2
+            exit 1
+          fi
           chmod +x "$appimagetool"
           mkdir -p appimagetool_mount && ./"$appimagetool" --appimage-extract &>/dev/null
           export PATH="$PWD/squashfs-root/usr/bin:$PATH"
