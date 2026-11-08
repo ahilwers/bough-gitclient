@@ -239,15 +239,30 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           set -euxo pipefail
+          DMG="${{ matrix.pkg_basename }}.dmg"
           echo "$APPLE_API_KEY" > authkey.p8
-          xcrun notarytool submit \
-            "${{ matrix.pkg_basename }}.dmg" \
+          xcrun notarytool submit "$DMG" \
             --key authkey.p8 \
             --key-id "$APPLE_API_KEY_ID" \
             --issuer "$APPLE_API_ISSUER" \
             --team-id "$APPLE_TEAM_ID" \
             --wait --timeout 20m
-          xcrun stapler staple "${{ matrix.pkg_basename }}.dmg"
+          # Stapling downloads the ticket from Apple's CloudKit, which
+          # intermittently drops the connection (NSURLErrorDomain -1005 ->
+          # "stapler ... failed! Error 68"). That says nothing about the build,
+          # so retry instead of failing the release.
+          for attempt in 1 2 3 4 5; do
+            if xcrun stapler staple "$DMG"; then
+              xcrun stapler validate "$DMG"
+              exit 0
+            fi
+            echo "::warning::stapler attempt $attempt failed, retrying in 20s"
+            sleep 20
+          done
+          # Notarization was accepted above, so online installations are fine.
+          # Only the first launch without network access can warn without a
+          # stapled ticket, which is not worth blocking the release over.
+          echo "::warning::Could not staple $DMG; publishing the notarized DMG without an attached ticket"
 
       # ── Windows: sign NSIS installer ────────────────────────────────────────
       - name: Sign Windows installer
