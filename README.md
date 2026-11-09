@@ -24,7 +24,9 @@ first-class working-copy experience: fast, native, and focused on your workflow.
 Bough is **free software**: free to use, free to modify, and free to share — your repositories stay
 on your machine, and no account is required.
 
-> **Status:** Bough is under active development. Public download links are not available yet.
+> **Status:** Bough is in active development and still pre-1.0. Preview builds for all three
+> platforms are published on the [Releases page](https://github.com/ahilwers/bough-gitclient/releases/latest);
+> expect breaking changes between versions and please report what breaks.
 
 ## Features
 
@@ -52,11 +54,15 @@ on your machine, and no account is required.
 | Windows | 10 21H2 | NSIS installer (`.exe`) |
 | Linux | modern distros | AppImage |
 
+**Download:** every release publishes the files above on the
+[Releases page](https://github.com/ahilwers/bough-gitclient/releases/latest). Recent releases also
+ship a `SHA256SUMS` file so you can verify a download before running it.
+
 > **Windows SmartScreen:** Windows installers are signed via the
 > [SignPath Foundation](https://signpath.org/) as soon as that application is approved. Until then
 > Windows shows *"Windows protected your PC"* on first launch — click **More info → Run anyway**, and
-> compare the file against the `SHA256SUMS` published with the release. Details, privacy notes, and
-> verification steps: [`CODE_SIGNING.md`](CODE_SIGNING.md).
+> compare the file's SHA-256 against the `SHA256SUMS` in the release, if present. Details, privacy
+> notes, and verification steps: [`CODE_SIGNING.md`](CODE_SIGNING.md).
 
 ## Building from source
 
