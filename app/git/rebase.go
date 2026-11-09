@@ -16,11 +16,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
+
+	"bough/internal/sysproc"
 )
 
 // StartInteractiveRebase performs an interactive rebase non-interactively by
@@ -140,7 +141,7 @@ func (r *Repository) StartInteractiveRebase(actions []RebaseAction) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "git", "rebase", "--interactive", "--autostash", base)
+	cmd := sysproc.CommandContext(ctx, "git", "rebase", "--interactive", "--autostash", base)
 	cmd.Dir = r.Path
 	cmd.Env = append(os.Environ(),
 		"GIT_SEQUENCE_EDITOR="+seqEditor,
@@ -166,7 +167,7 @@ func (r *Repository) ContinueRebase() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "git", "rebase", "--continue")
+	cmd := sysproc.CommandContext(ctx, "git", "rebase", "--continue")
 	cmd.Dir = r.Path
 	cmd.Env = append(os.Environ(), "GIT_EDITOR=true")
 

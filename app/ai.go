@@ -21,12 +21,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/zalando/go-keyring"
+
+	"bough/internal/sysproc"
 )
 
 const maxAIDiffKiB = 512
@@ -180,7 +181,7 @@ func (a *App) GenerateCommitMessage() (string, error) {
 
 func stagedAIDiff(ctx context.Context, path string) (string, error) {
 	// Disable external diff/textconv: only index vs HEAD data may be sent.
-	cmd := exec.CommandContext(ctx, "git", "-C", path, "diff", "--cached", "--no-ext-diff", "--no-textconv", "--no-color", "--unified=3", "--")
+	cmd := sysproc.CommandContext(ctx, "git", "-C", path, "diff", "--cached", "--no-ext-diff", "--no-textconv", "--no-color", "--unified=3", "--")
 	var diff boundedBuffer
 	cmd.Stdout = &diff
 	if err := cmd.Run(); err != nil {

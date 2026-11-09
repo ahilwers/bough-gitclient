@@ -18,6 +18,8 @@ import (
 	"os"
 	"os/exec"
 	"time"
+
+	"bough/internal/sysproc"
 )
 
 // cliTimeout is the maximum time a single git subprocess may run.
@@ -46,7 +48,7 @@ func cliWithEnv(dir string, env []string, args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cliTimeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "git", filtered...)
+	cmd := sysproc.CommandContext(ctx, "git", filtered...)
 	cmd.Dir = dir
 	if len(env) > 0 {
 		cmd.Env = append(os.Environ(), env...)
@@ -66,7 +68,7 @@ func cliWithEnv(dir string, env []string, args ...string) (string, error) {
 // execGit creates an exec.Cmd for git without running it.
 // Use this when you need to control Stdin or stream output.
 func execGit(dir string, args ...string) *exec.Cmd {
-	cmd := exec.Command("git", args...)
+	cmd := sysproc.Command("git", args...)
 	cmd.Dir = dir
 	return cmd
 }

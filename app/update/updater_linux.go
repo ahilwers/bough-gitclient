@@ -20,8 +20,9 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
+
+	"bough/internal/sysproc"
 )
 
 type linuxUpdater struct {
@@ -46,7 +47,7 @@ func (u *linuxUpdater) CheckForUpdates(ctx context.Context, currentVersion strin
 	// If AppImageUpdate binary is available, prefer its delta-update check.
 	if IsAppImage() {
 		appImage := os.Getenv("APPIMAGE")
-		cmd := exec.CommandContext(ctx, "AppImageUpdate", "--check-for-updates", appImage)
+		cmd := sysproc.CommandContext(ctx, "AppImageUpdate", "--check-for-updates", appImage)
 		if err := cmd.Run(); err != nil {
 			// Exit code 1 means "update available", 0 means "up to date".
 			if cmd.ProcessState != nil && cmd.ProcessState.ExitCode() == 1 {
@@ -86,7 +87,7 @@ func (u *linuxUpdater) InstallUpdate(ctx context.Context) error {
 	if appImage == "" {
 		return fmt.Errorf("not running from an AppImage")
 	}
-	cmd := exec.CommandContext(ctx, "AppImageUpdate", appImage)
+	cmd := sysproc.CommandContext(ctx, "AppImageUpdate", appImage)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

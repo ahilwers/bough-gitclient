@@ -15,8 +15,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
+
+	"bough/internal/sysproc"
 )
 
 // PullSnapshot binds a one-shot decision to the worktree, branch, local tip and
@@ -68,7 +69,7 @@ func (r *Repository) pullSnapshot() (PullSnapshot, error) {
 func pullCLI(path string, args ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), cliTimeout)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd := sysproc.CommandContext(ctx, "git", args...)
 	cmd.Dir = path
 	cmd.Env = append(os.Environ(), "LC_ALL=C", "LANG=C", "GIT_EDITOR=true", "GIT_SEQUENCE_EDITOR=true", "GIT_TERMINAL_PROMPT=0")
 	out, err := cmd.CombinedOutput()

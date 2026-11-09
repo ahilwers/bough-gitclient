@@ -18,6 +18,8 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+
+	"bough/internal/sysproc"
 )
 
 // ErrAuthFailed is returned when a CLI-git operation fails due to authentication.
@@ -26,7 +28,8 @@ var ErrAuthFailed = errors.New("git: authentication failed")
 // EnsureCredentialHelper checks whether a global credential.helper is configured.
 // If not, it sets the OS-native default. Called once at app startup.
 func EnsureCredentialHelper() error {
-	out, _ := exec.Command("git", "config", "--global", "credential.helper").Output()
+	lookup := sysproc.Command("git", "config", "--global", "credential.helper")
+	out, _ := lookup.Output()
 	current := strings.TrimSpace(string(out))
 	if current != "" {
 		return nil // already configured
@@ -54,7 +57,7 @@ func EnsureCredentialHelper() error {
 		return nil
 	}
 
-	cmd := exec.Command("git", "config", "--global", "credential.helper", helper)
+	cmd := sysproc.Command("git", "config", "--global", "credential.helper", helper)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("could not set credential helper %q: %w\n%s", helper, err, out)
 	}
@@ -67,7 +70,7 @@ func EnsureSSHAgent() {
 	if os.Getenv("SSH_AUTH_SOCK") != "" {
 		return // already set (e.g. launched from terminal)
 	}
-	out, err := exec.Command("launchctl", "getenv", "SSH_AUTH_SOCK").Output()
+	out, err := sysproc.Command("launchctl", "getenv", "SSH_AUTH_SOCK").Output()
 	if err == nil {
 		sock := strings.TrimSpace(string(out))
 		if sock != "" {
@@ -111,7 +114,7 @@ func StoreCredentials(repoURL, username, password string) error {
 	input := fmt.Sprintf("protocol=%s\nhost=%s\nusername=%s\npassword=%s\n\n",
 		proto, host, username, password)
 
-	cmd := exec.Command("git", "credential", "approve")
+	cmd := sysproc.Command("git", "credential", "approve")
 	cmd.Stdin = strings.NewReader(input)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("git credential approve: %w\n%s", err, out)

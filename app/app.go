@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	gitpkg "bough/git"
+	"bough/internal/sysproc"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -786,11 +787,11 @@ func (a *App) OpenInFinder(path string) error {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
-		cmd = exec.Command("open", path)
+		cmd = sysproc.Command("open", path)
 	case "windows":
-		cmd = exec.Command("explorer", path)
+		cmd = sysproc.Command("explorer", path)
 	default:
-		cmd = exec.Command("xdg-open", path)
+		cmd = sysproc.Command("xdg-open", path)
 	}
 	return cmd.Start()
 }
@@ -803,11 +804,11 @@ func (a *App) RevealInFinder(relativePath string) error {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
-		cmd = exec.Command("open", "-R", full)
+		cmd = sysproc.Command("open", "-R", full)
 	case "windows":
-		cmd = exec.Command("explorer", "/select,"+full)
+		cmd = sysproc.Command("explorer", "/select,"+full)
 	default:
-		cmd = exec.Command("xdg-open", filepath.Dir(full))
+		cmd = sysproc.Command("xdg-open", filepath.Dir(full))
 	}
 	return cmd.Start()
 }

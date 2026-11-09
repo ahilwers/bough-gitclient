@@ -147,6 +147,14 @@ scripts/                   # Build/deploy utilities
 - EdDSA signatures required on all update artifacts
 - Single appcast XML served from fixed URL
 
+**Child Processes:**
+- Create child processes with `sysproc.Command` / `sysproc.CommandContext`
+  (`app/internal/sysproc`), never `exec.Command` / `exec.CommandContext`. Windows otherwise
+  allocates a console window for each `git`/`ssh`/credential-helper run, which flashes on screen
+  while a GUI app performs a Git action. The wrapper is a no-op outside Windows.
+- `TestNoDirectExecCommand` fails when production code bypasses the wrapper, so this cannot be
+  forgotten silently.
+
 ## Before Implementing Features
 
 Check the relevant documentation in `docs/` and the code conventions in this file before adding new
