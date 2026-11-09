@@ -27,7 +27,7 @@
 set -euo pipefail
 
 VERSION="${1:?Usage: generate_appcast.sh <version-tag>}"
-REPO="${GITHUB_REPOSITORY:-ahilwers/gitmorrow-gitclient}"
+REPO="${GITHUB_REPOSITORY:-ahilwers/gitmorrow}"
 REPO_OWNER="${REPO%%/*}"
 REPO_NAME="${REPO##*/}"
 RELEASE_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${VERSION}"

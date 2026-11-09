@@ -27,6 +27,9 @@ stay on your machine, and no account is required.
 > **Status:** GitMorrow is in active development and still pre-1.0. Preview builds for all three
 > platforms are published on the [Releases page](https://github.com/ahilwers/gitmorrow/releases/latest);
 > expect breaking changes between versions and please report what breaks.
+> **First GitMorrow release:** switching from an earlier build is a clean break. Uninstall the old
+> app and install GitMorrow fresh; preferences, recent repositories, and AI settings will need to be
+> set up again. Your repositories and Git credentials are not changed.
 
 ## Features
 

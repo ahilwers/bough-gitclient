@@ -24,7 +24,7 @@ If the signing secrets are not set, it ships the artifact **unsigned** instead.
 
 ## 2. Prerequisites (one-time)
 
-- The repository is public on GitHub (`origin` → `ahilwers/gitmorrow-gitclient`).
+- The repository is public on GitHub (`origin` → `ahilwers/gitmorrow`).
 - Note: the build runs in **GitHub Actions** (a macOS runner, a Windows runner, a Linux runner).
   You do **not** need a local toolchain for Windows/Linux.
 
