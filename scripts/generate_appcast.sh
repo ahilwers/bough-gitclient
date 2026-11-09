@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Copyright (C) 2026 Achim Hilwers
 #
-# This file is part of Bough.
+# This file is part of GitMorrow.
 #
-# Bough is free software: you can redistribute it and/or modify it under the
+# GitMorrow is free software: you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software
 # Foundation, either version 3 of the License, or (at your option) any later
 # version. See the LICENSE file in the repository root for details.
@@ -16,7 +16,7 @@
 #   ./scripts/generate_appcast.sh <version-tag>
 #
 # Environment variables:
-#   GITHUB_REPOSITORY  — owner/repo (e.g. achim/bough) — set automatically in Actions
+#   GITHUB_REPOSITORY  — owner/repo (e.g. achim/gitmorrow) — set automatically in Actions
 #   SPARKLE_PRIVATE_KEY — Ed25519 private key PEM (required for macOS signatures)
 #
 # Output:
@@ -27,7 +27,7 @@
 set -euo pipefail
 
 VERSION="${1:?Usage: generate_appcast.sh <version-tag>}"
-REPO="${GITHUB_REPOSITORY:-achim/bough}"
+REPO="${GITHUB_REPOSITORY:-ahilwers/bough-gitclient}"
 REPO_OWNER="${REPO%%/*}"
 REPO_NAME="${REPO##*/}"
 RELEASE_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${VERSION}"
@@ -69,24 +69,24 @@ sign_artifact() {
 }
 
 # ── macOS Intel ───────────────────────────────────────────────────────────────
-MAC_INTEL_NAME="Bough-${VERSION}-macos-intel.dmg"
+MAC_INTEL_NAME="GitMorrow-${VERSION}-macos-intel.dmg"
 MAC_INTEL_URL="${RELEASE_URL}/${MAC_INTEL_NAME}"
 MAC_INTEL_SIZE=$(artifact_size "$MAC_INTEL_URL")
 MAC_INTEL_SIG=$(sign_artifact "$MAC_INTEL_NAME")
 
 # ── macOS ARM64 ───────────────────────────────────────────────────────────────
-MAC_ARM_NAME="Bough-${VERSION}-macos-arm64.dmg"
+MAC_ARM_NAME="GitMorrow-${VERSION}-macos-arm64.dmg"
 MAC_ARM_URL="${RELEASE_URL}/${MAC_ARM_NAME}"
 MAC_ARM_SIZE=$(artifact_size "$MAC_ARM_URL")
 MAC_ARM_SIG=$(sign_artifact "$MAC_ARM_NAME")
 
 # ── Windows ───────────────────────────────────────────────────────────────────
-WIN_NAME="Bough-${VERSION}-windows-x64.exe"
+WIN_NAME="GitMorrow-${VERSION}-windows-x64.exe"
 WIN_URL="${RELEASE_URL}/${WIN_NAME}"
 WIN_SIZE=$(artifact_size "$WIN_URL")
 
 # ── Linux AppImage ────────────────────────────────────────────────────────────
-LINUX_NAME="Bough-${VERSION}-linux-x86_64.AppImage"
+LINUX_NAME="GitMorrow-${VERSION}-linux-x86_64.AppImage"
 LINUX_URL="${RELEASE_URL}/${LINUX_NAME}"
 LINUX_SIZE=$(artifact_size "$LINUX_URL")
 
@@ -96,9 +96,9 @@ cat > appcast/appcast.xml << APPCAST_EOF
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"
      xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
-    <title>Bough Updates</title>
+    <title>GitMorrow Updates</title>
     <link>https://github.com/${REPO_OWNER}/${REPO_NAME}</link>
-    <description>Bough Git GUI client release notes</description>
+    <description>GitMorrow Git GUI client release notes</description>
     <language>en</language>
 
     <!-- macOS Intel (x86_64) -->

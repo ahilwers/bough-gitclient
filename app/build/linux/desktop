@@ -1,13 +1,13 @@
 [Desktop Entry]
 Version=1.0
-Name=Bough
+Name=GitMorrow
 Comment=A beautiful Git GUI client
 # The Exec line includes %u to pass the URL to the application
-Exec=/usr/local/bin/bough %u
+Exec=/usr/local/bin/gitmorrow %u
 Terminal=false
 Type=Application
-Icon=bough
+Icon=gitmorrow
 Categories=Utility;
-StartupWMClass=bough
+StartupWMClass=gitmorrow
 
  

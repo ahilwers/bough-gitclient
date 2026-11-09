@@ -19,9 +19,9 @@ Unicode true
 ####
 ## The following information is taken from the wails_tools.nsh file, but they can be overwritten here.
 ####
-## !define INFO_PROJECTNAME    "my-project" # Default "Bough"
+## !define INFO_PROJECTNAME    "my-project" # Default "GitMorrow"
 ## !define INFO_COMPANYNAME    "My Company" # Default "Achim Hilwers"
-## !define INFO_PRODUCTNAME    "My Product Name" # Default "Bough"
+## !define INFO_PRODUCTNAME    "My Product Name" # Default "GitMorrow"
 ## !define INFO_PRODUCTVERSION "1.0.0"     # Default "0.1.0"
 ## !define INFO_COPYRIGHT      "(c) Now, My Company" # Default "© 2026, My Company"
 ###
@@ -86,6 +86,18 @@ ShowInstDetails show # This will always show the installation details.
 
 Function .onInit
    !insertmacro wails.checkArchitecture
+
+   # Preserve the existing install location when upgrading from Bough.
+   # The app's display name changes, but an upgrade should not leave a second
+   # copy behind or break the existing uninstaller entry.
+   !if "${WAILS_INSTALL_SCOPE}" == "user"
+       StrCpy $0 "$LOCALAPPDATA\Programs\Bough"
+   !else
+       StrCpy $0 "$PROGRAMFILES64\Bough"
+   !endif
+   ${If} ${FileExists} "$0\Bough.exe"
+       StrCpy $INSTDIR $0
+   ${EndIf}
 FunctionEnd
 
 Section
@@ -97,11 +109,16 @@ Section
     
     !insertmacro wails.files
 
+    # Remove the old executable and shortcuts after upgrading from Bough.
+    Delete "$INSTDIR\Bough.exe"
+    Delete "$SMPROGRAMS\Bough.lnk"
+    Delete "$DESKTOP\Bough.lnk"
+
     # Releases before this one installed into $PROGRAMFILES64\<company>\Bough.
     # Remove that leftover directory after upgrading, otherwise the old copy and
     # its uninstaller stay behind next to the new installation. In silent mode
     # (in-app updates) this happens without a prompt.
-    StrCpy $0 "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}"
+    StrCpy $0 "$PROGRAMFILES64\${INFO_COMPANYNAME}\Bough"
     ${If} "$0" != "$INSTDIR"
     ${AndIf} ${FileExists} "$0\${PRODUCT_EXECUTABLE}"
         IfSilent removeLegacy askLegacy

@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -12,7 +12,7 @@
 import { Button } from '../shared/Button'
 import { useEffect, useRef, useState } from 'react'
 import { GitBranch, X } from 'lucide-react'
-import { GetAppVersion } from '@bindings/bough/app'
+import { GetAppVersion } from '@bindings/gitmorrow/app'
 import { useGitStore } from '@/stores/gitStore'
 
 /** Renders the embedded build version ("dev" outside release builds). */
@@ -22,7 +22,7 @@ function formatVersion(version: string | null): string {
 }
 
 /**
- * About dialog opened from the native menu ("About Bough"). It is an in-app
+ * About dialog opened from the native menu ("About GitMorrow"). It is an in-app
  * dialog rather than the platform about panel because only this can show the
  * build version returned by the Go backend.
  */
@@ -67,7 +67,7 @@ export function AboutDialog() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="About Bough"
+        aria-label="About GitMorrow"
         onClick={e => e.stopPropagation()}
         style={{
           background: 'var(--bg-panel)',
@@ -115,10 +115,10 @@ export function AboutDialog() {
           </div>
 
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-pri)', letterSpacing: '-0.01em' }}>
-            Bough
+            GitMorrow
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-sec)', textAlign: 'center' }}>
-            A beautiful Git GUI client
+            The Git Client Of Tomorrow
           </div>
 
           <div style={{

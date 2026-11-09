@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -17,7 +17,7 @@ import { DeleteBranchDialog } from './DeleteBranchDialog'
 import i18n from '@/i18n'
 
 const api = vi.hoisted(() => ({ PrepareBranchDeletion: vi.fn(), DeleteBranch: vi.fn() }))
-vi.mock('@bindings/bough/app', () => api)
+vi.mock('@bindings/gitmorrow/app', () => api)
 const local = { name: 'topic', remote: '', isRemote: false, repo: '/repo', worktree: '/repo' }
 const remote = { ...local, name: 'origin/topic', remote: 'origin', isRemote: true }
 const snapshot = (target = local) => ({ repoPath: '/repo', name: target.name, remote: target.remote, ref: 'refs/heads/topic', oid: 'a'.repeat(40), destination: target.isRemote ? 'origin (example.com)' : 'Local branch', configFingerprint: '' })

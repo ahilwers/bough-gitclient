@@ -6,7 +6,7 @@ version: '3'
 # This information is used to generate the build assets.
 info:
   companyName: "Achim Hilwers" # The name of the company
-  productName: "Bough" # The name of the application
+  productName: "GitMorrow" # The name of the application
   productIdentifier: "net.hilwers.bough" # The unique product identifier
   description: "A beautiful Git GUI client" # The application description
   copyright: "Copyright 2026" # Copyright text

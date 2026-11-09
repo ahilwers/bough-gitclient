@@ -46,7 +46,7 @@ build-wails: install-wails3
 
 ## build: Build the Go binary only (no frontend embedding), useful for backend tests.
 build:
-	cd app && go build -ldflags "-X main.version=$(VERSION)" -o ../bin/bough ./...
+	cd app && go build -ldflags "-X main.version=$(VERSION)" -o ../bin/gitmorrow ./...
 
 # ── Bindings ──────────────────────────────────────────────────────────────────
 
@@ -86,7 +86,7 @@ appcast:
 
 ## clean: Remove build output and AppDir staging directories.
 clean:
-	rm -rf app/bin app/build/bin bin *.AppImage Bough.AppDir appcast
+	rm -rf app/bin app/build/bin bin *.AppImage GitMorrow.AppDir appcast
 
 help:
 	@grep -E '^## ' Makefile | sed 's/## /  /'

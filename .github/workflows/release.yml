@@ -53,8 +53,8 @@ jobs:
             family: macos
             goos: darwin
             goarch: amd64
-            artifact: app/bin/Bough.app
-            pkg_basename: Bough-${{ github.ref_name }}-macos-intel
+            artifact: app/bin/GitMorrow.app
+            pkg_basename: GitMorrow-${{ github.ref_name }}-macos-intel
 
           # macOS Apple Silicon (arm64) — macos-latest currently maps to macOS 26 (arm64)
           - label: macOS (Apple Silicon)
@@ -62,8 +62,8 @@ jobs:
             family: macos
             goos: darwin
             goarch: arm64
-            artifact: app/bin/Bough.app
-            pkg_basename: Bough-${{ github.ref_name }}-macos-arm64
+            artifact: app/bin/GitMorrow.app
+            pkg_basename: GitMorrow-${{ github.ref_name }}-macos-arm64
 
           # Windows x64 (NSIS installer)
           - label: Windows (x64)
@@ -71,8 +71,8 @@ jobs:
             family: windows
             goos: windows
             goarch: amd64
-            artifact: app/bin/Bough-amd64-installer.exe
-            pkg_basename: Bough-${{ github.ref_name }}-windows-x64
+            artifact: app/bin/GitMorrow-amd64-installer.exe
+            pkg_basename: GitMorrow-${{ github.ref_name }}-windows-x64
 
           # Linux x86_64 (AppImage)
           - label: Linux (x86_64)
@@ -80,8 +80,8 @@ jobs:
             family: linux
             goos: linux
             goarch: amd64
-            artifact: app/bin/bough-x86_64.AppImage
-            pkg_basename: Bough-${{ github.ref_name }}-linux-x86_64
+            artifact: app/bin/gitmorrow-x86_64.AppImage
+            pkg_basename: GitMorrow-${{ github.ref_name }}-linux-x86_64
 
     steps:
       - uses: actions/checkout@v4
@@ -219,11 +219,11 @@ jobs:
           cd app/bin
           if [ -n "$APPLE_SIGNING_IDENTITY" ]; then
             codesign --force --options runtime --timestamp \
-              --sign "$APPLE_SIGNING_IDENTITY" Bough.app
+              --sign "$APPLE_SIGNING_IDENTITY" GitMorrow.app
           fi
           hdiutil create \
-            -volname "Bough" \
-            -srcfolder Bough.app \
+            -volname "GitMorrow" \
+            -srcfolder GitMorrow.app \
             -ov -format UDZO \
             "${{ matrix.pkg_basename }}.dmg"
           if [ -n "$APPLE_SIGNING_IDENTITY" ]; then
@@ -293,13 +293,13 @@ jobs:
           [IO.File]::WriteAllBytes("cert.pfx", [Convert]::FromBase64String($b64))
           & $signtool.FullName sign /f cert.pfx /p "$env:SIGN_PASSWORD" `
             /fd sha256 /tr http://timestamp.digicert.com /td sha256 `
-            "app\bin\Bough-amd64-installer.exe"
+            "app\bin\GitMorrow-amd64-installer.exe"
           Remove-Item cert.pfx
 
       - name: Stage Windows artifact
         if: matrix.family == 'windows'
         run: |
-          Copy-Item "app\bin\Bough-amd64-installer.exe" `
+          Copy-Item "app\bin\GitMorrow-amd64-installer.exe" `
             "${{ matrix.pkg_basename }}.exe"
         shell: pwsh
 
@@ -308,7 +308,7 @@ jobs:
         shell: bash
         run: |
           # `wails3 generate appimage` lowercases the binary name, so the file
-          # is bough-x86_64.AppImage even though APP_NAME is "Bough".
+          # is gitmorrow-x86_64.AppImage even though APP_NAME is "GitMorrow".
           mv app/bin/*-x86_64.AppImage "${{ matrix.pkg_basename }}.AppImage"
 
       # AppImage, .app bundle and .exe installer are produced by the Wails
