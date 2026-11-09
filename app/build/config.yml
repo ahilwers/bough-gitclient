@@ -7,10 +7,11 @@ version: '3'
 info:
   companyName: "Achim Hilwers" # The name of the company
   productName: "GitMorrow" # The name of the application
-  productIdentifier: "net.hilwers.bough" # The unique product identifier
-  description: "A beautiful Git GUI client" # The application description
+  # Retain the original identifier so existing installations can upgrade in place.
+  productIdentifier: "net.hilwers.bough" # Stable legacy bundle/package id
+  description: "The Git Client Of Tomorrow" # The application description
   copyright: "Copyright 2026" # Copyright text
-  comments: "A beautiful Git GUI client" # Comments
+  comments: "A fast, native Git client for macOS, Windows and Linux" # Comments
   version: "0.1.0" # The application version. This is only the placeholder used
   #                  by dev builds; release builds override the packaged
   #                  Info.plist / Windows version metadata with the version
