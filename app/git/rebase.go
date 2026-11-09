@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"bough/internal/sysproc"
+	"gitmorrow/internal/sysproc"
 )
 
 // StartInteractiveRebase performs an interactive rebase non-interactively by
@@ -49,7 +49,7 @@ func (r *Repository) StartInteractiveRebase(actions []RebaseAction) error {
 	msgFiles := make(map[string]string) // full hash → temp file path
 	for _, a := range ordered {
 		if a.Action == "reword" {
-			f, err := os.CreateTemp("", "bough-msg-*.txt")
+			f, err := os.CreateTemp("", "gitmorrow-msg-*.txt")
 			if err != nil {
 				return fmt.Errorf("failed to create message file: %w", err)
 			}
@@ -93,7 +93,7 @@ func (r *Repository) StartInteractiveRebase(actions []RebaseAction) error {
 	}
 
 	// Write todo to a temp file.
-	todoFile, err := os.CreateTemp("", "bough-rebase-todo-*.txt")
+	todoFile, err := os.CreateTemp("", "gitmorrow-rebase-todo-*.txt")
 	if err != nil {
 		return fmt.Errorf("failed to create todo file: %w", err)
 	}
@@ -115,7 +115,7 @@ func (r *Repository) StartInteractiveRebase(actions []RebaseAction) error {
 	var seqEditor string
 	if runtime.GOOS == "windows" {
 		// On Windows create a .bat file.
-		scriptFile, err := os.CreateTemp("", "bough-seq-editor-*.bat")
+		scriptFile, err := os.CreateTemp("", "gitmorrow-seq-editor-*.bat")
 		if err != nil {
 			return fmt.Errorf("failed to create sequence editor: %w", err)
 		}
@@ -125,7 +125,7 @@ func (r *Repository) StartInteractiveRebase(actions []RebaseAction) error {
 		fmt.Fprintf(scriptFile, "@echo off\ncopy /Y %q \"%%~1\" >nul\n", todoPath)
 		scriptFile.Close()
 	} else {
-		scriptFile, err := os.CreateTemp("", "bough-seq-editor-*.sh")
+		scriptFile, err := os.CreateTemp("", "gitmorrow-seq-editor-*.sh")
 		if err != nil {
 			return fmt.Errorf("failed to create sequence editor: %w", err)
 		}

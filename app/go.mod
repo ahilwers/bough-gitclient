@@ -1,4 +1,4 @@
-module bough
+module gitmorrow
 
 go 1.27.0
 

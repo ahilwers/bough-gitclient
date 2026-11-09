@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -26,7 +26,7 @@ import { NewBranchDialog } from '@/components/BranchManager/NewBranchDialog'
 import { MergeConfirmDialog } from '@/components/BranchManager/MergeConfirmDialog'
 import { DeleteBranchDialog } from '@/components/BranchManager/DeleteBranchDialog'
 import { StashDiffView } from '@/components/StashView/StashDiffView'
-import { OpenInFinder } from '@bindings/bough/app'
+import { OpenInFinder } from '@bindings/gitmorrow/app'
 import { useStatus } from '@/hooks/useStatus'
 import { useCherryPick } from '@/hooks/useCherryPick'
 import { parseGitError } from '@/lib/format'

@@ -8,13 +8,13 @@
   IgnorableNamespaces="uap3">
   
   <Identity 
-    Name="net.hilwers.bough"
+    Name="net.hilwers.gitmorrow"
     Publisher="CN=Achim Hilwers"
     Version="0.1.0.0" 
     ProcessorArchitecture="arm64" />
   
   <Properties>
-    <DisplayName>Bough</DisplayName>
+    <DisplayName>GitMorrow</DisplayName>
     <PublisherDisplayName>Achim Hilwers</PublisherDisplayName>
     <Description>A beautiful Git GUI client</Description>
     <Logo>Assets\StoreLogo.png</Logo>
@@ -29,9 +29,9 @@
   </Resources>
   
   <Applications>
-    <Application Id="net.hilwers.bough" Executable="bough" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="net.hilwers.gitmorrow" Executable="gitmorrow" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="Bough"
+        DisplayName="GitMorrow"
         Description="A beautiful Git GUI client"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
@@ -41,7 +41,7 @@
       </uap:VisualElements>
       
       <Extensions>
-        <desktop:Extension Category="windows.fullTrustProcess" Executable="bough" />
+        <desktop:Extension Category="windows.fullTrustProcess" Executable="gitmorrow" />
         
         
       </Extensions>

@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -17,7 +17,7 @@ import i18n from '@/i18n'
 import { CreateStashDialog } from './CreateStashDialog'
 
 const api = vi.hoisted(() => ({ CreateStash: vi.fn() }))
-vi.mock('@bindings/bough/app', () => api)
+vi.mock('@bindings/gitmorrow/app', () => api)
 
 function openDialog() {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } })

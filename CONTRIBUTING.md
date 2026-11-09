@@ -1,6 +1,6 @@
-# Contributing to Bough
+# Contributing to GitMorrow
 
-Thanks for your interest in contributing! Bough is free software, and every contribution — from a
+Thanks for your interest in contributing! GitMorrow is free software, and every contribution — from a
 typo fix to a new feature — is welcome.
 
 Please take a moment to read this guide and the repository's
@@ -28,7 +28,7 @@ Please take a moment to read this guide and the repository's
 
 ## Finding work
 
-Bough uses GitHub Issues for bug reports, feature requests, and planned work — the issue tracker is
+GitMorrow uses GitHub Issues for bug reports, feature requests, and planned work — the issue tracker is
 the roadmap:
 
 - Issues labeled `good first issue` are a great starting point.
@@ -41,7 +41,7 @@ the roadmap:
 
 A good bug report lets a maintainer reproduce the problem quickly. Please include:
 
-- Bough version (from **Help → About**, or the build tag / release version) and operating system
+- GitMorrow version (from **Help → About**, or the build tag / release version) and operating system
   (macOS / Windows / Linux, including version and architecture).
 - Steps to reproduce, with as much precision as possible.
 - Expected behavior and what actually happened.
@@ -67,7 +67,7 @@ Platform-specific system packages (Xcode Command Line Tools on macOS, `libgtk-3-
 # Development server with hot reload (Go + React)
 make dev                     # or: cd app && go tool wails3 dev
 
-# Production build → app/bin/Bough
+# Production build → app/bin/GitMorrow
 make build-wails             # or: cd app && go tool wails3 build
 
 # Tests
@@ -140,9 +140,9 @@ comment syntax — `//`, `#`, or `/* … */`):
 ```go
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -166,7 +166,7 @@ testing with 100+, 1000+, and 10000+ commit repositories) and, ideally, on more 
 
 ## License and sign-off
 
-Bough is licensed under the **GNU General Public License v3.0 or later** — see the
+GitMorrow is licensed under the **GNU General Public License v3.0 or later** — see the
 [LICENSE](LICENSE) file.
 
 By opening a pull request, you agree that your contribution is licensed under the same terms as the

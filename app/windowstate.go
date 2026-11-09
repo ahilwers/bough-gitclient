@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -37,7 +37,7 @@ func windowStatePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "Bough", "window.json"), nil
+	return filepath.Join(dir, "GitMorrow", "window.json"), nil
 }
 
 // loadWindowState returns the persisted window state, falling back to safe

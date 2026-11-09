@@ -38,7 +38,7 @@ echo "E" >> file.txt && git add . && git commit -m "Add feature E"
 #### 2. App starten
 
 ```bash
-cd /path/to/bough/app && wails3 dev
+cd /path/to/gitmorrow/app && wails3 dev
 ```
 
 #### 3. Test-Szenarien

@@ -4,11 +4,11 @@
         <key>CFBundlePackageType</key>
             <string>APPL</string>
         <key>CFBundleName</key>
-            <string>Bough</string>
+            <string>GitMorrow</string>
         <key>CFBundleExecutable</key>
-            <string>Bough</string>
+            <string>GitMorrow</string>
         <key>CFBundleIdentifier</key>
-            <string>net.hilwers.bough</string>
+            <string>net.hilwers.gitmorrow</string>
         <key>CFBundleVersion</key>
             <string>0.1.0</string>
         <key>CFBundleGetInfoString</key>

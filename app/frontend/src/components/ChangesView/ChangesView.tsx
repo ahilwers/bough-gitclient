@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -13,7 +13,7 @@ import { Button } from '../shared/Button'
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
-import { StageFile, UnstageFile, DiscardFile, AbortMerge } from '@bindings/bough/app'
+import { StageFile, UnstageFile, DiscardFile, AbortMerge } from '@bindings/gitmorrow/app'
 import { useRebase } from '@/hooks/useRebase'
 import { FileStatusList } from './FileStatusList'
 import { ChunkDiffPanel } from './ChunkDiffPanel'

@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -19,9 +19,9 @@ import type {
   Remote,
   StashEntry,
   Tag,
-} from '../../../../../bindings/bough/git'
+} from '../../../../../bindings/gitmorrow/git'
 
-// Types mirroring bindings/bough/git/models.ts
+// Types mirroring bindings/gitmorrow/git/models.ts
 export interface GraphLine { fromCol: number; toCol: number; color: number; isMerge: boolean }
 export interface Ref { name: string; type: string; isHead: boolean }
 export interface CommitNode {
@@ -100,7 +100,7 @@ export const DiscardFile = vi.fn((_path: string): Promise<void> => Promise.resol
 export const PullForUI = vi.fn((_repo: string, _branch: string): Promise<PullResult> => Promise.resolve({ outcome: 'success' }))
 export const ResolvePull = vi.fn((_snapshot: PullSnapshot, _strategy: string): Promise<PullResult> => Promise.resolve({ outcome: 'success' }))
 
-// Remaining bound methods (kept in sync with bindings/bough/app.ts so tests
+// Remaining bound methods (kept in sync with bindings/gitmorrow/app.ts so tests
 // that exercise an un-mocked import path never resolve undefined).
 export const AbortCherryPick = vi.fn((): Promise<void> => Promise.resolve())
 export const AbortMerge = vi.fn((): Promise<void> => Promise.resolve())

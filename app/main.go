@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -28,7 +28,7 @@ func main() {
 	svc := NewApp()
 
 	app := application.New(application.Options{
-		Name:        "Bough",
+		Name:        "GitMorrow",
 		Description: "A beautiful Git GUI client",
 		Services: []application.Service{
 			application.NewService(svc),
@@ -44,7 +44,7 @@ func main() {
 	// dialogs and read the window without a v3 runtime context.
 	svc.app = app
 
-	// Native menu bar: "About Bough" lives in the application menu on macOS and
+	// Native menu bar: "About GitMorrow" lives in the application menu on macOS and
 	// in the Help menu elsewhere.
 	app.Menu.Set(buildApplicationMenu(app))
 
@@ -52,7 +52,7 @@ func main() {
 
 	windowOpts := application.WebviewWindowOptions{
 		Name:             "main",
-		Title:            "Bough",
+		Title:            "GitMorrow",
 		Width:            ws.Width,
 		Height:           ws.Height,
 		MinWidth:         900,

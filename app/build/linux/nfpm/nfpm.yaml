@@ -3,7 +3,7 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "bough"
+name: "gitmorrow"
 arch: ${GOARCH}
 platform: "linux"
 version: "0.1.0"
@@ -17,12 +17,12 @@ license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/bough"
-    dst: "/usr/local/bin/bough"
+  - src: "./bin/gitmorrow"
+    dst: "/usr/local/bin/gitmorrow"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/bough.png"
-  - src: "./build/linux/bough.desktop"
-    dst: "/usr/share/applications/bough.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/gitmorrow.png"
+  - src: "./build/linux/gitmorrow.desktop"
+    dst: "/usr/share/applications/gitmorrow.desktop"
 
 # Default dependencies for the GTK4 + WebKitGTK 6.0 stack (Ubuntu 24.04+ / Debian 13+)
 depends:

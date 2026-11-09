@@ -1,6 +1,6 @@
-# Bough — Release Build & Publishing on GitHub
+# GitMorrow — Release Build & Publishing on GitHub
 
-This document explains the complete workflow to build Bough for **macOS, Windows and Linux**, add
+This document explains the complete workflow to build GitMorrow for **macOS, Windows and Linux**, add
 **code-signing / notarization**, and publish it as a **GitHub Release** — so that users can open the
 app **without the operating system complaining**.
 
@@ -24,7 +24,7 @@ If the signing secrets are not set, it ships the artifact **unsigned** instead.
 
 ## 2. Prerequisites (one-time)
 
-- The repository is public on GitHub (`origin` → `ahilwers/bough-gitclient`).
+- The repository is public on GitHub (`origin` → `ahilwers/gitmorrow`).
 - Note: the build runs in **GitHub Actions** (a macOS runner, a Windows runner, a Linux runner).
   You do **not** need a local toolchain for Windows/Linux.
 
@@ -49,7 +49,7 @@ issued by a certificate authority (ideally an **EV** certificate) removes that.
 
 ### Linux
 No signing required. AppImages run directly. (Caveat: if a user lacks FUSE2, run
-`Bough.AppImage --appimage-extract-and-run`.)
+`GitMorrow.AppImage --appimage-extract-and-run`.)
 
 ---
 
@@ -72,8 +72,8 @@ For **notarization** (App Store Connect API key):
 ### 4.2 Windows code-signing certificate
 - Buy an EV or standard **Authenticode certificate** from a CA (e.g. DigiCert, Sectigo, SSL.com).
 - Export it as a `.pfx` (including password).
-- **Important for the workflow:** Bough uses a Wails NSIS installer. So the
-  `Bough-amd64-installer.exe` is signed, **not** just the raw `.exe` binary.
+- **Important for the workflow:** GitMorrow uses a Wails NSIS installer. So the
+  `GitMorrow-amd64-installer.exe` is signed, **not** just the raw `.exe` binary.
 
 ---
 
@@ -116,7 +116,7 @@ If you want to enable the auto-update feature (Sparkle/appcast):
 - **`SPARKLE_PUBLIC_KEY`** = the base64 "Public key" from the script output → add as a secret and
   insert into `app/build/darwin/Info.plist` (`SUPublicEDKey`).
 - The appcast XML is pushed to the `gh-pages` branch by the workflow and needs web hosting at
-  `https://updates.bough.app/appcast.xml` before Sparkle can fetch it.
+  `https://updates.gitmorrow.app/appcast.xml` before Sparkle can fetch it.
   **This is optional** and does not block the release when the key is missing.
 
 ---
@@ -139,10 +139,10 @@ If you want to enable the auto-update feature (Sparkle/appcast):
 
 The workflow produces these artifacts:
 ```
-Bough-v0.1.0-macos-intel.dmg
-Bough-v0.1.0-macos-arm64.dmg
-Bough-v0.1.0-windows-x64.exe
-Bough-v0.1.0-linux-x86_64.AppImage
+GitMorrow-v0.1.0-macos-intel.dmg
+GitMorrow-v0.1.0-macos-arm64.dmg
+GitMorrow-v0.1.0-windows-x64.exe
+GitMorrow-v0.1.0-linux-x86_64.AppImage
 ```
 
 The tag is the single source of truth for the released version: CI passes it to the build as
@@ -157,9 +157,9 @@ placeholders for development builds.
 
 | Platform | Test |
 |---|---|
-| macOS | Start the app normally by double-clicking it from the `.dmg` — no Gatekeeper message. Check: `spctl -a -vv Bough.app`, `codesign --verify --deep --strict Bough.app` |
+| macOS | Start the app normally by double-clicking it from the `.dmg` — no Gatekeeper message. Check: `spctl -a -vv GitMorrow.app`, `codesign --verify --deep --strict GitMorrow.app` |
 | Windows | Start the installer; SmartScreen shows **no** "Unknown" warning. |
-| Linux | `./Bough-v0.1.0-linux-x86_64.AppImage` launches. |
+| Linux | `./GitMorrow-v0.1.0-linux-x86_64.AppImage` launches. |
 
 ---
 
@@ -169,7 +169,7 @@ placeholders for development builds.
   password). Apple has phased out the app-specific-password variant in favor of API keys.
 - **Secrets missing:** The build then continues without signing (the warning remains on macOS/Windows).
   Set the secrets and tag again — a new release will be created.
-- **`Bough.app`: "not verified" despite signing:** This only happens when **notarization**
+- **`GitMorrow.app`: "not verified" despite signing:** This only happens when **notarization**
   (`APPLE_API_KEY*` + `APPLE_TEAM_ID`) is missing or failed. `stapler staple` attaches the
   notarization **stamp** required to lift the warning.
 - **macOS runners:** Intel builds use `macos-15-intel` (the last remaining Intel label,

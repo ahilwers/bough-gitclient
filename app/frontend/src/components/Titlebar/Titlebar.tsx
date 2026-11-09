@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -35,7 +35,7 @@ export default function Titlebar() {
     >
       {/* App + repo title */}
       <div style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 600, color: 'var(--text-pri)' }}>
-        Bough
+        GitMorrow
         {repoName && (
           <span style={{ fontWeight: 400, color: 'var(--text-ter)', marginLeft: 8 }}>
             — {repoName}

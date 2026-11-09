@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="logos/bough-mark.svg" alt="Bough" width="88" height="88">
+  <img src="logos/gitmorrow-mark.svg" alt="GitMorrow" width="88" height="88">
 </p>
 
-<h1 align="center">Bough</h1>
+<h1 align="center">GitMorrow</h1>
 
 <p align="center">
-  <strong>The Git client you actually own.</strong><br>
-  A beautiful, fast, native Git client for your desktop. Free to use and built for developers.
+  <strong>The Git Client Of Tomorrow</strong><br>
+  A fast, native Git client for macOS, Windows, and Linux — free to use and built for developers.
 </p>
 
 <p align="center">
@@ -17,14 +17,19 @@
 
 ---
 
-**Bough** is a cross-platform Git GUI client for macOS (primary), Windows, and Linux — built with
+**GitMorrow** is a cross-platform Git GUI client for macOS (primary), Windows, and Linux — built with
 [Wails](https://wails.io) (Go + native WebView), React 19, and TypeScript. Designed for a
 first-class working-copy experience: fast, native, and focused on your workflow.
 
-Bough is **free software**: free to use, free to modify, and free to share — your repositories stay
-on your machine, and no account is required.
+GitMorrow is **free software**: free to use, free to modify, and free to share — your repositories
+stay on your machine, and no account is required.
 
-> **Status:** Bough is under active development. Public download links are not available yet.
+> **Status:** GitMorrow is in active development and still pre-1.0. Preview builds for all three
+> platforms are published on the [Releases page](https://github.com/ahilwers/gitmorrow/releases/latest);
+> expect breaking changes between versions and please report what breaks.
+> **First GitMorrow release:** switching from an earlier build is a clean break. Uninstall the old
+> app and install GitMorrow fresh; preferences, recent repositories, and AI settings will need to be
+> set up again. Your repositories and Git credentials are not changed.
 
 ## Features
 
@@ -40,7 +45,7 @@ on your machine, and no account is required.
 - **Built for performance** — the commit graph layout is computed in Go; history and diffs render
   instantly, even in repositories with thousands of commits.
 - **Your credentials stay yours** — authentication is delegated to Git's native helpers: the SSH
-  agent, macOS Keychain, and Windows Credential Manager. Bough never stores your credentials.
+  agent, macOS Keychain, and Windows Credential Manager. GitMorrow never stores your credentials.
 - **Auto-updates** — Sparkle (macOS), WinSparkle (Windows), and AppImageUpdate (Linux).
 - **AI-assisted commit messages** — optional AI-generated commit messages right from the commit box.
 
@@ -61,7 +66,7 @@ on your machine, and no account is required.
 # Development (live hot reload, Go + React)
 make dev                     # or: cd app && go tool wails3 dev
 
-# Production build → app/bin/Bough
+# Production build → app/bin/GitMorrow
 make build-wails             # or: cd app && go tool wails3 build
 
 # Regenerate frontend bindings from the Go service methods
@@ -122,7 +127,7 @@ By contributing, you agree that your contributions are licensed under the same t
 
 Copyright © 2026 Achim Hilwers
 
-Bough is free software: you can redistribute it and/or modify it under the terms of the
+GitMorrow is free software: you can redistribute it and/or modify it under the terms of the
 **GNU General Public License** as published by the Free Software Foundation, either **version 3** of
 the License, or (at your option) any later version.
 

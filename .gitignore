@@ -36,7 +36,7 @@ sparkle_key
 # Local build artefacts
 bin/
 *.AppImage
-Bough.AppDir/
+GitMorrow.AppDir/
 appcast/
 
 # Wails v3 task-runner cache

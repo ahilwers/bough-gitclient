@@ -5,13 +5,13 @@
 !include "FileFunc.nsh"
 
 !ifndef INFO_PROJECTNAME
-    !define INFO_PROJECTNAME "Bough"
+    !define INFO_PROJECTNAME "GitMorrow"
 !endif
 !ifndef INFO_COMPANYNAME
     !define INFO_COMPANYNAME "Achim Hilwers"
 !endif
 !ifndef INFO_PRODUCTNAME
-    !define INFO_PRODUCTNAME "Bough"
+    !define INFO_PRODUCTNAME "GitMorrow"
 !endif
 !ifndef INFO_PRODUCTVERSION
     !define INFO_PRODUCTVERSION "0.1.0"

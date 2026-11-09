@@ -8,13 +8,13 @@
         AllowPromptForPassword="false">
     </Settings>
     <Installer
-        Path="bough"
+        Path="gitmorrow"
         Arguments=""
-        InstallLocation="C:\Program Files\Bough">
+        InstallLocation="C:\Program Files\GitMorrow">
     </Installer>
     <PackageInformation
-        PackageName="Bough"
-        PackageDisplayName="Bough"
+        PackageName="GitMorrow"
+        PackageDisplayName="GitMorrow"
         PublisherName="CN=Achim Hilwers"
         PublisherDisplayName="Achim Hilwers"
         Version="0.1.0.0"
@@ -25,10 +25,10 @@
         </Capabilities>
         <Applications>
             <Application
-                Id="net.hilwers.bough"
+                Id="net.hilwers.gitmorrow"
                 Description="A beautiful Git GUI client"
-                DisplayName="Bough"
-                ExecutableName="bough"
+                DisplayName="GitMorrow"
+                ExecutableName="gitmorrow"
                 EntryPoint="Windows.FullTrustApplication">
                 
             </Application>
@@ -41,13 +41,13 @@
         </Dependencies>
         <Properties>
             <Framework>false</Framework>
-            <DisplayName>Bough</DisplayName>
+            <DisplayName>GitMorrow</DisplayName>
             <PublisherDisplayName>Achim Hilwers</PublisherDisplayName>
             <Description>A beautiful Git GUI client</Description>
             <Logo>Assets\AppIcon.png</Logo>
         </Properties>
     </PackageInformation>
-    <SaveLocation PackagePath="bough.msix" />
+    <SaveLocation PackagePath="gitmorrow.msix" />
     <PackageIntegrity>
         <CertificatePath></CertificatePath>
     </PackageIntegrity>

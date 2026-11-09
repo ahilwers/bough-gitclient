@@ -2,7 +2,7 @@
 
 ## About
 
-Bough is a Wails v3 desktop application (Go backend + React/TypeScript frontend).
+GitMorrow is a Wails v3 desktop application (Go backend + React/TypeScript frontend).
 
 The Wails v3 project configuration lives in `build/config.yml`. The `wails3` CLI
 (`wails3 dev`, `wails3 build`, `wails3 generate bindings`, …) is pinned as a Go

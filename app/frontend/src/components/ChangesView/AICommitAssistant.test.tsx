@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -12,9 +12,9 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { AICommitAssistant } from './AICommitAssistant'
-import { GenerateCommitMessage, GetAISettings, SaveAISettings } from '@bindings/bough/app'
+import { GenerateCommitMessage, GetAISettings, SaveAISettings } from '@bindings/gitmorrow/app'
 
-vi.mock('@bindings/bough/app', () => ({ GenerateCommitMessage: vi.fn(), GetAISettings: vi.fn(), SaveAISettings: vi.fn() }))
+vi.mock('@bindings/gitmorrow/app', () => ({ GenerateCommitMessage: vi.fn(), GetAISettings: vi.fn(), SaveAISettings: vi.fn() }))
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(GetAISettings).mockResolvedValue({ provider: 'openrouter', baseURL: 'https://openrouter.ai/api/v1', model: 'test', hasAPIKey: true })

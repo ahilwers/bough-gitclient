@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -11,7 +11,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { GetAppVersion } from '@bindings/bough/app'
+import { GetAppVersion } from '@bindings/gitmorrow/app'
 import { useGitStore } from '@/stores/gitStore'
 import { AboutDialog } from './AboutDialog'
 
@@ -25,13 +25,16 @@ describe('AboutDialog', () => {
   it('renders nothing while closed', () => {
     useGitStore.setState({ aboutDialogOpen: false })
     render(<AboutDialog />)
-    expect(screen.queryByRole('dialog', { name: 'About Bough' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'About GitMorrow' })).not.toBeInTheDocument()
   })
 
-  it('shows the version reported by the backend', async () => {
+  it('shows GitMorrow branding and its tagline', async () => {
     render(<AboutDialog />)
-    expect(await screen.findByTestId('about-version')).toHaveTextContent('1.2.3')
-    expect(screen.getByRole('dialog', { name: 'About Bough' })).toBeInTheDocument()
+    await screen.findByTestId('about-version')
+
+    expect(screen.getByRole('dialog', { name: 'About GitMorrow' })).toBeInTheDocument()
+    expect(screen.getByText('GitMorrow')).toBeInTheDocument()
+    expect(screen.getByText('The Git Client Of Tomorrow')).toBeInTheDocument()
   })
 
   it('strips a leading v from the version', async () => {

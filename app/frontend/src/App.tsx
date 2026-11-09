@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -12,7 +12,7 @@
 import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Events } from '@wailsio/runtime'
-import { SaveWindowSize, GetRecentRepos } from '@bindings/bough/app'
+import { SaveWindowSize, GetRecentRepos } from '@bindings/gitmorrow/app'
 import { useGitStore } from '@/stores/gitStore'
 import { useKeyboard } from '@/hooks/useKeyboard'
 import Toolbar from '@/components/Toolbar/Toolbar'
@@ -57,7 +57,7 @@ export default function App() {
     return unsubscribe
   }, [queryClient])
 
-  // Native menu entries are handled in the frontend: macOS puts "About Bough"
+  // Native menu entries are handled in the frontend: macOS puts "About GitMorrow"
   // in the application menu, Windows/Linux in the Help menu.
   useEffect(() => {
     const offAbout = Events.On('app:about', () => setAboutDialogOpen(true))

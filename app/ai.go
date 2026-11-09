@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -27,12 +27,12 @@ import (
 
 	"github.com/zalando/go-keyring"
 
-	"bough/internal/sysproc"
+	"gitmorrow/internal/sysproc"
 )
 
 const maxAIDiffKiB = 512
 const maxAIDiff = maxAIDiffKiB * 1024
-const aiService = "Bough AI commit messages"
+const aiService = "GitMorrow AI commit messages"
 
 // AISettings contains no secret. Credentials never return to the webview.
 type AISettings struct {
@@ -44,7 +44,7 @@ type AISettings struct {
 
 func aiSettingsPath() (string, error) {
 	dir, err := os.UserConfigDir()
-	return filepath.Join(dir, "Bough", "ai.json"), err
+	return filepath.Join(dir, "GitMorrow", "ai.json"), err
 }
 
 func validateAISettings(s AISettings) error {

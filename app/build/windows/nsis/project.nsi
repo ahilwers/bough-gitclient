@@ -19,9 +19,9 @@ Unicode true
 ####
 ## The following information is taken from the wails_tools.nsh file, but they can be overwritten here.
 ####
-## !define INFO_PROJECTNAME    "my-project" # Default "Bough"
+## !define INFO_PROJECTNAME    "my-project" # Default "GitMorrow"
 ## !define INFO_COMPANYNAME    "My Company" # Default "Achim Hilwers"
-## !define INFO_PRODUCTNAME    "My Product Name" # Default "Bough"
+## !define INFO_PRODUCTNAME    "My Product Name" # Default "GitMorrow"
 ## !define INFO_PRODUCTVERSION "1.0.0"     # Default "0.1.0"
 ## !define INFO_COPYRIGHT      "(c) Now, My Company" # Default "© 2026, My Company"
 ###
@@ -96,21 +96,6 @@ Section
     SetOutPath $INSTDIR
     
     !insertmacro wails.files
-
-    # Releases before this one installed into $PROGRAMFILES64\<company>\Bough.
-    # Remove that leftover directory after upgrading, otherwise the old copy and
-    # its uninstaller stay behind next to the new installation. In silent mode
-    # (in-app updates) this happens without a prompt.
-    StrCpy $0 "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}"
-    ${If} "$0" != "$INSTDIR"
-    ${AndIf} ${FileExists} "$0\${PRODUCT_EXECUTABLE}"
-        IfSilent removeLegacy askLegacy
-        askLegacy:
-            MessageBox MB_YESNO|MB_ICONQUESTION "A previous version of ${INFO_PRODUCTNAME} was installed in:$\r$\n$\r$\n$0$\r$\n$\r$\nRemove it?" IDNO legacyHandled
-        removeLegacy:
-            RMDir /r "$0"
-        legacyHandled:
-    ${EndIf}
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"

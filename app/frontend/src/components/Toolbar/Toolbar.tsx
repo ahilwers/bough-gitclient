@@ -1,8 +1,8 @@
 // Copyright (C) 2026 Achim Hilwers
 //
-// This file is part of Bough.
+// This file is part of GitMorrow.
 //
-// Bough is free software: you can redistribute it and/or modify it under the
+// GitMorrow is free software: you can redistribute it and/or modify it under the
 // terms of the GNU General Public License as published by the Free Software
 // Foundation, either version 3 of the License, or (at your option) any later
 // version. See the LICENSE file in the repository root for details.
@@ -17,7 +17,7 @@ import { RefreshCw, ArrowDown, ArrowUp, GitBranch, Layers, Tag, Search, ChevronD
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useGitStore } from '@/stores/gitStore'
 import { useStatus } from '@/hooks/useStatus'
-import { SelectRepository, OpenRepository, Fetch, PullForUI, ResolvePull, Push, GetPushInfo, PushWithUpstream, SelectAndInitRepository } from '@bindings/bough/app'
+import { SelectRepository, OpenRepository, Fetch, PullForUI, ResolvePull, Push, GetPushInfo, PushWithUpstream, SelectAndInitRepository } from '@bindings/gitmorrow/app'
 import { CreateUpstreamDialog } from './CreateUpstreamDialog'
 import { parseGitError } from '@/lib/format'
 import { useQueryClient } from '@tanstack/react-query'
@@ -28,7 +28,7 @@ import { CreateStashDialog } from '@/components/StashView/CreateStashDialog'
 import { CreateTagDialog } from '@/components/TagManager/CreateTagDialog'
 
 import { PullStrategyDialog } from './PullStrategyDialog'
-import type { PullSnapshot, PushInfo } from '@bindings/bough/git'
+import type { PullSnapshot, PushInfo } from '@bindings/gitmorrow/git'
 
 export default function Toolbar() {
   const { t } = useTranslation()
