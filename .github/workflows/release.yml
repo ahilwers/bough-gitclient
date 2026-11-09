@@ -42,6 +42,10 @@ jobs:
       HAS_APPLE_CERT: ${{ secrets.APPLE_CERTIFICATE != '' }}
       HAS_APPLE_API: ${{ secrets.APPLE_API_KEY != '' && secrets.APPLE_TEAM_ID != '' }}
       HAS_WIN_CERT: ${{ secrets.SIGN_CERTIFICATE != '' }}
+      # SignPath Foundation (free OSS code signing): needs an API token and the
+      # organization id from the SignPath dashboard. See CODE_SIGNING.md.
+      HAS_SIGNPATH: ${{ secrets.SIGNPATH_API_TOKEN != '' && vars.SIGNPATH_ORGANIZATION_ID != '' }}
+      HAS_WIN_SIGNED: ${{ secrets.SIGN_CERTIFICATE != '' || (secrets.SIGNPATH_API_TOKEN != '' && vars.SIGNPATH_ORGANIZATION_ID != '') }}
       HAS_SPARKLE_PUB: ${{ secrets.SPARKLE_PUBLIC_KEY != '' }}
     strategy:
       fail-fast: false
@@ -271,7 +275,49 @@ jobs:
           echo "::warning::Could not staple $DMG; publishing the notarized DMG without an attached ticket"
 
       # ── Windows: sign NSIS installer ────────────────────────────────────────
-      - name: Sign Windows installer
+      #
+      # Two mutually exclusive paths:
+      #   1. SignPath Foundation (free for OSS) — default, no certificate or
+      #      token on our side. The built installer is uploaded as a workflow
+      #      artifact, SignPath verifies that it came from this repository and
+      #      returns the signed file. Requires the SIGNPATH_API_TOKEN secret and
+      #      the SIGNPATH_ORGANIZATION_ID repository variable.
+      #   2. A classic PFX certificate in SIGN_CERTIFICATE/SIGN_PASSWORD, kept
+      #      as a fallback for anyone who already owns a paid certificate.
+      #
+      # With neither configured, the installer ships unsigned (see
+      # CODE_SIGNING.md for what users then see).
+
+      - name: Upload unsigned installer for SignPath
+        if: matrix.family == 'windows' && env.HAS_WIN_CERT != 'true' && env.HAS_SIGNPATH == 'true'
+        id: unsigned-installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-windows-installer
+          path: app/bin/Bough-amd64-installer.exe
+          if-no-files-found: error
+          # upload-artifact@v4 always wraps files in a ZIP, so the SignPath
+          # artifact configuration must use a ZIP root element containing
+          # Bough-amd64-installer.exe. Compression is pointless for an
+          # already-compressed installer.
+          compression-level: 0
+          retention-days: 1
+
+      - name: Sign Windows installer (SignPath)
+        if: matrix.family == 'windows' && env.HAS_WIN_CERT != 'true' && env.HAS_SIGNPATH == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'bough-gitclient' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG || 'nsis-installer' }}
+          github-artifact-id: ${{ steps.unsigned-installer.outputs.artifact-id }}
+          wait-for-completion: true
+          # The signed installer replaces the unsigned one under the same name.
+          output-artifact-directory: app/bin
+
+      - name: Sign Windows installer (PFX certificate)
         if: matrix.family == 'windows' && env.HAS_WIN_CERT == 'true'
         env:
           SIGN_CERTIFICATE: ${{ secrets.SIGN_CERTIFICATE }}
@@ -295,6 +341,31 @@ jobs:
             /fd sha256 /tr http://timestamp.digicert.com /td sha256 `
             "app\bin\Bough-amd64-installer.exe"
           Remove-Item cert.pfx
+
+      - name: Verify Windows signature
+        if: matrix.family == 'windows' && env.HAS_WIN_SIGNED == 'true'
+        shell: pwsh
+        run: |
+          # Get-AuthenticodeSignature needs no Windows SDK, so this check works
+          # regardless of which signing path produced the signature.
+          $sig = Get-AuthenticodeSignature "app\bin\Bough-amd64-installer.exe"
+          Write-Host "Signature status: $($sig.Status)"
+          if ($sig.SignerCertificate) {
+            Write-Host "Signer: $($sig.SignerCertificate.Subject)"
+            Write-Host "Timestamp: $($sig.TimeStamperCertificate.NotBefore)"
+          }
+          if ($sig.Status -ne 'Valid') {
+            Write-Error "Windows installer signature is not valid: $($sig.Status) — $($sig.StatusMessage)"
+            exit 1
+          }
+
+      - name: Warn about unsigned Windows installer
+        if: matrix.family == 'windows' && env.HAS_WIN_SIGNED != 'true'
+        shell: pwsh
+        run: |
+          # Not a failure: unsigned builds are the current default until the
+          # SignPath Foundation application is approved. See CODE_SIGNING.md.
+          Write-Output "::warning::Windows installer is unsigned — no SIGN_CERTIFICATE and no SignPath token configured (see CODE_SIGNING.md)."
 
       - name: Stage Windows artifact
         if: matrix.family == 'windows'
@@ -342,7 +413,20 @@ jobs:
         run: |
           set -e
           mkdir -p release
-          find dist -type f ! -name '*.app' -exec cp {} release/ \;
+          # Only the per-platform release artifacts. The Windows job also uploads
+          # the *unsigned* installer for the SignPath signing request; it must
+          # never end up in the published release. `-path` keeps the pattern
+          # quoted, so artifact names containing spaces (matrix.label) are safe.
+          find dist -mindepth 2 -maxdepth 2 -type f -path 'dist/release-*/*' \
+            ! -name '*.app' -exec cp {} release/ \;
+          ls -l release/
+
+      - name: Generate SHA-256 checksums
+        working-directory: release
+        run: |
+          set -e
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
 
       - name: Publish release
         if: >

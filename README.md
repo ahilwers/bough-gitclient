@@ -52,6 +52,12 @@ on your machine, and no account is required.
 | Windows | 10 21H2 | NSIS installer (`.exe`) |
 | Linux | modern distros | AppImage |
 
+> **Windows SmartScreen:** Windows installers are signed via the
+> [SignPath Foundation](https://signpath.org/) as soon as that application is approved. Until then
+> Windows shows *"Windows protected your PC"* on first launch — click **More info → Run anyway**, and
+> compare the file against the `SHA256SUMS` published with the release. Details, privacy notes, and
+> verification steps: [`CODE_SIGNING.md`](CODE_SIGNING.md).
+
 ## Building from source
 
 **Prerequisites:** Go 1.27+, Node.js 22. Wails v3.0.0 is pinned as a Go tool in `app/go.mod` — use the
@@ -105,6 +111,7 @@ scripts/      Build and utility scripts
 ## Documentation
 
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — contribution guide (setup, conventions, pull request process)
+- [`CODE_SIGNING.md`](CODE_SIGNING.md) — code signing policy: what is signed, how to verify it, privacy
 - [`docs/`](docs/) — architecture and design documents
 - [`RELEASE.md`](RELEASE.md) — release build, code signing, and publishing on GitHub
 - [`AGENTS.md`](AGENTS.md) — guidance for AI agents and contributors working in this repository
