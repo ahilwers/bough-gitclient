@@ -5,6 +5,14 @@ vars:
   BIN_DIR: "bin"
   PACKAGE_MANAGER: '{{.PACKAGE_MANAGER | default "npm"}}'
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
+  # Build version. It is stamped into the binary (-X main.version) and into the
+  # platform metadata (Windows file properties, macOS Info.plist). The packaging
+  # tasks rebuild the binary themselves, so deriving the value here keeps every
+  # path consistent: `wails3 build`, `wails3 task windows:package`, the Makefile
+  # and CI. CI overrides it with the pushed tag via VERSION=... (CLI variables
+  # take precedence over this dynamic default).
+  VERSION:
+    sh: git describe --tags --always --dirty || echo dev
   # Target OS for build/package/run. Defaults to the host OS, and is overridden
   # by `wails3 build GOOS=...` (or the GOOS env var) for cross-compilation. The
   # tasks below dispatch to the matching platform Taskfile via this variable.

@@ -57,10 +57,14 @@ make clean          # Remove build artifacts
 - **Never** use raw JSON over stdin/stdout
 
 **Version Embedding:**
-Builds embed version via Makefile `LDFLAGS`:
-```bash
--X main.version=$(git describe --tags --always --dirty) -X main.buildDate=$(date -u +%Y-%m-%d)
-```
+- `VERSION` is a Taskfile variable in `app/Taskfile.yml`, defaulting to
+  `git describe --tags --always --dirty`; each platform Taskfile turns it into
+  `-ldflags "-X main.version=$VERSION"`.
+- The packaging tasks (`windows:package`, `darwin:package`, `linux:create:appimage`)
+  rebuild the binary themselves. The version therefore has to come from that
+  build (Taskfile default or `VERSION=...`, which CI passes as the pushed tag).
+  Setting ldflags only on a previous `wails3 build` is not enough: the packaged
+  app would report "Development build".
 
 **Testing:**
 - Go: `go test -race -cover ./...` (run from `app/`)

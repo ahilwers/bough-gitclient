@@ -2,7 +2,6 @@
 
 # Embed version from the nearest git tag (falls back to commit hash).
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-BUILD_DATE ?= $(shell date -u +%Y-%m-%d)
 
 # wails3 is pinned as a Go tool in app/go.mod. Wails v3's CLI resolves nested
 # `wails3` invocations from PATH (its Taskfiles call `wails3 ...` directly), so
@@ -10,9 +9,9 @@ BUILD_DATE ?= $(shell date -u +%Y-%m-%d)
 GO_BIN := $(shell go env GOPATH)/bin
 export PATH := $(GO_BIN):$(PATH)
 
-# The version ldflags are folded into the platform Taskfiles via the
-# LD_FLAGS variable (defaults to "-w -s" strip flags).
-LD_FLAGS := -w -s -X main.version=$(VERSION) -X main.buildDate=$(BUILD_DATE)
+# The version is passed to the platform Taskfiles as VERSION; each platform adds
+# its own ldflags (strip flags, -H windowsgui on Windows), so packaging tasks
+# that rebuild the binary embed the same version instead of "dev".
 
 # Go build tags forwarded to Wails (`EXTRA_TAGS` in the v3 Taskfiles).
 #
@@ -43,7 +42,7 @@ dev: install-wails3
 ## build-wails: Build the full Wails v3 application (outputs to app/bin/).
 ## macOS includes the Liquid Glass backdrop; use EXTRA_TAGS= to build without it.
 build-wails: install-wails3
-	cd app && wails3 build VERSION="$(VERSION)" LD_FLAGS="$(LD_FLAGS)" $(if $(TAGS),EXTRA_TAGS="$(TAGS)")
+	cd app && wails3 build VERSION="$(VERSION)" $(if $(TAGS),EXTRA_TAGS="$(TAGS)")
 
 ## build: Build the Go binary only (no frontend embedding), useful for backend tests.
 build:
@@ -77,7 +76,7 @@ generate-keys:
 
 ## appimage: Build a Linux AppImage via the Wails v3 Linux task (run on Linux).
 appimage: install-wails3
-	cd app && wails3 task linux:create:appimage GOOS=linux ARCH=amd64
+	cd app && wails3 task linux:create:appimage GOOS=linux ARCH=amd64 VERSION="$(VERSION)"
 
 ## appcast: Generate appcast.xml for the current git tag.
 appcast:
