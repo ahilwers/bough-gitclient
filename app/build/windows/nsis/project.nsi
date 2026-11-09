@@ -50,6 +50,7 @@ VIAddVersionKey "ProductName"     "${INFO_PRODUCTNAME}"
 ManifestDPIAware true
 
 !include "MUI.nsh"
+!include "LogicLib.nsh"
 
 !define MUI_ICON "..\icon.ico"
 !define MUI_UNICON "..\icon.ico"
@@ -76,7 +77,10 @@ OutFile "..\..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe" # Name of the i
 !if "${WAILS_INSTALL_SCOPE}" == "user"
     InstallDir "$LOCALAPPDATA\Programs\${INFO_PRODUCTNAME}"
 !else
-    InstallDir "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}"
+    # Install directly into the program directory. Do not add the company as an
+    # intermediate directory: a single app per vendor needs no extra level and
+    # users look for the app under its own name.
+    InstallDir "$PROGRAMFILES64\${INFO_PRODUCTNAME}"
 !endif
 ShowInstDetails show # This will always show the installation details.
 
@@ -92,6 +96,21 @@ Section
     SetOutPath $INSTDIR
     
     !insertmacro wails.files
+
+    # Releases before this one installed into $PROGRAMFILES64\<company>\Bough.
+    # Remove that leftover directory after upgrading, otherwise the old copy and
+    # its uninstaller stay behind next to the new installation. In silent mode
+    # (in-app updates) this happens without a prompt.
+    StrCpy $0 "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}"
+    ${If} "$0" != "$INSTDIR"
+    ${AndIf} ${FileExists} "$0\${PRODUCT_EXECUTABLE}"
+        IfSilent removeLegacy askLegacy
+        askLegacy:
+            MessageBox MB_YESNO|MB_ICONQUESTION "A previous version of ${INFO_PRODUCTNAME} was installed in:$\r$\n$\r$\n$0$\r$\n$\r$\nRemove it?" IDNO legacyHandled
+        removeLegacy:
+            RMDir /r "$0"
+        legacyHandled:
+    ${EndIf}
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"

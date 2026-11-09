@@ -10,7 +10,7 @@
     <Installer
         Path="bough"
         Arguments=""
-        InstallLocation="C:\Program Files\Achim Hilwers\Bough">
+        InstallLocation="C:\Program Files\Bough">
     </Installer>
     <PackageInformation
         PackageName="Bough"
