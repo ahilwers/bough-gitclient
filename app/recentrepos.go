@@ -24,7 +24,7 @@ func recentReposPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "Bough", "recent_repos.json"), nil
+	return filepath.Join(dir, "GitMorrow", "recent_repos.json"), nil
 }
 
 func loadRecentRepos() []string {

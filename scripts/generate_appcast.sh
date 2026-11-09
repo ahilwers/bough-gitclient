@@ -20,14 +20,14 @@
 #   SPARKLE_PRIVATE_KEY — Ed25519 private key PEM (required for macOS signatures)
 #
 # Output:
-#   appcast/appcast.xml  — deploy this to https://updates.bough.app/
+#   appcast/appcast.xml  — deploy this to https://updates.gitmorrow.app/
 #
 # The script fetches release metadata from the GitHub API and computes file
 # sizes + signatures for each artifact.
 set -euo pipefail
 
 VERSION="${1:?Usage: generate_appcast.sh <version-tag>}"
-REPO="${GITHUB_REPOSITORY:-ahilwers/bough-gitclient}"
+REPO="${GITHUB_REPOSITORY:-ahilwers/gitmorrow-gitclient}"
 REPO_OWNER="${REPO%%/*}"
 REPO_NAME="${REPO##*/}"
 RELEASE_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${VERSION}"
@@ -161,4 +161,4 @@ cat > appcast/appcast.xml << APPCAST_EOF
 APPCAST_EOF
 
 echo "Generated appcast/appcast.xml"
-echo "  Deploy to https://updates.bough.app/"
+echo "  Deploy to https://updates.gitmorrow.app/"

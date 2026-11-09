@@ -8,7 +8,7 @@
         <key>CFBundleExecutable</key>
             <string>GitMorrow</string>
         <key>CFBundleIdentifier</key>
-            <string>net.hilwers.bough</string>
+            <string>net.hilwers.gitmorrow</string>
         <key>CFBundleVersion</key>
             <string>0.1.0</string>
         <key>CFBundleGetInfoString</key>
@@ -25,7 +25,7 @@
             <string>Copyright 2026</string>
         <!-- Sparkle 2 auto-update -->
         <key>SUFeedURL</key>
-        <string>https://updates.bough.app/appcast.xml</string>
+        <string>https://updates.gitmorrow.app/appcast.xml</string>
         <key>SUPublicEDKey</key>
         <string>REPLACE_WITH_EDDSA_PUBLIC_KEY</string>
         <key>SUAllowsAutomaticUpdates</key>

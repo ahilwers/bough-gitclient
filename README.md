@@ -25,7 +25,7 @@ GitMorrow is **free software**: free to use, free to modify, and free to share â
 stay on your machine, and no account is required.
 
 > **Status:** GitMorrow is in active development and still pre-1.0. Preview builds for all three
-> platforms are published on the [Releases page](https://github.com/ahilwers/bough-gitclient/releases/latest);
+> platforms are published on the [Releases page](https://github.com/ahilwers/gitmorrow/releases/latest);
 > expect breaking changes between versions and please report what breaks.
 
 ## Features

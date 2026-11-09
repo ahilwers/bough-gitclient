@@ -86,18 +86,6 @@ ShowInstDetails show # This will always show the installation details.
 
 Function .onInit
    !insertmacro wails.checkArchitecture
-
-   # Preserve the existing install location when upgrading from Bough.
-   # The app's display name changes, but an upgrade should not leave a second
-   # copy behind or break the existing uninstaller entry.
-   !if "${WAILS_INSTALL_SCOPE}" == "user"
-       StrCpy $0 "$LOCALAPPDATA\Programs\Bough"
-   !else
-       StrCpy $0 "$PROGRAMFILES64\Bough"
-   !endif
-   ${If} ${FileExists} "$0\Bough.exe"
-       StrCpy $INSTDIR $0
-   ${EndIf}
 FunctionEnd
 
 Section
@@ -108,26 +96,6 @@ Section
     SetOutPath $INSTDIR
     
     !insertmacro wails.files
-
-    # Remove the old executable and shortcuts after upgrading from Bough.
-    Delete "$INSTDIR\Bough.exe"
-    Delete "$SMPROGRAMS\Bough.lnk"
-    Delete "$DESKTOP\Bough.lnk"
-
-    # Releases before this one installed into $PROGRAMFILES64\<company>\Bough.
-    # Remove that leftover directory after upgrading, otherwise the old copy and
-    # its uninstaller stay behind next to the new installation. In silent mode
-    # (in-app updates) this happens without a prompt.
-    StrCpy $0 "$PROGRAMFILES64\${INFO_COMPANYNAME}\Bough"
-    ${If} "$0" != "$INSTDIR"
-    ${AndIf} ${FileExists} "$0\${PRODUCT_EXECUTABLE}"
-        IfSilent removeLegacy askLegacy
-        askLegacy:
-            MessageBox MB_YESNO|MB_ICONQUESTION "A previous version of ${INFO_PRODUCTNAME} was installed in:$\r$\n$\r$\n$0$\r$\n$\r$\nRemove it?" IDNO legacyHandled
-        removeLegacy:
-            RMDir /r "$0"
-        legacyHandled:
-    ${EndIf}
 
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"

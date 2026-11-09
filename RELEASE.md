@@ -116,7 +116,7 @@ If you want to enable the auto-update feature (Sparkle/appcast):
 - **`SPARKLE_PUBLIC_KEY`** = the base64 "Public key" from the script output → add as a secret and
   insert into `app/build/darwin/Info.plist` (`SUPublicEDKey`).
 - The appcast XML is pushed to the `gh-pages` branch by the workflow and needs web hosting at
-  `https://updates.bough.app/appcast.xml` before Sparkle can fetch it.
+  `https://updates.gitmorrow.app/appcast.xml` before Sparkle can fetch it.
   **This is optional** and does not block the release when the key is missing.
 
 ---

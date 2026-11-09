@@ -12,7 +12,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { GetAppVersion } from '@bindings/gitmorrow/app'
 
-const APPCAST_URL = 'https://updates.bough.app/appcast.xml'
+const APPCAST_URL = 'https://updates.gitmorrow.app/appcast.xml'
 
 interface UpdateInfo {
   currentVersion: string

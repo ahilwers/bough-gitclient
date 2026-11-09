@@ -361,7 +361,7 @@ jobs:
 
   # ────────────────────── Appcast (optional auto-update) ──────────────────────
   # Generates the Sparkle appcast.xml and publishes it to the gh-pages branch,
-  # which hosting the XML at updates.bough.app enables. Optional: steps are
+  # which hosting the XML at updates.gitmorrow.app enables. Optional: steps are
   # skipped when SPARKLE_PRIVATE_KEY is not configured. Failing here never
   # blocks the release.
   appcast:

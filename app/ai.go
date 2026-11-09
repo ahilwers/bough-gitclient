@@ -32,7 +32,7 @@ import (
 
 const maxAIDiffKiB = 512
 const maxAIDiff = maxAIDiffKiB * 1024
-const aiService = "Bough AI commit messages"
+const aiService = "GitMorrow AI commit messages"
 
 // AISettings contains no secret. Credentials never return to the webview.
 type AISettings struct {
@@ -44,7 +44,7 @@ type AISettings struct {
 
 func aiSettingsPath() (string, error) {
 	dir, err := os.UserConfigDir()
-	return filepath.Join(dir, "Bough", "ai.json"), err
+	return filepath.Join(dir, "GitMorrow", "ai.json"), err
 }
 
 func validateAISettings(s AISettings) error {

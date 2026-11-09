@@ -37,7 +37,7 @@ func windowStatePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(dir, "Bough", "window.json"), nil
+	return filepath.Join(dir, "GitMorrow", "window.json"), nil
 }
 
 // loadWindowState returns the persisted window state, falling back to safe

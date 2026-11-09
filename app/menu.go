@@ -59,10 +59,10 @@ func buildApplicationMenu(app *application.App) *application.Menu {
 		app.Event.Emit("app:keyboard-shortcuts")
 	})
 	help.Add("GitMorrow on GitHub").OnClick(func(*application.Context) {
-		app.Browser.OpenURL("https://github.com/ahilwers/bough-gitclient")
+		app.Browser.OpenURL("https://github.com/ahilwers/gitmorrow")
 	})
 	help.Add("Report an Issue").OnClick(func(*application.Context) {
-		app.Browser.OpenURL("https://github.com/ahilwers/bough-gitclient/issues")
+		app.Browser.OpenURL("https://github.com/ahilwers/gitmorrow/issues")
 	})
 
 	return menu

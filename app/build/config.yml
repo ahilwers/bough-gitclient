@@ -7,8 +7,7 @@ version: '3'
 info:
   companyName: "Achim Hilwers" # The name of the company
   productName: "GitMorrow" # The name of the application
-  # Retain the original identifier so existing installations can upgrade in place.
-  productIdentifier: "net.hilwers.bough" # Stable legacy bundle/package id
+  productIdentifier: "net.hilwers.gitmorrow" # The unique product identifier
   description: "The Git Client Of Tomorrow" # The application description
   copyright: "Copyright 2026" # Copyright text
   comments: "A fast, native Git client for macOS, Windows and Linux" # Comments

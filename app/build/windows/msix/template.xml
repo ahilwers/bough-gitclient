@@ -25,7 +25,7 @@
         </Capabilities>
         <Applications>
             <Application
-                Id="net.hilwers.bough"
+                Id="net.hilwers.gitmorrow"
                 Description="A beautiful Git GUI client"
                 DisplayName="GitMorrow"
                 ExecutableName="gitmorrow"
