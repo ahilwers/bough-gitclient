@@ -116,13 +116,23 @@ func (r *Repository) DiscardHunk(hunkPatch string) error {
 }
 
 // CreateCommit creates a commit with the given message.
-// Returns the full 40-character commit hash.
+// Returns the commit hash (abbreviated for merge commits).
 func (r *Repository) CreateCommit(message string) (string, error) {
+	// Capture the worktree once; all operations in this commit use that path.
+	path := r.Path
+	gitPath, err := CLI(path, "rev-parse", "--git-path", "MERGE_HEAD")
+	if err != nil {
+		return "", err
+	}
+	mergeHead := strings.TrimSpace(gitPath)
+	if !filepath.IsAbs(mergeHead) {
+		mergeHead = filepath.Join(path, mergeHead)
+	}
 	// When a merge is in progress (MERGE_HEAD exists), go-git's wt.Commit()
 	// incorrectly reports "clean working tree" and cannot create the two-parent
 	// merge commit. Use the git CLI instead, which handles MERGE_HEAD correctly.
-	if _, err := os.Stat(filepath.Join(r.Path, ".git", "MERGE_HEAD")); err == nil {
-		out, err := CLI(r.Path, "commit", "-m", message)
+	if _, err := os.Stat(mergeHead); err == nil {
+		out, err := CLI(path, "commit", "-m", message)
 		if err != nil {
 			return "", err
 		}
@@ -142,18 +152,24 @@ func (r *Repository) CreateCommit(message string) (string, error) {
 		return "", nil // hash not critical — caller only uses it for display
 	}
 
-	wt, err := r.repo.Worktree()
+	repo, err := gogit.PlainOpenWithOptions(path, &gogit.PlainOpenOptions{
+		DetectDotGit: true, EnableDotGitCommonDir: true,
+	})
+	if err != nil {
+		return "", err
+	}
+	wt, err := repo.Worktree()
 	if err != nil {
 		return "", err
 	}
 	// Try local config first (covers test repos), then fall back to global.
 	name, email := "", ""
-	if localCfg, err := r.repo.ConfigScoped(config.LocalScope); err == nil {
+	if localCfg, err := repo.ConfigScoped(config.LocalScope); err == nil {
 		name = localCfg.User.Name
 		email = localCfg.User.Email
 	}
 	if name == "" || email == "" {
-		if globalCfg, err := r.repo.ConfigScoped(config.GlobalScope); err == nil {
+		if globalCfg, err := repo.ConfigScoped(config.GlobalScope); err == nil {
 			if name == "" {
 				name = globalCfg.User.Name
 			}
