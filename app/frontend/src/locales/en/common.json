@@ -25,6 +25,7 @@
       "storage": "Logging is disabled because local storage failed. The application can continue without logging."
     },
     "category": {
+      "already-exists": "A tag with this name already exists. Choose another name.",
       "unknown": "Details omitted: this error could not be safely classified. You can retry, check repository status, or deliberately copy raw output after reading the warning.",
       "authentication": "Check your credentials and the remote access permissions, then retry.",
       "network": "Check your connection and whether the remote host is reachable, then retry.",

@@ -17,6 +17,19 @@ import (
 	"testing"
 )
 
+func TestDuplicateTagFailureIsUsefulWithoutLeakingDetails(t *testing.T) {
+	f := newFailure([]string{"-c", "tag.gpgSign=false", "tag", "--", "private-token", "hash"}, errors.New("exit status 128"), "fatal: tag 'private-token' already exists")
+	if f.Operation != "tag" {
+		t.Errorf("operation = %q, want tag", f.Operation)
+	}
+	if !strings.Contains(f.Error(), "already exists") {
+		t.Errorf("duplicate-tag explanation missing: %s", f.Error())
+	}
+	if strings.Contains(f.Error(), "private-token") {
+		t.Errorf("sensitive details leaked: %s", f.Error())
+	}
+}
+
 func TestDiagnosticCaptureIsBounded(t *testing.T) {
 	var buffer diagnosticBuffer
 	input := strings.Repeat("secret", 100000)

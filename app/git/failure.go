@@ -31,6 +31,9 @@ type Failure struct {
 }
 
 func (f *Failure) Error() string {
+	if f.Category == "already-exists" && f.Operation == "tag" {
+		return fmt.Sprintf("git tag failed (exit %d; tag already exists). Details omitted.", f.ExitCode)
+	}
 	return fmt.Sprintf("git %s failed (exit %d; %s). Details omitted.", f.Operation, f.ExitCode, f.Category)
 }
 func (f *Failure) Unwrap() error      { return f.cause }
@@ -46,10 +49,21 @@ func diagnostic(err error) string {
 
 // operation accepts only fixed command names, never arbitrary arguments.
 func operation(args []string) string {
-	if len(args) > 0 {
+	for len(args) > 0 {
 		switch args[0] {
+		case "-c":
+			if len(args) < 2 {
+				return "unknown"
+			}
+			args = args[2:]
+			continue
+		case "--no-replace-objects":
+			args = args[1:]
+			continue
 		case "add", "restore", "apply", "stash", "pull", "push", "fetch", "rebase", "merge", "commit", "cherry-pick", "branch", "tag", "worktree", "checkout", "switch", "reset", "revert", "rm", "show", "diff", "config", "rev-parse", "ls-remote", "credential", "clone", "status", "log":
 			return args[0]
+		default:
+			return "unknown"
 		}
 	}
 	return "unknown"
@@ -92,8 +106,11 @@ func newFailure(args []string, err error, raw string) *Failure {
 		raw = raw[:64*1024]
 	}
 	category := "unknown"
+	op := operation(args)
 	text := strings.ToLower(raw)
 	switch {
+	case op == "tag" && strings.Contains(text, "already exists"):
+		category = "already-exists"
 	case errors.Is(err, context.DeadlineExceeded):
 		category = "timeout"
 	case errors.Is(err, context.Canceled):
@@ -107,5 +124,5 @@ func newFailure(args []string, err error, raw string) *Failure {
 	case strings.Contains(text, "non-fast-forward"), strings.Contains(text, "[rejected]"):
 		category = "rejected"
 	}
-	return &Failure{Operation: operation(args), ExitCode: code, Category: category, raw: raw, cause: err}
+	return &Failure{Operation: op, ExitCode: code, Category: category, raw: raw, cause: err}
 }

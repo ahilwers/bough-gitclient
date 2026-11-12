@@ -94,7 +94,7 @@ func (l *Logger) Record(op string, code int, category string) {
 		op = "unknown"
 	}
 	switch category {
-	case "authentication", "network", "locked", "rejected", "timeout", "cancelled":
+	case "authentication", "network", "locked", "rejected", "timeout", "cancelled", "already-exists":
 	default:
 		category = "unknown"
 	}

@@ -253,6 +253,9 @@ func TestCreateTagRejectsInvalidInputs(t *testing.T) {
 	if err := repo.CreateTag("existing", head); err != nil {
 		t.Fatal(err)
 	}
+	if duplicate := repo.CreateTag("existing", head); duplicate == nil || !strings.Contains(duplicate.Error(), "already exists") {
+		t.Fatalf("duplicate tag should have a safe useful explanation: %v", duplicate)
+	}
 	before := creationGit(t, dir, "rev-parse", "refs/tags/existing")
 	for _, tt := range []struct{ name, target string }{
 		{"", head},

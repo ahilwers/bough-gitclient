@@ -25,6 +25,7 @@
       "storage": "Protokollierung wegen eines lokalen Speicherfehlers deaktiviert. Die Anwendung funktioniert weiterhin."
     },
     "category": {
+      "already-exists": "Ein Tag mit diesem Namen existiert bereits. Wähle einen anderen Namen.",
       "unknown": "Details ausgelassen: Dieser Fehler konnte nicht sicher eingeordnet werden. Prüfe den Repository-Status oder kopiere die rohe Ausgabe bewusst nach Lesen der Warnung.",
       "authentication": "Prüfe Zugangsdaten und Zugriffsrechte für den Remote und versuche es erneut.",
       "network": "Prüfe die Verbindung und die Erreichbarkeit des Remote-Hosts.",
