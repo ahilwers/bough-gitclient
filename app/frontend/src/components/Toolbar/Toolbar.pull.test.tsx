@@ -68,11 +68,12 @@ for (const strategy of ['Merge', 'Rebase']) it(`runs one-shot ${strategy} and re
   expect(invalidate).toHaveBeenCalled()
 })
 it('routes conflicts to Changes without success and refreshes', async () => {
-  vi.mocked(ResolvePull).mockResolvedValue({ outcome: 'conflict', detail: 'conflicts' })
+  vi.mocked(ResolvePull).mockResolvedValue({ outcome: 'conflict', diagnosticID: 'abcdefgh23456789abcdefgh23' })
   const { invalidate } = setup(); await pull(); await screen.findByRole('dialog')
   fireEvent.click(screen.getByRole('button', { name: 'Merge' }))
   await waitFor(() => expect(useGitStore.getState().activeView).toBe('changes'))
   expect(useGitStore.getState().flash?.message).toMatch(/Pull stopped/)
+  expect(useGitStore.getState().flash?.message).toContain('[git-error:abcdefgh23456789abcdefgh23]')
   expect(invalidate).toHaveBeenCalled()
 })
 it('preserves authentication errors without prompting for a strategy', async () => {

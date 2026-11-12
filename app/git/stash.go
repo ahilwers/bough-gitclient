@@ -61,9 +61,9 @@ func (r *Repository) GetStashDiff(index int) ([]DiffFile, error) {
 func (r *Repository) ApplyStashHunk(patch string) error {
 	cmd := execGit(r.Path, "apply", "--unidiff-zero", "-")
 	cmd.Stdin = strings.NewReader(patch)
-	out, err := cmd.CombinedOutput()
+	out, err := capturedOutput(cmd)
 	if err != nil {
-		return fmt.Errorf("git apply: %w\n%s", err, string(out))
+		return newFailure([]string{"apply"}, err, string(out))
 	}
 	return nil
 }

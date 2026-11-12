@@ -1,4 +1,39 @@
 {
+  "diagnostics": {
+    "failed": "Git operation failed.",
+    "settings": "Diagnostic settings",
+    "title": "Git error details",
+    "policy": "Local only. Logs contain timestamp, operation, exit code and category, never command arguments or output. No uploads. Up to five files of 2 MiB each. Raw output is kept only briefly in backend memory (up to 64 KiB).",
+    "summary": "Operation: {{operation}}\nExit code: {{exitCode}}\nCategory: {{category}}",
+    "copySafe": "Copy safe summary",
+    "copyRaw": "Copy raw output…",
+    "warning": "Raw Git output may contain passwords, tokens, remote URLs, paths and other secrets. Copy only if you intend to share it safely. Clipboard history and other applications may retain it. Nothing is uploaded automatically.",
+    "confirmRaw": "I understand — copy raw output",
+    "cancel": "Cancel",
+    "close": "Close",
+    "enabled": "Record local Git failure metadata",
+    "openFolder": "Open log folder",
+    "copied": "Copied",
+    "unavailable": "Diagnostics unavailable.",
+    "actionFailed": "The action could not be completed.",
+    "expired": "Details expired or unavailable.",
+    "details": "Details",
+    "dismiss": "Dismiss",
+    "reason": {
+      "disabled": "Logging is disabled by your setting.",
+      "protection": "Logging is disabled because protected storage could not be established or verified. The application can continue without logging.",
+      "storage": "Logging is disabled because local storage failed. The application can continue without logging."
+    },
+    "category": {
+      "unknown": "Details omitted: this error could not be safely classified. You can retry, check repository status, or deliberately copy raw output after reading the warning.",
+      "authentication": "Check your credentials and the remote access permissions, then retry.",
+      "network": "Check your connection and whether the remote host is reachable, then retry.",
+      "locked": "Another Git operation may hold the index lock. Wait for it to finish. Do not delete a lock while Git is running.",
+      "rejected": "The remote rejected this operation. Fetch and inspect the remote branch before deciding how to continue.",
+      "timeout": "Git exceeded the operation timeout. Check credential prompts and running Git processes before retrying.",
+      "cancelled": "The operation was cancelled. Check repository status before retrying."
+    }
+  },
   "app": {
     "name": "GitMorrow"
   },

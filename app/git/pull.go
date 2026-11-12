@@ -13,6 +13,7 @@ package git
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -33,9 +34,11 @@ type PullSnapshot struct {
 }
 
 type PullResult struct {
-	Outcome  string        `json:"outcome"` // success | choice | conflict
-	Snapshot *PullSnapshot `json:"snapshot,omitempty"`
-	Detail   string        `json:"detail,omitempty"`
+	Failure      *Failure      `json:"-"`
+	DiagnosticID string        `json:"diagnosticID,omitempty"`
+	Outcome      string        `json:"outcome"` // success | choice | conflict
+	Snapshot     *PullSnapshot `json:"snapshot,omitempty"`
+	Detail       string        `json:"detail,omitempty"`
 }
 
 func (r *Repository) pullSnapshot() (PullSnapshot, error) {
@@ -72,12 +75,12 @@ func pullCLI(path string, args ...string) error {
 	cmd := sysproc.CommandContext(ctx, "git", args...)
 	cmd.Dir = path
 	cmd.Env = append(os.Environ(), "LC_ALL=C", "LANG=C", "GIT_EDITOR=true", "GIT_SEQUENCE_EDITOR=true", "GIT_TERMINAL_PROMPT=0")
-	out, err := cmd.CombinedOutput()
+	out, err := capturedOutput(cmd)
 	if ctx.Err() != nil {
-		return fmt.Errorf("git pull: timed out after %s\n%s", cliTimeout, out)
+		return newFailure([]string{"pull"}, ctx.Err(), string(out))
 	}
 	if err != nil {
-		return fmt.Errorf("git pull: %w\n%s", err, out)
+		return newFailure([]string{"pull"}, err, string(out))
 	}
 	return nil
 }
@@ -126,7 +129,9 @@ func (r *Repository) finishPull(pullErr error, before PullSnapshot, offerChoice 
 	// A failed integration is not success. Route even non-file stops (e.g. a
 	// failed commit hook) to the existing continue/abort UI.
 	if r.DetectMergeState(0) != nil || r.DetectRebaseState(0) != nil {
-		return PullResult{Outcome: "conflict", Detail: pullErr.Error()}, nil
+		var failure *Failure
+		errors.As(pullErr, &failure)
+		return PullResult{Outcome: "conflict", Failure: failure}, nil
 	}
 	if offerChoice && !IsAuthError(pullErr) && strategyRequired(pullErr) {
 		after, err := r.pullSnapshot()
@@ -142,7 +147,7 @@ func strategyRequired(err error) bool {
 	// Git has no structured error code for these failures. Pin the subprocess
 	// locale, then require BOTH its specific fatal diagnostic and actual graph
 	// divergence. Never infer this from arbitrary frontend/localized text.
-	msg := err.Error()
+	msg := diagnostic(err)
 	return strings.Contains(msg, "fatal: Need to specify how to reconcile divergent branches.") || strings.Contains(msg, "fatal: Not possible to fast-forward, aborting.")
 }
 

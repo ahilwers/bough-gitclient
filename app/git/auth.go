@@ -58,8 +58,8 @@ func EnsureCredentialHelper() error {
 	}
 
 	cmd := sysproc.Command("git", "config", "--global", "credential.helper", helper)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("could not set credential helper %q: %w\n%s", helper, err, out)
+	if out, err := capturedOutput(cmd); err != nil {
+		return newFailure([]string{"config"}, err, string(out))
 	}
 	return nil
 }
@@ -85,7 +85,7 @@ func IsAuthError(err error) bool {
 	if err == nil {
 		return false
 	}
-	msg := strings.ToLower(err.Error())
+	msg := strings.ToLower(diagnostic(err))
 	triggers := []string{
 		"authentication failed",
 		"could not read username",
@@ -116,8 +116,8 @@ func StoreCredentials(repoURL, username, password string) error {
 
 	cmd := sysproc.Command("git", "credential", "approve")
 	cmd.Stdin = strings.NewReader(input)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("git credential approve: %w\n%s", err, out)
+	if out, err := capturedOutput(cmd); err != nil {
+		return newFailure([]string{"credential"}, err, string(out))
 	}
 	return nil
 }

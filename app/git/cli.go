@@ -14,7 +14,6 @@ package git
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"time"
@@ -53,14 +52,15 @@ func cliWithEnv(dir string, env []string, args ...string) (string, error) {
 	if len(env) > 0 {
 		cmd.Env = append(os.Environ(), env...)
 	}
-	var stdout, stderr bytes.Buffer
+	var stdout bytes.Buffer
+	var stderr diagnosticBuffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		if ctx.Err() != nil {
-			return "", fmt.Errorf("git %v: timed out after %s", filtered, cliTimeout)
+			err = ctx.Err()
 		}
-		return "", fmt.Errorf("git %v: %w\n%s", filtered, err, stderr.String())
+		return "", newFailure(filtered, err, stderr.String())
 	}
 	return stdout.String(), nil
 }

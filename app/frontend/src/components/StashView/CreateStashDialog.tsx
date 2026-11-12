@@ -11,6 +11,7 @@
 
 import { useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
+import { DiagnosticMessage } from '../shared/ErrorDetails'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -90,7 +91,7 @@ export function CreateStashDialog({ onClose }: Props) {
               <input type="checkbox" checked={includeUntracked} onChange={event => setIncludeUntracked(event.target.checked)} disabled={busy || !context.valid} style={{ accentColor: 'var(--acc)' }} />
               {tr('untracked', 'Include untracked files (optional)', 'Nicht verfolgte Dateien einbeziehen (optional)')}
             </label>
-            {(contextError || error) && <p role="alert" style={errorStyle}>{contextError || error}</p>}
+            {(contextError || error) && <p role="alert" style={errorStyle}><DiagnosticMessage message={contextError || error} /></p>}
             <div style={actionsStyle}>
               <Dialog.Close asChild><button type="button" style={cancelStyle} disabled={busy}>{tr('cancel', 'Cancel', 'Abbrechen')}</button></Dialog.Close>
               <button type="submit" style={{ ...primaryStyle, opacity: busy || !context.valid ? 0.6 : 1 }} disabled={busy || !context.valid}>
