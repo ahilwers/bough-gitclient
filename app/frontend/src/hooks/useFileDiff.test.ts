@@ -9,7 +9,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
+import { useGitStore } from '@/stores/gitStore'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createWrapper } from '@/test/queryWrapper'
 import { useFileDiff } from './useFileDiff'
@@ -29,6 +30,15 @@ beforeEach(() => {
 })
 
 describe('useFileDiff', () => {
+  it('does not expose a previous worktree diff while the new diff loads', async () => {
+    useGitStore.setState({ activeRepo: '/repo', activeWorktree: '/one' })
+    vi.mocked(GetFileDiff).mockReset().mockResolvedValueOnce(makeDiff({ oldPath: 'old content' }))
+      .mockImplementationOnce(() => new Promise(() => {}))
+    const { result } = renderHook(() => useFileDiff('shared.ts', false), { wrapper: createWrapper() })
+    await waitFor(() => expect(result.current.data?.oldPath).toBe('old content'))
+    act(() => useGitStore.setState({ activeWorktree: '/two' }))
+    await waitFor(() => expect(result.current.data).toBeUndefined())
+  })
   it('returns diff data from the backend', async () => {
     const diff = makeDiff({ path: 'src/app.ts', hunks: [] })
     vi.mocked(GetFileDiff).mockResolvedValue(diff)

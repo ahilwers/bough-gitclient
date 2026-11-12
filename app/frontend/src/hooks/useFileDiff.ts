@@ -11,15 +11,17 @@
 
 import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useGitStore } from '@/stores/gitStore'
 import { GetFileDiff, GetUntrackedFileDiff } from '@bindings/gitmorrow/app'
 import { Events } from '@wailsio/runtime'
 import type { DiffFile } from '@/lib/types'
 
 export function useFileDiff(filePath: string | null, staged: boolean, isUntracked = false) {
   const queryClient = useQueryClient()
+  const { activeRepo, activeWorktree } = useGitStore()
 
   const query = useQuery({
-    queryKey: ['diff', filePath, staged, isUntracked],
+    queryKey: ['diff', filePath, staged, isUntracked, activeRepo, activeWorktree],
     queryFn: async (): Promise<DiffFile> => {
       if (isUntracked) {
         return (await GetUntrackedFileDiff(filePath!)) as DiffFile

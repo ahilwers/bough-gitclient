@@ -27,7 +27,13 @@ import type { FileStatus } from '@/lib/types'
 export default function ChangesView() {
   const [selectedFile, setSelectedFile] = useState<FileStatus | null>(null)
   const [selectedStaged, setSelectedStaged] = useState(false)
-  const { showFlash, cherryPickConflictActive } = useGitStore()
+  const { showFlash, cherryPickConflictActive, activeRepo, activeWorktree } = useGitStore()
+
+  // A file with the same path in another worktree is a different selection.
+  useEffect(() => {
+    setSelectedFile(null)
+    setSelectedStaged(false)
+  }, [activeRepo, activeWorktree])
   const queryClient = useQueryClient()
   const { data: status } = useStatus()
   const mergeState = status?.mergeState

@@ -10,6 +10,7 @@
     "pushPending_other": "Push — {{count}} unpushed commits (compared with upstream)",
     "branch": "Branch",
     "currentBranch": "Current branch: {{branch}}",
+    "currentWorktree": "Current worktree: {{path}}",
     "detachedHead": "Detached HEAD",
     "stash": "Stash",
     "tag": "Tag"
@@ -55,7 +56,11 @@
     "newBranch": "Branch",
     "newPath": "Path",
     "create": "Create Worktree",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "loading": "Loading worktrees…",
+    "loadError": "Could not load worktrees",
+    "empty": "No worktrees",
+    "hasUncommittedChanges": "Has uncommitted changes"
   },
   "push": {
     "createUpstream": {
