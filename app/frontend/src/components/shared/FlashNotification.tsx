@@ -10,14 +10,26 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { Button } from './Button'
+import { useEffect, useState } from 'react'
+import { ReportDiagnostic } from '@bindings/gitmorrow/app'
+import { useTranslation } from 'react-i18next'
+import { ErrorDetails } from './ErrorDetails'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react'
 import { useGitStore } from '@/stores/gitStore'
 
 export default function FlashNotification() {
+  const { t } = useTranslation()
+  const [detailsID, setDetailsID] = useState<string | null>(null)
   const flash = useGitStore((s) => s.flash)
   const clearFlash = useGitStore((s) => s.clearFlash)
 
+  const marker = flash?.message.match(/\s*\[git-error:([A-Za-z0-9_-]{20,64})\]/)
+  const message = flash?.message.replace(/\s*\[git-error:[A-Za-z0-9_-]{20,64}\]/, '')
+  const diagnosticID = marker?.[1]
+  useEffect(() => {
+    if (diagnosticID) void ReportDiagnostic(diagnosticID).catch(() => {})
+  }, [diagnosticID])
   const isError = flash?.type === 'danger'
 
   const bg =
@@ -31,6 +43,8 @@ export default function FlashNotification() {
     Info
 
   return (
+    <>
+    {detailsID && <ErrorDetails key={detailsID} id={detailsID} onClose={() => setDetailsID(null)} />}
     <AnimatePresence>
       {flash && (
         <motion.div
@@ -64,12 +78,13 @@ export default function FlashNotification() {
           }}
         >
           <Icon size={15} style={{ flexShrink: 0, marginTop: isError ? 1 : 0 }} />
-          <span style={{ flex: 1 }}>{flash.message}</span>
+          <span style={{ flex: 1 }}>{message}</span>
+          {marker && <Button onClick={() => setDetailsID(marker[1])}>{t('diagnostics.details')}</Button>}
           {/* Errors show an explicit dismiss button since they live for 6 s */}
           {isError && (
             <Button variant="ghost"
               onClick={clearFlash}
-              aria-label="Dismiss"
+              aria-label={t('diagnostics.dismiss')}
               style={{
                 background: 'none',
                 border: 'none',
@@ -88,5 +103,6 @@ export default function FlashNotification() {
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   )
 }

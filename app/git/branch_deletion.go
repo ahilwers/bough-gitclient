@@ -49,16 +49,16 @@ func remoteGit(dir string, args ...string) (string, error) {
 		return out, nil
 	}
 	if IsAuthError(err) {
-		return "", ErrAuthFailed
+		return "", fmt.Errorf("%w: %w", ErrAuthFailed, err)
 	}
-	msg := strings.ToLower(err.Error())
+	msg := strings.ToLower(diagnostic(err))
 	if strings.Contains(msg, "stale info") {
-		return "", fmt.Errorf("remote branch changed; prepare deletion again")
+		return "", fmt.Errorf("remote branch changed; prepare deletion again: %w", err)
 	}
 	if strings.Contains(msg, "rejected") || strings.Contains(msg, "denied") {
-		return "", fmt.Errorf("remote server rejected branch deletion")
+		return "", fmt.Errorf("remote server rejected branch deletion: %w", err)
 	}
-	return "", fmt.Errorf("could not contact push destination or delete remote branch")
+	return "", fmt.Errorf("could not contact push destination or delete remote branch: %w", err)
 }
 
 func safeDestination(remote, raw string) string {
@@ -153,7 +153,7 @@ func (r *Repository) PrepareBranchDeletion(name, remote string) (BranchDeletionI
 	} else {
 		var exit *exec.ExitError
 		if !errors.As(e, &exit) || exit.ExitCode() != 1 {
-			return info, fmt.Errorf("could not inspect URL rewrite rules")
+			return info, fmt.Errorf("could not inspect URL rewrite rules: %w", e)
 		}
 	}
 	fetch, err := CLI(r.Path, "config", "--get-all", "remote."+remote+".fetch")
@@ -162,7 +162,7 @@ func (r *Repository) PrepareBranchDeletion(name, remote string) (BranchDeletionI
 	}
 	urls, err := CLI(r.Path, "remote", "get-url", "--push", "--all", "--", remote)
 	if err != nil {
-		return info, fmt.Errorf("configured remote has no push destination")
+		return info, fmt.Errorf("configured remote has no push destination: %w", err)
 	}
 	urlLines := strings.Split(strings.TrimSuffix(urls, "\n"), "\n")
 	if len(urlLines) != 1 || urlLines[0] == "" || strings.HasPrefix(urlLines[0], "-") {
@@ -173,7 +173,7 @@ func (r *Repository) PrepareBranchDeletion(name, remote string) (BranchDeletionI
 	// push configuration instead of treating it as the confirmed URL.
 	remotes, err := CLI(r.Path, "remote")
 	if err != nil {
-		return info, fmt.Errorf("could not inspect configured remotes")
+		return info, fmt.Errorf("could not inspect configured remotes: %w", err)
 	}
 	for _, configured := range strings.Split(strings.TrimSpace(remotes), "\n") {
 		if rawURL == configured {
@@ -184,7 +184,7 @@ func (r *Repository) PrepareBranchDeletion(name, remote string) (BranchDeletionI
 	// them in the snapshot even when they differ from the push destination.
 	fetchURLs, err := CLI(r.Path, "remote", "get-url", "--all", "--", remote)
 	if err != nil {
-		return info, fmt.Errorf("could not inspect remote fetch destinations")
+		return info, fmt.Errorf("could not inspect remote fetch destinations: %w", err)
 	}
 	info.Destination = safeDestination(remote, rawURL)
 	info.ConfigFingerprint = branchDeletionFingerprint(remote, fetch, rawURL, fetchURLs, tracking, trackingOID)

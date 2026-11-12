@@ -12,7 +12,6 @@
 package git
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,9 +56,9 @@ func (r *Repository) UnstageFile(filePath string) error {
 func (r *Repository) StageHunkViaApply(hunkPatch string) error {
 	cmd := execGit(r.Path, "apply", "--cached", "--unidiff-zero", "-")
 	cmd.Stdin = strings.NewReader(hunkPatch)
-	out, err := cmd.CombinedOutput()
+	out, err := capturedOutput(cmd)
 	if err != nil {
-		return fmt.Errorf("git apply: %w\n%s", err, string(out))
+		return newFailure([]string{"apply"}, err, string(out))
 	}
 	return nil
 }
@@ -69,9 +68,9 @@ func (r *Repository) StageHunkViaApply(hunkPatch string) error {
 func (r *Repository) UnstageHunkViaApply(hunkPatch string) error {
 	cmd := execGit(r.Path, "apply", "--cached", "-R", "--unidiff-zero", "-")
 	cmd.Stdin = strings.NewReader(hunkPatch)
-	out, err := cmd.CombinedOutput()
+	out, err := capturedOutput(cmd)
 	if err != nil {
-		return fmt.Errorf("git apply --cached -R: %w\n%s", err, string(out))
+		return newFailure([]string{"apply"}, err, string(out))
 	}
 	return nil
 }
@@ -108,9 +107,9 @@ func (r *Repository) DiscardStagedFile(filePath string) error {
 func (r *Repository) DiscardHunk(hunkPatch string) error {
 	cmd := execGit(r.Path, "apply", "-R", "--unidiff-zero", "-")
 	cmd.Stdin = strings.NewReader(hunkPatch)
-	out, err := cmd.CombinedOutput()
+	out, err := capturedOutput(cmd)
 	if err != nil {
-		return fmt.Errorf("git apply -R: %w\n%s", err, string(out))
+		return newFailure([]string{"apply"}, err, string(out))
 	}
 	return nil
 }

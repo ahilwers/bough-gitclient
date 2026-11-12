@@ -9,6 +9,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import i18n from '@/i18n'
+
 /**
  * Returns the first 7 characters of a git hash.
  * If the string is shorter than 7 chars it is returned as-is.
@@ -60,6 +62,10 @@ export function basename(path: string): string {
  * Falls back to the trimmed original message when no such lines are found.
  */
 export function parseGitError(err: unknown): string {
+  const cause = err instanceof Error ? err.cause : undefined
+  if (cause && typeof cause === 'object' && 'id' in cause && typeof cause.id === 'string' && /^[A-Za-z0-9_-]{20,64}$/.test(cause.id)) {
+    return `${i18n.t('diagnostics.failed')} [git-error:${cause.id}]`
+  }
   const raw = err instanceof Error ? err.message : String(err)
 
   // Extract lines that carry the actual diagnostic from git.

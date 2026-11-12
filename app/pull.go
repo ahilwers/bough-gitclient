@@ -23,7 +23,20 @@ func (a *App) PullForUI(expectedRepo, expectedBranch string) (gitpkg.PullResult,
 	if a.repo == nil {
 		return gitpkg.PullResult{}, gitpkg.ErrNotARepo
 	}
-	return a.repo.PullForUI(expectedRepo, expectedBranch)
+	result, err := a.repo.PullForUI(expectedRepo, expectedBranch)
+	return a.surfacePullResult(result), err
+}
+
+// surfacePullResult handles conflicts returned as successful IPC results rather
+// than errors. Strategy-choice probes never enter this path.
+func (a *App) surfacePullResult(result gitpkg.PullResult) gitpkg.PullResult {
+	if result.Outcome == "conflict" && result.Failure != nil {
+		if info := a.diagnosticService().Capture(result.Failure); info != nil {
+			result.DiagnosticID = info.ID
+		}
+	}
+	result.Failure = nil
+	return result
 }
 
 func (a *App) ResolvePull(snapshot gitpkg.PullSnapshot, strategy string) (gitpkg.PullResult, error) {
@@ -32,5 +45,6 @@ func (a *App) ResolvePull(snapshot gitpkg.PullSnapshot, strategy string) (gitpkg
 	if a.repo == nil {
 		return gitpkg.PullResult{}, gitpkg.ErrNotARepo
 	}
-	return a.repo.ResolvePull(snapshot, strategy)
+	result, err := a.repo.ResolvePull(snapshot, strategy)
+	return a.surfacePullResult(result), err
 }

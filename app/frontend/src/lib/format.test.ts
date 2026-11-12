@@ -59,6 +59,12 @@ describe('basename', () => {
 })
 
 describe('parseGitError', () => {
+  it('uses safe structured metadata without retaining backend text', () => {
+    const error = new Error('secret-token', { cause: { id: 'abcdefgh23456789abcdefgh23', operation: 'push', exitCode: 128, category: 'authentication' } })
+    const message = parseGitError(error)
+    expect(message).not.toContain('secret-token')
+    expect(message).toContain('[git-error:abcdefgh23456789abcdefgh23]')
+  })
   it('extracts the fatal: line from a typical git worktree error', () => {
     const raw = new Error(
       "git [worktree add ../gitclient-worktree main]: exit status 128\n" +

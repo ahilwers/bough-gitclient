@@ -12,7 +12,6 @@
 package git
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -145,18 +144,18 @@ func (r *Repository) StartInteractiveRebase(actions []RebaseAction) error {
 	cmd.Dir = r.Path
 	cmd.Env = append(os.Environ(),
 		"GIT_SEQUENCE_EDITOR="+seqEditor,
-		"GIT_EDITOR=true",         // suppress squash/fixup message editor
-		"GIT_TERMINAL_PROMPT=0",   // no credential prompts
+		"GIT_EDITOR=true",       // suppress squash/fixup message editor
+		"GIT_TERMINAL_PROMPT=0", // no credential prompts
 	)
 
-	var outBuf bytes.Buffer
+	var outBuf diagnosticBuffer
 	cmd.Stdout = &outBuf
 	cmd.Stderr = &outBuf
 	if err := cmd.Run(); err != nil {
 		if ctx.Err() != nil {
-			return fmt.Errorf("rebase timed out")
+			return newFailure([]string{"rebase"}, ctx.Err(), outBuf.String())
 		}
-		return fmt.Errorf("%s", strings.TrimSpace(outBuf.String()))
+		return newFailure([]string{"rebase"}, err, outBuf.String())
 	}
 	return nil
 }
@@ -171,14 +170,14 @@ func (r *Repository) ContinueRebase() error {
 	cmd.Dir = r.Path
 	cmd.Env = append(os.Environ(), "GIT_EDITOR=true")
 
-	var outBuf bytes.Buffer
+	var outBuf diagnosticBuffer
 	cmd.Stdout = &outBuf
 	cmd.Stderr = &outBuf
 	if err := cmd.Run(); err != nil {
 		if ctx.Err() != nil {
-			return fmt.Errorf("rebase continue timed out")
+			return newFailure([]string{"rebase"}, ctx.Err(), outBuf.String())
 		}
-		return fmt.Errorf("%s", strings.TrimSpace(outBuf.String()))
+		return newFailure([]string{"rebase"}, err, outBuf.String())
 	}
 	return nil
 }
