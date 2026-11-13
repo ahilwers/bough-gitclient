@@ -44,11 +44,13 @@ interface FileStatusListProps {
   selectedStaged: boolean
   onSelectFile: (file: FileStatus, staged: boolean) => void
   nextPanel?: string
+  /** Width of the file list panel in pixels. Adjustable by the user. */
+  width?: number
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nextPanel = 'changes-diff' }: FileStatusListProps) {
+export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nextPanel = 'changes-diff', width = 240 }: FileStatusListProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [focused, setFocused] = useState(false)
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
@@ -261,7 +263,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
         }}
         onKeyDown={handleKeyDown}
         style={{
-          width: 240, flexShrink: 0,
+          width, flexShrink: 0,
           borderRight: '1px solid var(--border-sub)',
           background: 'var(--bg-sidebar)',
           display: 'flex', flexDirection: 'column',
