@@ -41,8 +41,8 @@ type BranchDeletionInfo struct {
 
 var deletionOID = regexp.MustCompile(`^(?:[0-9a-f]{40}|[0-9a-f]{64})$`)
 
-// Do not return Git's raw diagnostics: they may include credentials from URLs,
-// arbitrary server output, or command arguments. Classify useful failure types.
+// Failures keep Git's own output (see Failure); the wrapping adds what the
+// operation was trying to do.
 func remoteGit(dir string, args ...string) (string, error) {
 	out, err := CLI(dir, args...)
 	if err == nil {
@@ -51,7 +51,7 @@ func remoteGit(dir string, args ...string) (string, error) {
 	if IsAuthError(err) {
 		return "", fmt.Errorf("%w: %w", ErrAuthFailed, err)
 	}
-	msg := strings.ToLower(diagnostic(err))
+	msg := strings.ToLower(err.Error())
 	if strings.Contains(msg, "stale info") {
 		return "", fmt.Errorf("remote branch changed; prepare deletion again: %w", err)
 	}

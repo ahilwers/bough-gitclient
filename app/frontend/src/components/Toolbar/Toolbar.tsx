@@ -9,7 +9,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { DiagnosticSettingsButton } from '../shared/ErrorDetails'
 import { Button } from '../shared/Button'
 import { ThemeMenu } from '../shared/ThemeMenu'
 import { useState, useEffect, useRef } from 'react'
@@ -170,7 +169,7 @@ export default function Toolbar() {
         setPullChoice(result.snapshot)
       } else if (result.outcome === 'conflict') {
         setActiveView('changes')
-        showFlash(t('pull.conflict') + (result.diagnosticID ? ` [git-error:${result.diagnosticID}]` : ''), 'danger')
+        showFlash(t('pull.conflict') + (result.detail ? `\n${result.detail}` : ''), 'danger')
       } else if (result.outcome === 'success') {
         showFlash(t('pull.success'))
       }
@@ -397,7 +396,6 @@ export default function Toolbar() {
         />
         <div style={{ width: 1, height: 20, background: 'var(--border-sub)', margin: '0 2px' }} />
         <ThemeMenu />
-        <DiagnosticSettingsButton />
         <IconButton
           icon={<HelpCircle size={14} />}
           label="Keyboard shortcuts (?)"

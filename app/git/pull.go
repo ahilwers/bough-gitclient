@@ -34,11 +34,10 @@ type PullSnapshot struct {
 }
 
 type PullResult struct {
-	Failure      *Failure      `json:"-"`
-	DiagnosticID string        `json:"diagnosticID,omitempty"`
-	Outcome      string        `json:"outcome"` // success | choice | conflict
-	Snapshot     *PullSnapshot `json:"snapshot,omitempty"`
-	Detail       string        `json:"detail,omitempty"`
+	Failure  *Failure      `json:"-"`
+	Outcome  string        `json:"outcome"` // success | choice | conflict
+	Snapshot *PullSnapshot `json:"snapshot,omitempty"`
+	Detail   string        `json:"detail,omitempty"`
 }
 
 func (r *Repository) pullSnapshot() (PullSnapshot, error) {

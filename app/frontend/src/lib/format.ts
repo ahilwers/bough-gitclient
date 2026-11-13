@@ -9,8 +9,6 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import i18n from '@/i18n'
-
 /**
  * Returns the first 7 characters of a git hash.
  * If the string is shorter than 7 chars it is returned as-is.
@@ -52,34 +50,14 @@ export function basename(path: string): string {
 }
 
 /**
- * Extracts a human-readable message from a raw git CLI error.
+ * Returns the message of a failed Git call.
  *
- * Wails surfaces Go errors as rejected Promises whose message looks like:
- *   "git [worktree add ...]: exit status 128\nPreparing worktree...\nfatal: 'main' is already used by worktree at '...'"
- *
- * This function strips the command prefix and boilerplate, returning only the
- * meaningful git diagnostic line(s) (fatal:, error:, hint:).
- * Falls back to the trimmed original message when no such lines are found.
+ * Wails rejects the promise with the Go error's text. Since #30 that text is
+ * Git's own output, prefixed with the operation and exit code, so it is shown
+ * here without any filtering: the toast renders the first lines and the
+ * details dialog the complete text.
  */
 export function parseGitError(err: unknown): string {
-  const cause = err instanceof Error ? err.cause : undefined
-  if (cause && typeof cause === 'object' && 'id' in cause && typeof cause.id === 'string' && /^[A-Za-z0-9_-]{20,64}$/.test(cause.id)) {
-    return `${i18n.t('diagnostics.failed')} [git-error:${cause.id}]`
-  }
   const raw = err instanceof Error ? err.message : String(err)
-
-  // Extract lines that carry the actual diagnostic from git.
-  const diagnosticLines = raw
-    .split('\n')
-    .filter(l => /^(fatal|error|hint):\s*/i.test(l))
-    .map(l => l.replace(/^(fatal|error|hint):\s*/i, '').trim())
-    .filter(Boolean)
-
-  if (diagnosticLines.length > 0) {
-    return diagnosticLines.join('\n')
-  }
-
-  // Strip the "git [...]: exit status N" prefix that the Go CLI wrapper adds.
-  const withoutPrefix = raw.replace(/^git \[.*?\]: exit status \d+\s*/m, '').trim()
-  return withoutPrefix || raw.trim()
+  return raw.trim()
 }

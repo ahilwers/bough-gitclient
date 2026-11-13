@@ -12,39 +12,57 @@
 package git
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
 	"sync"
+	"unicode/utf8"
 )
 
-// Failure keeps untrusted diagnostics out of Error(), IPC and state stores.
-// Diagnostics are bounded and may only be exported by an explicit user action.
+// maxOutputBytes bounds the output kept in memory for one failed command. The
+// complete text is handed to the UI, so this is also the most a details dialog
+// can show.
+const maxOutputBytes = 64 * 1024
+
+// Failure carries what Git actually printed.
+//
+// The message is Git's own output, prefixed with the operation and exit code so
+// that a command which fails silently still explains itself. Command arguments
+// are never echoed. The app shows the first lines in a toast and the complete
+// text in a details dialog; nothing is written to disk.
 type Failure struct {
 	Operation string
 	ExitCode  int
-	Category  string
-	raw       string
+	Output    string
 	cause     error
 }
 
 func (f *Failure) Error() string {
-	if f.Category == "already-exists" && f.Operation == "tag" {
-		return fmt.Sprintf("git tag failed (exit %d; tag already exists). Details omitted.", f.ExitCode)
+	header := "git"
+	if f.Operation != "" && f.Operation != "unknown" {
+		header += " " + f.Operation
 	}
-	return fmt.Sprintf("git %s failed (exit %d; %s). Details omitted.", f.Operation, f.ExitCode, f.Category)
+	header += " failed"
+	if f.ExitCode > 0 {
+		header += fmt.Sprintf(" (exit %d)", f.ExitCode)
+	}
+	if output := strings.TrimRight(f.Output, "\r\n"); output != "" {
+		return header + "\n" + output
+	}
+	// No output at all: the cause is the only information there is. For an
+	// exit status that would repeat the header, so it is left out.
+	if f.cause != nil && !isExitStatus(f.cause) {
+		return header + ": " + f.cause.Error()
+	}
+	return header
 }
-func (f *Failure) Unwrap() error      { return f.cause }
-func (f *Failure) Diagnostic() string { return f.raw }
 
-func diagnostic(err error) string {
-	var f *Failure
-	if errors.As(err, &f) {
-		return f.raw
-	}
-	return err.Error()
+func (f *Failure) Unwrap() error { return f.cause }
+
+func isExitStatus(err error) bool {
+	var exit *exec.ExitError
+	return errors.As(err, &exit)
 }
 
 // operation accepts only fixed command names, never arbitrary arguments.
@@ -69,31 +87,56 @@ func operation(args []string) string {
 	return "unknown"
 }
 
-// diagnosticBuffer drains output without retaining more than 64 KiB.
-// Stdout and stderr may be written concurrently by os/exec.
-type diagnosticBuffer struct {
+// truncateOutput cuts to maxOutputBytes without splitting a UTF-8 sequence.
+func truncateOutput(raw string) string {
+	if len(raw) <= maxOutputBytes {
+		return raw
+	}
+	raw = raw[:maxOutputBytes]
+	for len(raw) > 0 && !utf8.ValidString(raw) {
+		raw = raw[:len(raw)-1]
+	}
+	return raw
+}
+
+// outputBuffer drains subprocess output without retaining more than
+// maxOutputBytes. Stdout and stderr may be written concurrently by os/exec.
+type outputBuffer struct {
 	mu   sync.Mutex
 	data []byte
 }
 
-func (b *diagnosticBuffer) Write(data []byte) (int, error) {
+func (b *outputBuffer) Write(data []byte) (int, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	n := len(data)
-	remaining := 65536 - len(b.data)
+	remaining := maxOutputBytes - len(b.data)
 	if len(data) > remaining {
 		data = data[:remaining]
 	}
 	b.data = append(b.data, data...)
 	return n, nil
 }
-func (b *diagnosticBuffer) String() string { b.mu.Lock(); defer b.mu.Unlock(); return string(b.data) }
+
+func (b *outputBuffer) String() string { b.mu.Lock(); defer b.mu.Unlock(); return string(b.data) }
+
+// capturedOutput runs cmd and returns its combined output.
 func capturedOutput(cmd *exec.Cmd) ([]byte, error) {
-	var out diagnosticBuffer
+	var out outputBuffer
 	cmd.Stdout = &out
 	cmd.Stderr = &out
 	err := cmd.Run()
 	return []byte(out.String()), err
+}
+
+// diagnostic returns the text Git printed for err: the captured output of a
+// command failure, otherwise the error's own message.
+func diagnostic(err error) string {
+	var failure *Failure
+	if errors.As(err, &failure) && failure.Output != "" {
+		return failure.Output
+	}
+	return err.Error()
 }
 
 func newFailure(args []string, err error, raw string) *Failure {
@@ -102,27 +145,10 @@ func newFailure(args []string, err error, raw string) *Failure {
 	if errors.As(err, &exit) {
 		code = exit.ExitCode()
 	}
-	if len(raw) > 64*1024 {
-		raw = raw[:64*1024]
+	return &Failure{
+		Operation: operation(args),
+		ExitCode:  code,
+		Output:    truncateOutput(raw),
+		cause:     err,
 	}
-	category := "unknown"
-	op := operation(args)
-	text := strings.ToLower(raw)
-	switch {
-	case op == "tag" && strings.Contains(text, "already exists"):
-		category = "already-exists"
-	case errors.Is(err, context.DeadlineExceeded):
-		category = "timeout"
-	case errors.Is(err, context.Canceled):
-		category = "cancelled"
-	case strings.Contains(text, "authentication failed"), strings.Contains(text, "permission denied (publickey"), strings.Contains(text, "could not read username"):
-		category = "authentication"
-	case strings.Contains(text, "could not resolve host"), strings.Contains(text, "unable to access"), strings.Contains(text, "connection timed out"):
-		category = "network"
-	case strings.Contains(text, "index.lock"):
-		category = "locked"
-	case strings.Contains(text, "non-fast-forward"), strings.Contains(text, "[rejected]"):
-		category = "rejected"
-	}
-	return &Failure{Operation: op, ExitCode: code, Category: category, raw: raw, cause: err}
 }

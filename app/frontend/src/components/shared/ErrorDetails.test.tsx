@@ -9,51 +9,65 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { beforeEach, afterEach, expect, it, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
-import { ErrorDetails, DiagnosticSettingsButton, DiagnosticMessage } from './ErrorDetails'
-import { ReportDiagnostic, CopyRawDiagnostic, GetDiagnostic, GetDiagnosticSettings, SetDiagnosticLogging, OpenDiagnosticFolder } from '@bindings/gitmorrow/app'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { ErrorDetails, ErrorMessage, isLongMessage } from './ErrorDetails'
 import '@/i18n'
 
-vi.mock('@bindings/gitmorrow/app', () => ({
-  ReportDiagnostic: vi.fn().mockResolvedValue(undefined), CopyRawDiagnostic: vi.fn(), GetDiagnostic: vi.fn(), GetDiagnosticSettings: vi.fn(), SetDiagnosticLogging: vi.fn(), OpenDiagnosticFolder: vi.fn(),
-}))
-beforeEach(() => {
-  vi.clearAllMocks()
-  vi.mocked(GetDiagnostic).mockResolvedValue({ id: 'abcdefgh23456789abcdefgh23', operation: 'push', exitCode: 128, category: 'authentication' })
-  vi.mocked(GetDiagnosticSettings).mockResolvedValue({ enabled: true, reason: '' })
-  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: vi.fn().mockResolvedValue(undefined) } })
-})
+const longMessage = [
+  'git push failed (exit 1)',
+  'To https://example.com/repo.git',
+  ' ! [rejected]        main -> main (non-fast-forward)',
+  'error: failed to push some refs to https://example.com/repo.git',
+].join('\n')
+
 afterEach(cleanup)
-it('copies safe metadata but requires warning acknowledgement before raw copy', async () => {
-  render(<ErrorDetails id="abcdefgh23456789abcdefgh23" onClose={vi.fn()} />)
-  await screen.findByText(/128/)
-  expect(CopyRawDiagnostic).not.toHaveBeenCalled()
-  fireEvent.click(screen.getByRole('button', { name: 'Copy safe summary' }))
-  await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('push')))
-  fireEvent.click(screen.getByRole('button', { name: 'Copy raw output…' }))
-  expect(screen.getByText(/may contain passwords/)).toBeInTheDocument()
-  expect(CopyRawDiagnostic).not.toHaveBeenCalled()
-  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-  expect(CopyRawDiagnostic).not.toHaveBeenCalled()
-  fireEvent.click(screen.getByRole('button', { name: 'Copy raw output…' }))
-  fireEvent.click(screen.getByRole('button', { name: 'I understand — copy raw output' }))
-  await waitFor(() => expect(CopyRawDiagnostic).toHaveBeenCalledWith('abcdefgh23456789abcdefgh23', true))
-  fireEvent.click(screen.getByRole('button', { name: 'Open log folder' }))
-  await waitFor(() => expect(OpenDiagnosticFolder).toHaveBeenCalled())
+
+describe('isLongMessage', () => {
+  it('treats a two-line failure as short', () => {
+    expect(isLongMessage("git add failed (exit 1)\nfatal: pathspec 'x' did not match")).toBe(false)
+  })
+
+  it('treats more than three lines as long', () => {
+    expect(isLongMessage(longMessage)).toBe(true)
+  })
+
+  it('treats a single very long line as long', () => {
+    expect(isLongMessage('git push failed (exit 1)\n' + 'x'.repeat(300))).toBe(true)
+  })
 })
-it('shows and reports inline Git errors without displaying diagnostic IDs', async () => {
-  render(<DiagnosticMessage message="Git failed [git-error:abcdefgh23456789abcdefgh23]" />)
-  expect(screen.getByText('Git failed')).toBeInTheDocument()
-  expect(ReportDiagnostic).toHaveBeenCalledWith('abcdefgh23456789abcdefgh23')
-  fireEvent.click(screen.getByRole('button', { name: 'Details' }))
-  expect(await screen.findByRole('dialog')).toBeInTheDocument()
+
+describe('ErrorMessage', () => {
+  it('renders a short message without a details link', () => {
+    render(<ErrorMessage message="fatal: not a git repository" />)
+    expect(screen.getByText('fatal: not a git repository')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Details' })).not.toBeInTheDocument()
+  })
+
+  it('opens the complete text for a long message', () => {
+    render(<ErrorMessage message={longMessage} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }))
+    expect(within(screen.getByRole('dialog')).getByTestId('error-details-text').textContent).toBe(longMessage)
+  })
 })
-it('offers persistent logging settings without needing an error', async () => {
-  render(<DiagnosticSettingsButton />)
-  fireEvent.click(screen.getByRole('button', { name: 'Diagnostic settings' }))
-  const checkbox = await screen.findByRole('checkbox', { name: 'Record local Git failure metadata' })
-  expect(checkbox).toBeChecked()
-  fireEvent.click(checkbox)
-  await waitFor(() => expect(SetDiagnosticLogging).toHaveBeenCalledWith(false))
+
+describe('ErrorDetails', () => {
+  it('shows the unmodified output and copies it', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+
+    render(<ErrorDetails text={longMessage} onClose={vi.fn()} />)
+
+    expect(screen.getByTestId('error-details-text').textContent).toBe(longMessage)
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(longMessage))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument())
+  })
+
+  it('closes on request', () => {
+    const onClose = vi.fn()
+    render(<ErrorDetails text={longMessage} onClose={onClose} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(onClose).toHaveBeenCalled()
+  })
 })

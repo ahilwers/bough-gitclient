@@ -31,9 +31,8 @@ func (a *App) PullForUI(expectedRepo, expectedBranch string) (gitpkg.PullResult,
 // than errors. Strategy-choice probes never enter this path.
 func (a *App) surfacePullResult(result gitpkg.PullResult) gitpkg.PullResult {
 	if result.Outcome == "conflict" && result.Failure != nil {
-		if info := a.diagnosticService().Capture(result.Failure); info != nil {
-			result.DiagnosticID = info.ID
-		}
+		// Carry Git's message with the result; the toast shows it as it is.
+		result.Detail = result.Failure.Error()
 	}
 	result.Failure = nil
 	return result
