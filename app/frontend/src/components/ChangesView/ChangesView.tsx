@@ -10,9 +10,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { Button } from '../shared/Button'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { AbortMerge } from '@bindings/gitmorrow/app'
 import { useRebase } from '@/hooks/useRebase'
 import { FileStatusList } from './FileStatusList'
@@ -21,10 +22,20 @@ import { CommitBox } from './CommitBox'
 import { useStatus } from '@/hooks/useStatus'
 import { useGitStore } from '@/stores/gitStore'
 import { useCherryPick } from '@/hooks/useCherryPick'
+import { useResizableWidth } from '@/hooks/useResizableWidth'
 import { parseGitError } from '@/lib/format'
 import type { FileStatus } from '@/lib/types'
 
+/** Persisted width of the changes view file list panel. */
+const FILE_LIST_WIDTH_KEY = 'changes-filelist-width'
+const MIN_FILE_LIST_WIDTH = 160
+const MAX_FILE_LIST_WIDTH = 560
+const DEFAULT_FILE_LIST_WIDTH = 240
+/** Width step used when the splitter is operated with the keyboard. */
+const KEYBOARD_RESIZE_STEP = 16
+
 export default function ChangesView() {
+  const { t } = useTranslation()
   const [selectedFile, setSelectedFile] = useState<FileStatus | null>(null)
   const [selectedStaged, setSelectedStaged] = useState(false)
   const { showFlash, cherryPickConflictActive } = useGitStore()
@@ -40,6 +51,48 @@ export default function ChangesView() {
     || cherryPickConflictActive
     || (!mergeState && !!status?.hasConflicts)
   const { abortMutation: abortCherryPickMutation } = useCherryPick()
+
+  // The file list panel width is user-adjustable and persists across sessions.
+  const {
+    width: fileListWidth,
+    startResize: startFileListResize,
+    nudge: nudgeFileListWidth,
+    reset: resetFileListWidth,
+  } = useResizableWidth({
+    storageKey: FILE_LIST_WIDTH_KEY,
+    min: MIN_FILE_LIST_WIDTH,
+    max: MAX_FILE_LIST_WIDTH,
+    initial: DEFAULT_FILE_LIST_WIDTH,
+  })
+  const [isDraggingSplitter, setIsDraggingSplitter] = useState(false)
+
+  const onSplitterMouseDown = useCallback((event: React.MouseEvent) => {
+    setIsDraggingSplitter(true)
+    startFileListResize(event)
+    const onUp = () => {
+      setIsDraggingSplitter(false)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mouseup', onUp)
+  }, [startFileListResize])
+
+  const onSplitterKeyDown = useCallback((event: React.KeyboardEvent) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      nudgeFileListWidth(-KEYBOARD_RESIZE_STEP)
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      nudgeFileListWidth(KEYBOARD_RESIZE_STEP)
+    } else if (event.key === 'Home') {
+      event.preventDefault()
+      resetFileListWidth()
+    }
+  }, [nudgeFileListWidth, resetFileListWidth])
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['status'] })
+    queryClient.invalidateQueries({ queryKey: ['diff'] })
+  }
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -274,11 +327,32 @@ export default function ChangesView() {
 
       {/* Main content row */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* File status list (240px, left) */}
+        {/* File status list (left, user-adjustable width) */}
         <FileStatusList
           selectedFile={selectedFile?.path ?? null}
           selectedStaged={selectedStaged}
           onSelectFile={handleSelectFile}
+          width={fileListWidth}
+        />
+
+        {/* Splitter handle for the file list panel */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={t('changesView.resizeFileList', { defaultValue: 'Resize file list' })}
+          aria-valuenow={fileListWidth}
+          aria-valuemin={MIN_FILE_LIST_WIDTH}
+          aria-valuemax={MAX_FILE_LIST_WIDTH}
+          tabIndex={0}
+          onMouseDown={onSplitterMouseDown}
+          onKeyDown={onSplitterKeyDown}
+          onDoubleClick={resetFileListWidth}
+          style={{
+            width: 4, flexShrink: 0, cursor: 'col-resize',
+            background: isDraggingSplitter ? 'var(--acc)' : 'var(--border-sub)',
+            transition: isDraggingSplitter ? 'none' : 'background 0.15s',
+            outline: 'none',
+          }}
         />
 
         {/* Diff panel + commit box (flex:1, right) */}

@@ -49,13 +49,17 @@
     "tag": "Tag"
   },
   "views": { "history": "Historie", "changes": "\u00c4nderungen" },
+  "changesView": {
+    "resizeFileList": "Dateiliste skalieren"
+  },
   "sidebar": {
     "branches": "Branches",
     "remotes": "Remote",
     "tags": "Tags",
     "stashes": "Stashes",
     "worktrees": "Worktrees",
-    "newWorktree": "Neuer Worktree"
+    "newWorktree": "Neuer Worktree",
+    "resizeWidth": "Seitenleiste skalieren"
   },
   "staging": {
     "unstaged": "Nicht gestaged",
