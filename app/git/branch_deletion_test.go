@@ -12,9 +12,12 @@
 package git_test
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -135,6 +138,41 @@ func deletionRemoteFixture(t *testing.T) (string, string, string, *git.Repositor
 	deletionGit(t, dir, "remote", "set-url", "--push", "origin", push)
 	deletionGit(t, dir, "fetch", "origin")
 	return dir, fetch, push, repo
+}
+
+func TestRemoteDeletionInspectionFailuresPreserveDiagnostics(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("fixture uses a POSIX shell wrapper")
+	}
+	for _, tc := range []struct{ name, pattern string }{
+		{"rewrite rules", "config:--get-regexp:*"},
+		{"push URL", "remote:get-url:--push"},
+		{"remote list", "remote::"},
+		{"fetch URLs", "remote:get-url:--all"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir, _, _, repo := deletionRemoteFixture(t)
+			realGit, err := exec.LookPath("git")
+			if err != nil {
+				t.Fatal(err)
+			}
+			bin := t.TempDir()
+			wrapper := fmt.Sprintf("#!/bin/sh\ncase \"$1:$2:$3\" in %s) printf 'private-diagnostic-value\\n' >&2; exit 42;; esac\nexec %q \"$@\"\n", tc.pattern, realGit)
+			if err := os.WriteFile(filepath.Join(bin, "git"), []byte(wrapper), 0700); err != nil {
+				t.Fatal(err)
+			}
+			t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+			_, err = repo.PrepareBranchDeletion("origin/feature/deep", "origin")
+			var failure *git.Failure
+			if !errors.As(err, &failure) || failure.ExitCode != 42 {
+				t.Fatalf("inspection failure must preserve structured Git diagnostics: %v", err)
+			}
+			if strings.Contains(err.Error(), "private-diagnostic-value") {
+				t.Fatalf("raw diagnostic exposed: %v", err)
+			}
+			_ = dir
+		})
+	}
 }
 
 func TestDeleteRemoteUsesOnlyPushDestination(t *testing.T) {

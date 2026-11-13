@@ -1,4 +1,40 @@
 {
+  "diagnostics": {
+    "failed": "Git-Vorgang fehlgeschlagen.",
+    "settings": "Diagnoseeinstellungen",
+    "title": "Git-Fehlerdetails",
+    "policy": "Nur lokal. Protokolle enthalten Zeitpunkt, Vorgang, Exitcode und Kategorie, niemals Argumente oder Ausgaben. Keine Uploads. Höchstens fünf Dateien mit je 2 MiB. Rohe Ausgaben bleiben nur kurz im Backend-Speicher (bis 64 KiB).",
+    "summary": "Vorgang: {{operation}}\nExitcode: {{exitCode}}\nKategorie: {{category}}",
+    "copySafe": "Sichere Zusammenfassung kopieren",
+    "copyRaw": "Rohe Ausgabe kopieren…",
+    "warning": "Rohe Git-Ausgaben können Passwörter, Tokens, Remote-URLs, Pfade und andere Geheimnisse enthalten. Kopiere sie nur, wenn du sie sicher weitergeben möchtest. Zwischenablageverlauf und andere Anwendungen können sie speichern. Es erfolgt kein automatischer Upload.",
+    "confirmRaw": "Verstanden — rohe Ausgabe kopieren",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "enabled": "Lokale Metadaten fehlgeschlagener Git-Vorgänge protokollieren",
+    "openFolder": "Protokollordner öffnen",
+    "copied": "Kopiert",
+    "unavailable": "Diagnose nicht verfügbar.",
+    "actionFailed": "Die Aktion konnte nicht abgeschlossen werden.",
+    "expired": "Details abgelaufen oder nicht verfügbar.",
+    "details": "Details",
+    "dismiss": "Schließen",
+    "reason": {
+      "disabled": "Protokollierung ist in deinen Einstellungen deaktiviert.",
+      "protection": "Protokollierung deaktiviert: Geschützter Speicher konnte nicht eingerichtet oder überprüft werden. Die Anwendung funktioniert weiterhin.",
+      "storage": "Protokollierung wegen eines lokalen Speicherfehlers deaktiviert. Die Anwendung funktioniert weiterhin."
+    },
+    "category": {
+      "already-exists": "Ein Tag mit diesem Namen existiert bereits. Wähle einen anderen Namen.",
+      "unknown": "Details ausgelassen: Dieser Fehler konnte nicht sicher eingeordnet werden. Prüfe den Repository-Status oder kopiere die rohe Ausgabe bewusst nach Lesen der Warnung.",
+      "authentication": "Prüfe Zugangsdaten und Zugriffsrechte für den Remote und versuche es erneut.",
+      "network": "Prüfe die Verbindung und die Erreichbarkeit des Remote-Hosts.",
+      "locked": "Ein anderer Git-Vorgang hält möglicherweise die Indexsperre. Warte, bis er beendet ist. Lösche keine Sperre bei laufendem Git.",
+      "rejected": "Der Remote hat den Vorgang abgelehnt. Aktualisiere und prüfe den Remote-Branch, bevor du fortfährst.",
+      "timeout": "Zeitlimit überschritten. Prüfe Anmeldedialoge und laufende Git-Prozesse vor einem erneuten Versuch.",
+      "cancelled": "Der Vorgang wurde abgebrochen. Prüfe den Repository-Status, bevor du es erneut versuchst."
+    }
+  },
   "app": { "name": "GitMorrow" },
   "toolbar": {
     "fetch": "Aktualisieren",
@@ -33,6 +69,16 @@
     "commitMessage": "Commit-Nachricht (\u2318 + Enter zum Committen)\u2026",
     "amend": "Amend",
     "commit": "Commit"
+  },
+  "fileSelection": {
+    "toolbar": "Ausgew\u00e4hlte Dateien",
+    "count": "{{count}} ausgew\u00e4hlt",
+    "stage": "Stagen",
+    "stageTitle": "Die ausgew\u00e4hlten Dateien stagen",
+    "discard": "Verwerfen",
+    "discardTitle": "Die \u00c4nderungen der ausgew\u00e4hlten Dateien verwerfen",
+    "clear": "Auswahl aufheben",
+    "clearTitle": "Die Auswahl aufheben"
   },
   "commits": {
     "selectPrompt": "Commit ausw\u00e4hlen",

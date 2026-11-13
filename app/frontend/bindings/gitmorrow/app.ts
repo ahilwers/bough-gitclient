@@ -13,6 +13,9 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as git$0 from "./git/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as diagnostics$0 from "./internal/diagnostics/models.js";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -90,6 +93,14 @@ export function ContinueRebase(): $CancellablePromise<void> {
     return $Call.ByID(3657905568);
 }
 
+/**
+ * No raw diagnostic ever crosses IPC, including when copied. Clipboard managers
+ * may retain copied text; the UI must warn before asking for this one-shot action.
+ */
+export function CopyRawDiagnostic(id: string, confirmed: boolean): $CancellablePromise<void> {
+    return $Call.ByID(2384912125, id, confirmed);
+}
+
 export function CreateBranch(name: string, $from: string, checkoutAfter: boolean): $CancellablePromise<void> {
     return $Call.ByID(3624428965, name, $from, checkoutAfter);
 }
@@ -127,12 +138,26 @@ export function DiscardFile(filePath: string): $CancellablePromise<void> {
     return $Call.ByID(2822748111, filePath);
 }
 
+/**
+ * DiscardFiles discards the unstaged changes of several files at once.
+ */
+export function DiscardFiles(filePaths: string[] | null): $CancellablePromise<void> {
+    return $Call.ByID(2555264244, filePaths);
+}
+
 export function DiscardHunk(patch: string): $CancellablePromise<void> {
     return $Call.ByID(3564137197, patch);
 }
 
 export function DiscardStagedFile(filePath: string): $CancellablePromise<void> {
     return $Call.ByID(1769544097, filePath);
+}
+
+/**
+ * DiscardStagedFiles reverts several staged files to their HEAD state at once.
+ */
+export function DiscardStagedFiles(filePaths: string[] | null): $CancellablePromise<void> {
+    return $Call.ByID(3684935062, filePaths);
 }
 
 export function DropStash(index: number): $CancellablePromise<void> {
@@ -165,6 +190,14 @@ export function GetCommitDiff(hash: string): $CancellablePromise<git$0.DiffFile[
 
 export function GetCommits(limit: number, all: boolean): $CancellablePromise<git$0.CommitNode[] | null> {
     return $Call.ByID(1353234799, limit, all);
+}
+
+export function GetDiagnostic(id: string): $CancellablePromise<diagnostics$0.Info | null> {
+    return $Call.ByID(2789621140, id);
+}
+
+export function GetDiagnosticSettings(): $CancellablePromise<diagnostics$0.Status> {
+    return $Call.ByID(1000066169);
 }
 
 export function GetFileAtCommit(hash: string, filePath: string): $CancellablePromise<string> {
@@ -300,6 +333,10 @@ export function MergeBranch($from: string): $CancellablePromise<void> {
     return $Call.ByID(3631821023, $from);
 }
 
+export function OpenDiagnosticFolder(): $CancellablePromise<void> {
+    return $Call.ByID(964134602);
+}
+
 /**
  * OpenInFinder opens the given path in the platform's native file browser.
  * macOS → Finder, Windows → Explorer, Linux → xdg-open.
@@ -366,6 +403,10 @@ export function RenameRemote(oldName: string, newName: string): $CancellableProm
     return $Call.ByID(1518629377, oldName, newName);
 }
 
+export function ReportDiagnostic(id: string): $CancellablePromise<void> {
+    return $Call.ByID(847853856, id);
+}
+
 export function ResolvePull(snapshot: git$0.PullSnapshot, strategy: string): $CancellablePromise<git$0.PullResult> {
     return $Call.ByID(4157443044, snapshot, strategy);
 }
@@ -413,6 +454,10 @@ export function SelectAndInitRepository(): $CancellablePromise<string> {
  */
 export function SelectRepository(): $CancellablePromise<string> {
     return $Call.ByID(3574868053);
+}
+
+export function SetDiagnosticLogging(enabled: boolean): $CancellablePromise<void> {
+    return $Call.ByID(3006702689, enabled);
 }
 
 export function StageFile(filePath: string): $CancellablePromise<void> {

@@ -9,6 +9,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import { DiagnosticMessage } from '../shared/ErrorDetails'
 import { Button } from '../shared/Button'
 import { useState, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
@@ -138,7 +139,7 @@ export function NewBranchDialog({ onClose }: Props) {
               {error && (
                 <p style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>
                   <AlertCircle size={11} />
-                  {error}
+                  <DiagnosticMessage message={error} />
                 </p>
               )}
             </div>

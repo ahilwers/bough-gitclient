@@ -13,7 +13,7 @@ import { Button } from '../shared/Button'
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
-import { StageFile, UnstageFile, DiscardFile, AbortMerge } from '@bindings/gitmorrow/app'
+import { AbortMerge } from '@bindings/gitmorrow/app'
 import { useRebase } from '@/hooks/useRebase'
 import { FileStatusList } from './FileStatusList'
 import { ChunkDiffPanel } from './ChunkDiffPanel'
@@ -47,29 +47,6 @@ export default function ChangesView() {
     || (!mergeState && !!status?.hasConflicts)
   const { abortMutation: abortCherryPickMutation } = useCherryPick()
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['status'] })
-    queryClient.invalidateQueries({ queryKey: ['diff'] })
-  }
-
-  const stageMutation = useMutation({
-    mutationFn: (path: string) => StageFile(path),
-    onSuccess: invalidate,
-    onError: (err: Error) => showFlash(`Failed to stage: ${parseGitError(err)}`, 'danger'),
-  })
-
-  const unstageMutation = useMutation({
-    mutationFn: (path: string) => UnstageFile(path),
-    onSuccess: invalidate,
-    onError: (err: Error) => showFlash(`Failed to unstage: ${parseGitError(err)}`, 'danger'),
-  })
-
-  const discardMutation = useMutation({
-    mutationFn: (path: string) => DiscardFile(path),
-    onSuccess: invalidate,
-    onError: (err: Error) => showFlash(`Failed to discard: ${parseGitError(err)}`, 'danger'),
-  })
-
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement).tagName
@@ -83,33 +60,6 @@ export default function ChangesView() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (!selectedFile) return
-      const mod = e.metaKey || e.ctrlKey
-
-      if (mod && e.key === 's') {
-        e.preventDefault()
-        if (selectedStaged) {
-          unstageMutation.mutate(selectedFile.path)
-        } else {
-          stageMutation.mutate(selectedFile.path)
-        }
-      }
-
-      if (mod && e.key === 'd') {
-        e.preventDefault()
-        // Only discard tracked unstaged files — skip untracked (?), skip staged
-        if (!selectedStaged && selectedFile.staged !== '?') {
-          discardMutation.mutate(selectedFile.path)
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedFile, selectedStaged, stageMutation, unstageMutation, discardMutation])
 
   function handleSelectFile(file: FileStatus, staged: boolean) {
     setSelectedFile(file)

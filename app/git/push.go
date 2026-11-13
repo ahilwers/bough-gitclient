@@ -81,7 +81,7 @@ func (r *Repository) PushWithUpstream(repoPath, remote, branch string) error {
 	// the lightweight tags this app creates.
 	_, err = CLI(r.Path, "push", "--set-upstream", "--tags", "--", remote, ref+":"+ref)
 	if IsAuthError(err) {
-		return ErrAuthFailed
+		return fmt.Errorf("%w: %w", ErrAuthFailed, err)
 	}
 	return err
 }
@@ -119,7 +119,7 @@ func (r *Repository) PushTracked(force bool) error {
 	args = append(args, b.Remote, src+":"+b.Merge.String())
 	_, err = CLI(r.Path, args...)
 	if IsAuthError(err) {
-		return ErrAuthFailed
+		return fmt.Errorf("%w: %w", ErrAuthFailed, err)
 	}
 	return err
 }

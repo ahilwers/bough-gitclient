@@ -87,6 +87,6 @@ func (r *Repository) CreateTag(name, target string) error {
 	}
 	// Ignore tag.gpgSign to guarantee a lightweight tag; -- prevents either
 	// user-supplied argument from being interpreted as a git option.
-	_, err = CLI(r.Path, "-c", "tag.gpgSign=false", "tag", "--", name, target)
+	_, err = cliWithEnv(r.Path, []string{"LC_ALL=C", "LANG=C", "LANGUAGE=C"}, "-c", "tag.gpgSign=false", "tag", "--", name, target)
 	return err
 }
