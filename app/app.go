@@ -426,6 +426,34 @@ func (a *App) PrepareBranchDeletion(name, remote string) (gitpkg.BranchDeletionI
 	return a.repo.PrepareBranchDeletion(name, remote)
 }
 
+// DiscardFiles discards the unstaged changes of several files at once.
+func (a *App) DiscardFiles(filePaths []string) error {
+	a.pullMu.Lock()
+	defer a.pullMu.Unlock()
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.DiscardFiles(filePaths); err != nil {
+		return err
+	}
+	a.emitRepoChanged(a.repo.Path)
+	return nil
+}
+
+// DiscardStagedFiles reverts several staged files to their HEAD state at once.
+func (a *App) DiscardStagedFiles(filePaths []string) error {
+	a.pullMu.Lock()
+	defer a.pullMu.Unlock()
+	if a.repo == nil {
+		return gitpkg.ErrNotARepo
+	}
+	if err := a.repo.DiscardStagedFiles(filePaths); err != nil {
+		return err
+	}
+	a.emitRepoChanged(a.repo.Path)
+	return nil
+}
+
 // DeleteBranch deletes only the branch described by the confirmed snapshot.
 func (a *App) DeleteBranch(info gitpkg.BranchDeletionInfo) error {
 	a.pullMu.Lock()

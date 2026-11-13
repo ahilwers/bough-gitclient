@@ -75,6 +75,16 @@
     "amend": "Amend",
     "commit": "Commit"
   },
+  "fileSelection": {
+    "toolbar": "Ausgew\u00e4hlte Dateien",
+    "count": "{{count}} ausgew\u00e4hlt",
+    "stage": "Stagen",
+    "stageTitle": "Die ausgew\u00e4hlten Dateien stagen",
+    "discard": "Verwerfen",
+    "discardTitle": "Die \u00c4nderungen der ausgew\u00e4hlten Dateien verwerfen",
+    "clear": "Auswahl aufheben",
+    "clearTitle": "Die Auswahl aufheben"
+  },
   "commits": {
     "selectPrompt": "Commit ausw\u00e4hlen",
     "files": "Dateien",

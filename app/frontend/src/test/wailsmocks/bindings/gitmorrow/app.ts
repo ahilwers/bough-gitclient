@@ -102,6 +102,8 @@ export const CopyRawDiagnostic = vi.fn((_id: string, _confirmed: boolean): Promi
 export const OpenDiagnosticFolder = vi.fn((): Promise<void> => Promise.resolve())
 export const GetAppVersion = vi.fn((): Promise<string> => Promise.resolve('0.1.0'))
 export const DiscardFile = vi.fn((_path: string): Promise<void> => Promise.resolve())
+export const DiscardFiles = vi.fn((_paths: string[]): Promise<void> => Promise.resolve())
+export const DiscardStagedFiles = vi.fn((_paths: string[]): Promise<void> => Promise.resolve())
 
 export const PullForUI = vi.fn((_repo: string, _branch: string): Promise<PullResult> => Promise.resolve({ outcome: 'success' }))
 export const ResolvePull = vi.fn((_snapshot: PullSnapshot, _strategy: string): Promise<PullResult> => Promise.resolve({ outcome: 'success' }))

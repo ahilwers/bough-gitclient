@@ -80,6 +80,16 @@
     "amend": "Amend",
     "commit": "Commit"
   },
+  "fileSelection": {
+    "toolbar": "Selected files",
+    "count": "{{count}} selected",
+    "stage": "Stage",
+    "stageTitle": "Stage the selected files",
+    "discard": "Discard",
+    "discardTitle": "Discard the changes of the selected files",
+    "clear": "Clear",
+    "clearTitle": "Clear the selection"
+  },
   "commits": {
     "selectPrompt": "Select a commit",
     "files": "Files",

@@ -138,12 +138,26 @@ export function DiscardFile(filePath: string): $CancellablePromise<void> {
     return $Call.ByID(2822748111, filePath);
 }
 
+/**
+ * DiscardFiles discards the unstaged changes of several files at once.
+ */
+export function DiscardFiles(filePaths: string[] | null): $CancellablePromise<void> {
+    return $Call.ByID(2555264244, filePaths);
+}
+
 export function DiscardHunk(patch: string): $CancellablePromise<void> {
     return $Call.ByID(3564137197, patch);
 }
 
 export function DiscardStagedFile(filePath: string): $CancellablePromise<void> {
     return $Call.ByID(1769544097, filePath);
+}
+
+/**
+ * DiscardStagedFiles reverts several staged files to their HEAD state at once.
+ */
+export function DiscardStagedFiles(filePaths: string[] | null): $CancellablePromise<void> {
+    return $Call.ByID(3684935062, filePaths);
 }
 
 export function DropStash(index: number): $CancellablePromise<void> {
