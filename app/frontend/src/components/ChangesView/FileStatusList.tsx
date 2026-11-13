@@ -51,6 +51,8 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
   const [focused, setFocused] = useState(false)
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
   const [discardConfirm, setDiscardConfirm] = useState<{ file: FileStatus; staged: boolean } | null>(null)
+  // Confirmation for discarding a whole multi-selection at once.
+  const [bulkDiscard, setBulkDiscard] = useState<{ unstaged: string[]; staged: string[] } | null>(null)
   const queryClient = useQueryClient()
   const { showFlash } = useGitStore()
   const { data: status } = useStatus()
@@ -156,6 +158,10 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
     selectKeys(allEntries.map(e => e.key))
   }, [allEntries, selectKeys])
 
+  // Actions apply to every selected row while a multi-selection exists and to
+  // the row that owns the diff view otherwise.
+  const hasSelection = selectionActive && selectedKeys.length > 0
+
   // Ctrl/Cmd+A selects every file of the list. It is ignored while a text
   // field has the focus, where it must keep selecting text.
   useEffect(() => {
@@ -170,6 +176,21 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [selectAll])
 
+  // A status refresh can remove rows (commit, external change). Drop keys whose
+  // row is gone, so the bulk bar never counts files that are no longer shown.
+  const entryKeys = allEntries.map(e => e.key).join('\u0000')
+  useEffect(() => {
+    const present = new Set(entryKeys === '' ? [] : entryKeys.split('\u0000'))
+    setSelectedKeys(prev => {
+      const next = prev.filter(k => present.has(k))
+      return next.length === prev.length ? prev : next
+    })
+  }, [entryKeys])
+
+  useEffect(() => {
+    if (selectionActive && selectedKeys.length === 0) setSelectionActive(false)
+  }, [selectionActive, selectedKeys.length])
+
   // Selected entries, grouped by the section they belong to.
   const selectedEntries = allEntries.filter(e => selectedKeys.includes(e.key))
   const selectedUnstaged = selectedEntries.filter(e => !e.staged)
@@ -180,8 +201,16 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
 
   const stageSelectedMutation = useMutation({
     mutationFn: (paths: string[]) => StageFiles(paths),
-    onSuccess: invalidate,
+    // The rows change section after the action, which changes their key, so the
+    // selection cannot survive it.
+    onSuccess: () => { invalidate(); selectKeys([]) },
     onError: (err: Error) => showFlash(`Failed to stage: ${parseGitError(err)}`, 'danger'),
+  })
+
+  const unstageSelectedMutation = useMutation({
+    mutationFn: (paths: string[]) => UnstageFiles(paths),
+    onSuccess: () => { invalidate(); selectKeys([]) },
+    onError: (err: Error) => showFlash(`Failed to unstage: ${parseGitError(err)}`, 'danger'),
   })
 
   const discardSelectedMutation = useMutation({
@@ -189,7 +218,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
       if (unstaged.length > 0) await DiscardFiles(unstaged)
       if (staged.length > 0) await DiscardStagedFiles(staged)
     },
-    onSuccess: invalidate,
+    onSuccess: () => { invalidate(); selectKeys([]) },
     onError: (err: Error) => showFlash(`Failed to discard: ${parseGitError(err)}`, 'danger'),
   })
 
@@ -199,6 +228,12 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
     stageSelectedMutation.mutate(paths)
   }, [selectedUnstaged, stageSelectedMutation])
 
+  const unstageSelected = useCallback(() => {
+    const paths = selectedStagedEntries.map(e => e.file.path)
+    if (paths.length === 0) return
+    unstageSelectedMutation.mutate(paths)
+  }, [selectedStagedEntries, unstageSelectedMutation])
+
   const discardSelected = useCallback(() => {
     const unstaged = discardableUnstaged.map(e => e.file.path)
     const staged = discardableStaged.map(e => e.file.path)
@@ -206,22 +241,60 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
     discardSelectedMutation.mutate({ unstaged, staged })
   }, [discardableUnstaged, discardableStaged, discardSelectedMutation])
 
+  // Keyboard entry points: S, U, D and their Cmd/Ctrl variants go through here,
+  // so they act on the whole selection when there is one.
+  const stageCurrent = useCallback(() => {
+    if (hasSelection) { stageSelected(); return }
+    const current = allEntries[currentIdx]
+    if (current && !current.staged && !isConflictedStatus(current.file)) {
+      stageFileMutation.mutate(current.file.path)
+    }
+  }, [hasSelection, stageSelected, allEntries, currentIdx, stageFileMutation])
+
+  const unstageCurrent = useCallback(() => {
+    if (hasSelection) { unstageSelected(); return }
+    const current = allEntries[currentIdx]
+    if (current && current.staged) unstageFileMutation.mutate(current.file.path)
+  }, [hasSelection, unstageSelected, allEntries, currentIdx, unstageFileMutation])
+
+  const discardCurrent = useCallback(() => {
+    if (hasSelection) {
+      const unstaged = discardableUnstaged.map(e => e.file.path)
+      const staged = discardableStaged.map(e => e.file.path)
+      // Untracked and conflicted files cannot be restored; skip if nothing is left.
+      if (unstaged.length === 0 && staged.length === 0) return
+      setBulkDiscard({ unstaged, staged })
+      return
+    }
+    const current = allEntries[currentIdx]
+    if (current) setDiscardConfirm({ file: current.file, staged: current.staged })
+  }, [hasSelection, discardableUnstaged, discardableStaged, allEntries, currentIdx])
+
   const confirmDiscard = useCallback((file: FileStatus, staged: boolean) => {
     setContextMenu(null)
     setDiscardConfirm({ file, staged })
   }, [])
 
   const executeDiscard = useCallback(() => {
-    if (discardConfirm) {
+    if (bulkDiscard) {
+      discardSelectedMutation.mutate(bulkDiscard)
+    } else if (discardConfirm) {
       if (discardConfirm.staged) {
         discardStagedMutation.mutate(discardConfirm.file.path)
       } else {
         discardFileMutation.mutate(discardConfirm.file.path)
       }
     }
+    setBulkDiscard(null)
     setDiscardConfirm(null)
     containerRef.current?.focus()
-  }, [discardConfirm, discardFileMutation, discardStagedMutation])
+  }, [bulkDiscard, discardConfirm, discardSelectedMutation, discardFileMutation, discardStagedMutation])
+
+  const cancelDiscard = useCallback(() => {
+    setBulkDiscard(null)
+    setDiscardConfirm(null)
+    containerRef.current?.focus()
+  }, [])
 
   const selectFromKeyboard = useCallback((file: FileStatus, staged: boolean) => {
     onSelectFile(file, staged)
@@ -245,7 +318,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.target as HTMLElement).tagName === 'BUTTON') return
-    if (contextMenu || discardConfirm) return
+    if (contextMenu || discardConfirm || bulkDiscard) return
 
     switch (e.key) {
       case 'ArrowDown':
@@ -265,29 +338,28 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
       case 's':
       case 'S': {
         e.preventDefault()
-        const cur = allEntries[currentIdx]
-        if (cur && !cur.staged && !isConflictedStatus(cur.file)) {
-          stageFileMutation.mutate(cur.file.path)
-          containerRef.current?.focus()
-        }
+        stageCurrent()
+        containerRef.current?.focus()
         break
       }
       case 'u':
       case 'U': {
         e.preventDefault()
-        const cur = allEntries[currentIdx]
-        if (cur && cur.staged) {
-          unstageFileMutation.mutate(cur.file.path)
-          containerRef.current?.focus()
-        }
+        unstageCurrent()
+        containerRef.current?.focus()
         break
       }
       case 'd':
       case 'D': {
         e.preventDefault()
-        const cur = allEntries[currentIdx]
-        if (!cur) break
-        setDiscardConfirm({ file: cur.file, staged: cur.staged })
+        discardCurrent()
+        break
+      }
+      case 'Escape': {
+        if (!hasSelection) break
+        e.preventDefault()
+        selectKeys([])
+        anchorKey.current = null
         break
       }
       case 'G': {
@@ -323,7 +395,30 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
         break
       }
     }
-  }, [allEntries, currentIdx, selectFromKeyboard, nextPanel, stageFileMutation, unstageFileMutation, contextMenu, discardConfirm])
+  }, [allEntries, currentIdx, selectFromKeyboard, nextPanel, stageCurrent, unstageCurrent, discardCurrent, hasSelection, selectKeys, contextMenu, discardConfirm, bulkDiscard])
+
+  // Cmd/Ctrl+S and Cmd/Ctrl+D act on the selection as well. The panel's own
+  // onKeyDown runs first and marks the event as handled, so this listener only
+  // covers the case where the focus is outside the file list.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return
+      if (!(event.metaKey || event.ctrlKey)) return
+      const target = event.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      if (contextMenu || discardConfirm || bulkDiscard) return
+      const key = event.key.toLowerCase()
+      if (key === 's') {
+        event.preventDefault()
+        stageCurrent()
+      } else if (key === 'd') {
+        event.preventDefault()
+        discardCurrent()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [stageCurrent, discardCurrent, contextMenu, discardConfirm, bulkDiscard])
 
   return (
     <>
@@ -500,6 +595,7 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
             { keys: ['S'], label: 'Stage' },
             { keys: ['U'], label: 'Unstage' },
             { keys: ['D'], label: 'Discard' },
+            ...(hasSelection ? [{ keys: ['Esc'], label: 'Clear' }] : []),
           ]} />
         )}
       </div>
@@ -527,11 +623,12 @@ export function FileStatusList({ selectedFile, selectedStaged, onSelectFile, nex
       )}
 
       {/* Discard confirmation */}
-      {discardConfirm && (
+      {(discardConfirm || bulkDiscard) && (
         <DiscardConfirmDialog
-          filePath={discardConfirm.file.path}
+          filePath={discardConfirm?.file.path}
+          count={bulkDiscard ? bulkDiscard.unstaged.length + bulkDiscard.staged.length : 1}
           onConfirm={executeDiscard}
-          onCancel={() => { setDiscardConfirm(null); containerRef.current?.focus() }}
+          onCancel={cancelDiscard}
         />
       )}
     </>
@@ -795,12 +892,15 @@ function ContextMenu({ x, y, file, staged, onStage, onUnstage, onDiscard, onReve
 // ─── Discard confirm dialog ───────────────────────────────────────────────────
 
 interface DiscardConfirmDialogProps {
-  filePath: string
+  /** Path of the single file; omitted for a multi-selection. */
+  filePath?: string
+  /** Number of files the confirmation covers. */
+  count?: number
   onConfirm: () => void
   onCancel: () => void
 }
 
-function DiscardConfirmDialog({ filePath, onConfirm, onCancel }: DiscardConfirmDialogProps) {
+function DiscardConfirmDialog({ filePath, count = 1, onConfirm, onCancel }: DiscardConfirmDialogProps) {
   const cancelRef = useRef<HTMLButtonElement>(null)
   const discardRef = useRef<HTMLButtonElement>(null)
 
@@ -834,6 +934,9 @@ function DiscardConfirmDialog({ filePath, onConfirm, onCancel }: DiscardConfirmD
     >
       <div
         onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Discard changes"
         style={{
           background: 'var(--bg-panel)',
           border: '1px solid var(--border)',
@@ -849,11 +952,21 @@ function DiscardConfirmDialog({ filePath, onConfirm, onCancel }: DiscardConfirmD
             Discard Changes?
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-sec)', lineHeight: 1.5 }}>
-            All changes to{' '}
-            <code style={{ fontFamily: 'monospace', color: 'var(--danger)', wordBreak: 'break-all' }}>
-              {filePath}
-            </code>
-            {' '}will be permanently lost.
+            {count > 1 ? (
+              <>
+                All changes to{' '}
+                <strong style={{ color: 'var(--danger)' }}>{count} selected files</strong>
+                {' '}will be permanently lost.
+              </>
+            ) : (
+              <>
+                All changes to{' '}
+                <code style={{ fontFamily: 'monospace', color: 'var(--danger)', wordBreak: 'break-all' }}>
+                  {filePath}
+                </code>
+                {' '}will be permanently lost.
+              </>
+            )}
           </div>
         </div>
 

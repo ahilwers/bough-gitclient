@@ -15,9 +15,12 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { FileStatus, RepoStatus } from '@/lib/types'
 import { FileStatusList } from './FileStatusList'
-import { StageFiles, DiscardFiles, DiscardStagedFiles } from '@bindings/gitmorrow/app'
+import { StageFile, StageFiles, UnstageFiles, DiscardFiles, DiscardStagedFiles } from '@bindings/gitmorrow/app'
 
-afterEach(() => cleanup())
+afterEach(() => {
+  cleanup()
+  vi.clearAllMocks()
+})
 
 // Two files with unstaged changes, two with staged changes.
 const files: FileStatus[] = [
@@ -99,5 +102,80 @@ describe('changes file list multi-selection', () => {
 
     await waitFor(() => expect(DiscardFiles).toHaveBeenCalledWith(['a.txt']))
     await waitFor(() => expect(DiscardStagedFiles).toHaveBeenCalledWith(['c.txt']))
+  })
+})
+
+describe('changes file list keyboard actions on a multi-selection', () => {
+  const press = (panel: HTMLElement, key: string, opts: Partial<KeyboardEventInit> = {}) =>
+    fireEvent.keyDown(panel, { key, ...opts })
+
+  it('stages every selected file with S', async () => {
+    const { panel, row } = setup()
+    fireEvent.click(row('a.txt'), { ctrlKey: true })
+    fireEvent.click(row('b.txt'), { ctrlKey: true })
+
+    press(panel, 's')
+
+    await waitFor(() => expect(StageFiles).toHaveBeenCalledWith(['a.txt', 'b.txt']))
+    expect(StageFile).not.toHaveBeenCalled()
+  })
+
+  it('unstages every selected staged file with U', async () => {
+    const { panel, row } = setup()
+    fireEvent.click(row('c.txt', true), { ctrlKey: true })
+    fireEvent.click(row('d.txt', true), { ctrlKey: true })
+
+    press(panel, 'u')
+
+    await waitFor(() => expect(UnstageFiles).toHaveBeenCalledWith(['c.txt', 'd.txt']))
+  })
+
+  it('discards the whole selection only after one confirmation', async () => {
+    const { panel, row } = setup()
+    fireEvent.click(row('a.txt'), { ctrlKey: true })
+    fireEvent.click(row('c.txt', true), { ctrlKey: true })
+
+    press(panel, 'd')
+
+    const dialog = screen.getByRole('dialog', { name: 'Discard changes' })
+    expect(dialog).toHaveTextContent('All changes to 2 selected files will be permanently lost.')
+    expect(DiscardFiles).not.toHaveBeenCalled()
+    expect(DiscardStagedFiles).not.toHaveBeenCalled()
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Discard' }))
+
+    await waitFor(() => expect(DiscardFiles).toHaveBeenCalledWith(['a.txt']))
+    await waitFor(() => expect(DiscardStagedFiles).toHaveBeenCalledWith(['c.txt']))
+  })
+
+  it('clears the selection with Escape', () => {
+    const { panel, row } = setup()
+    fireEvent.click(row('a.txt'), { ctrlKey: true })
+    expect(screen.getByRole('toolbar', { name: 'Selected files' })).toHaveTextContent('1 selected')
+
+    press(panel, 'Escape')
+
+    expect(screen.queryByRole('toolbar', { name: 'Selected files' })).not.toBeInTheDocument()
+  })
+
+  it('applies Cmd/Ctrl+S to the selection while the diff panel has the focus', async () => {
+    const { row } = setup()
+    fireEvent.click(row('a.txt'), { ctrlKey: true })
+    fireEvent.click(row('b.txt'), { ctrlKey: true })
+
+    fireEvent.keyDown(window, { key: 's', ctrlKey: true })
+
+    await waitFor(() => expect(StageFiles).toHaveBeenCalledWith(['a.txt', 'b.txt']))
+  })
+
+  it('acts on the focused file again once the selection is gone', async () => {
+    const { panel, row } = setup()
+    fireEvent.click(row('a.txt'), { ctrlKey: true })
+    fireEvent.click(row('b.txt'))
+
+    press(panel, 's')
+
+    await waitFor(() => expect(StageFile).toHaveBeenCalledWith('b.txt'))
+    expect(StageFiles).not.toHaveBeenCalled()
   })
 })
