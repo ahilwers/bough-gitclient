@@ -43,7 +43,7 @@ type PendingConfirm =
   | { kind: 'dropStash'; entry: StashEntry }
 
 export default function Sidebar() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState({
     branches: true,
     remotes: true,
@@ -326,7 +326,7 @@ export default function Sidebar() {
                   { type: 'separator' as const },
                   { label: `Switch to '${b.name}'`, onClick: () => setPending({ kind: 'checkout', branch: b.name }) },
                   { type: 'separator' as const },
-                  { label: t('deleteBranch.localMenu', { defaultValue: i18n.language.startsWith('de') ? 'Lokalen Branch löschen' : 'Delete local branch' }), destructive: true, onClick: () => beginDelete(b, false) },
+                  { label: t('deleteBranch.localMenu'), destructive: true, onClick: () => beginDelete(b, false) },
                 ]
 
             const item = (
@@ -424,7 +424,7 @@ export default function Sidebar() {
               ...(currentBranch && currentBranch !== localName ? [{ label: `Pull into '${currentBranch}'`, onClick: () => setPending({ kind: 'pullIntoCurrent' as const, remote: b.remote, branch: localName, currentBranch }) }] : []),
               ...(!b.isHead ? [
                 { type: 'separator' as const },
-                { label: t('deleteBranch.remoteMenu', { defaultValue: i18n.language.startsWith('de') ? 'Remote-Branch löschen' : 'Delete remote branch' }), destructive: true, onClick: () => beginDelete(b, true) },
+                { label: t('deleteBranch.remoteMenu'), destructive: true, onClick: () => beginDelete(b, true) },
               ] : []),
             ]
             return (

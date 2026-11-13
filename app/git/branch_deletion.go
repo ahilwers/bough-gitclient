@@ -28,7 +28,10 @@ import (
 // or the push destination's branch tip, not the remote-tracking tip. Destination
 // contains a redacted label and a short hash identifying a complete network URL.
 // ConfigFingerprint hashes the remote, fetch refspec, effective push/fetch URLs,
-// tracking ref and its OID; it is empty for local branch deletion.
+// tracking ref and its OID; it is empty for local branch deletion. Merged reports
+// whether a local branch is fully merged into its upstream branch (or into HEAD
+// when it has none); it is always true for remote branches, where Git does not
+// apply a merged check.
 type BranchDeletionInfo struct {
 	RepoPath          string `json:"repoPath"`
 	Name              string `json:"name"`
@@ -37,6 +40,20 @@ type BranchDeletionInfo struct {
 	OID               string `json:"oid"`
 	Destination       string `json:"destination"`
 	ConfigFingerprint string `json:"configFingerprint"`
+	Merged            bool   `json:"merged"`
+}
+
+// sameDeletionTarget compares the identity fields of two snapshots. Merged is
+// advisory only: it changes when the user merges something in another window
+// and must not invalidate an otherwise valid confirmation.
+func sameDeletionTarget(a, b BranchDeletionInfo) bool {
+	return a.RepoPath == b.RepoPath &&
+		a.Name == b.Name &&
+		a.Remote == b.Remote &&
+		a.Ref == b.Ref &&
+		a.OID == b.OID &&
+		a.Destination == b.Destination &&
+		a.ConfigFingerprint == b.ConfigFingerprint
 }
 
 var deletionOID = regexp.MustCompile(`^(?:[0-9a-f]{40}|[0-9a-f]{64})$`)
@@ -111,6 +128,47 @@ func (r *Repository) deletionWorktreePath() (string, error) {
 	return filepath.Clean(strings.TrimSuffix(out, "\n")), nil
 }
 
+// localBranchRef validates a local branch name and returns its full ref.
+func localBranchRef(dir, name string) (string, error) {
+	if name == "" || strings.HasPrefix(name, "-") || name == "HEAD" || strings.ContainsAny(name, "\n") {
+		return "", fmt.Errorf("invalid branch name")
+	}
+	ref := "refs/heads/" + name
+	if _, err := CLI(dir, "check-ref-format", ref); err != nil {
+		return "", fmt.Errorf("invalid branch name")
+	}
+	return ref, nil
+}
+
+// LocalBranchMerged reports whether the local branch is fully merged, using the
+// same rule `git branch -d` applies: the branch tip must be an ancestor of the
+// branch's upstream ref, or of HEAD when the branch has no usable upstream
+// (none configured, or its tracking ref is gone).
+func (r *Repository) LocalBranchMerged(name string) (bool, error) {
+	ref, err := localBranchRef(r.Path, name)
+	if err != nil {
+		return false, err
+	}
+	if _, err := deletionRefOID(r.Path, ref); err != nil {
+		return false, fmt.Errorf("branch does not exist")
+	}
+	target := "HEAD"
+	if upstream, err := CLI(r.Path, "rev-parse", "--symbolic-full-name", name+"@{upstream}"); err == nil {
+		if resolved := strings.TrimSpace(upstream); resolved != "" {
+			target = resolved
+		}
+	}
+	_, err = CLI(r.Path, "merge-base", "--is-ancestor", ref, target)
+	if err == nil {
+		return true, nil
+	}
+	var failure *Failure
+	if errors.As(err, &failure) && failure.ExitCode == 1 {
+		return false, nil
+	}
+	return false, fmt.Errorf("could not determine whether the branch is merged")
+}
+
 // PrepareBranchDeletion reads fresh refs and, for remotes, queries the actual
 // push destination. Only the standard, unambiguous fetch mapping is supported.
 func (r *Repository) PrepareBranchDeletion(name, remote string) (BranchDeletionInfo, error) {
@@ -137,7 +195,15 @@ func (r *Repository) PrepareBranchDeletion(name, remote string) (BranchDeletionI
 	if remote == "" {
 		info.OID, err = deletionRefOID(r.Path, info.Ref)
 		info.Destination = "Local branch"
-		return info, err
+		if err != nil {
+			return info, err
+		}
+		merged, mergeErr := r.LocalBranchMerged(name)
+		if mergeErr != nil {
+			return info, mergeErr
+		}
+		info.Merged = merged
+		return info, nil
 	}
 	tracking := "refs/remotes/" + name
 	trackingOID, err := deletionRefOID(r.Path, tracking)
@@ -201,13 +267,19 @@ func (r *Repository) PrepareBranchDeletion(name, remote string) (BranchDeletionI
 		return info, fmt.Errorf("remote branch does not exist or is ambiguous")
 	}
 	info.OID = parts[0]
+	// Git applies no merged check to remote branch deletion.
+	info.Merged = true
 	return info, nil
 }
 
 // DeleteBranch revalidates every snapshot field before deleting. Git itself
 // checks worktree usage and merged status for local branches; the server checks
 // the exact confirmed object ID atomically using a lease for remote branches.
-func (r *Repository) DeleteBranch(info BranchDeletionInfo) error {
+// When force is set, a local branch that is not fully merged is deleted
+// anyway (`git branch -D`); Git still refuses branches that are checked out in
+// a worktree or are the current branch. Remote branch deletion ignores force:
+// it already uses a lease and Git applies no merged check there.
+func (r *Repository) DeleteBranch(info BranchDeletionInfo, force bool) error {
 	path, err := r.deletionWorktreePath()
 	if err != nil {
 		return err
@@ -219,11 +291,16 @@ func (r *Repository) DeleteBranch(info BranchDeletionInfo) error {
 	if err != nil {
 		return err
 	}
-	if current != info {
+	if !sameDeletionTarget(current, info) {
 		return fmt.Errorf("branch, repository, or remote configuration changed; prepare deletion again")
 	}
 	if info.Remote == "" {
-		_, err = CLI(r.Path, "branch", "-d", "--", info.Name)
+		args := []string{"branch", "-d"}
+		if force {
+			args = []string{"branch", "-D"}
+		}
+		args = append(args, "--", info.Name)
+		_, err = CLI(r.Path, args...)
 		return err
 	}
 	urls, err := CLI(r.Path, "remote", "get-url", "--push", "--all", "--", info.Remote)
