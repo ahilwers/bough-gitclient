@@ -63,7 +63,8 @@
     "tags": "Tags",
     "stashes": "Stashes",
     "worktrees": "Worktrees",
-    "newWorktree": "New Worktree"
+    "newWorktree": "New Worktree",
+    "resizeWidth": "Resize sidebar"
   },
   "staging": {
     "unstaged": "Unstaged",

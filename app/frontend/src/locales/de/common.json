@@ -58,7 +58,8 @@
     "tags": "Tags",
     "stashes": "Stashes",
     "worktrees": "Worktrees",
-    "newWorktree": "Neuer Worktree"
+    "newWorktree": "Neuer Worktree",
+    "resizeWidth": "Seitenleiste skalieren"
   },
   "staging": {
     "unstaged": "Nicht gestaged",

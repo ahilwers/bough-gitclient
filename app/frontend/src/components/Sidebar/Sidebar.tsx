@@ -42,7 +42,12 @@ type PendingConfirm =
   | { kind: 'deleteTag'; tag: string }
   | { kind: 'dropStash'; entry: StashEntry }
 
-export default function Sidebar() {
+interface SidebarProps {
+  /** Width of the sidebar in pixels. Adjustable by the user. */
+  width?: number
+}
+
+export default function Sidebar({ width = 200 }: SidebarProps) {
   const { t, i18n } = useTranslation()
   const [expanded, setExpanded] = useState({
     branches: true,
@@ -255,8 +260,9 @@ export default function Sidebar() {
   return (
     <>
       <aside
+        data-panel="sidebar"
         style={{
-          width: 200,
+          width,
           flexShrink: 0,
           background: 'var(--bg-sidebar)',
           borderRight: '1px solid var(--border-sub)',
