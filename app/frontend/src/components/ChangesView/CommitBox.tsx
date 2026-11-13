@@ -98,7 +98,7 @@ export function CommitBox() {
     onError: (err: Error) => showFlash(`Commit failed: ${parseGitError(err)}`, 'danger'),
   })
 
-  const disabled = !message.trim() || commitMutation.isPending
+  const disabled = !status || !message.trim() || commitMutation.isPending
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
