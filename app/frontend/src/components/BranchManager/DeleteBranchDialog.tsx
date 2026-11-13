@@ -17,7 +17,7 @@ import { PrepareBranchDeletion, DeleteBranch } from '@bindings/gitmorrow/app'
 import type { BranchDeletionInfo } from '@bindings/gitmorrow/git'
 import { useGitStore } from '@/stores/gitStore'
 import { parseGitError } from '@/lib/format'
-import { DiagnosticMessage } from '../shared/ErrorDetails'
+import { ErrorMessage } from '../shared/ErrorDetails'
 import { Button } from '../shared/Button'
 
 interface Target {
@@ -131,7 +131,7 @@ export function DeleteBranchDialog({ target, onClose }: { target: Target; onClos
             {target.isRemote && <><p>Remote: {info.remote}</p><p>{tr('destination', 'Destination', 'Ziel')}: {info.destination}</p><p>{tr('destinationId', 'For network URLs, the SHA-256 identifier distinguishes the push destination without displaying credentials or paths.', 'Bei Netzwerk-URLs unterscheidet die SHA-256-Kennung das Push-Ziel, ohne Zugangsdaten oder Pfade anzuzeigen.')}</p></>}
             <p>OID: {info.oid}</p>
           </div>}
-          {error && <p role="alert" style={{ color: 'var(--danger)', overflowWrap: 'anywhere' }}><DiagnosticMessage message={error} /></p>}
+          {error && <p role="alert" style={{ color: 'var(--danger)', overflowWrap: 'anywhere' }}><ErrorMessage message={error} /></p>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 24 }}>
             <Dialog.Close asChild><Button ref={cancel} variant="secondary" disabled={pending}>{tr('cancel', 'Cancel', 'Abbrechen')}</Button></Dialog.Close>
             <Button variant="danger" disabled={!info || pending} onClick={submit}>{pending ? tr('pending', 'Deleting…', 'Wird gelöscht…') : tr('confirm', 'Delete Branch', 'Branch löschen')}</Button>

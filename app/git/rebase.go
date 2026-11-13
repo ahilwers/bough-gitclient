@@ -148,7 +148,7 @@ func (r *Repository) StartInteractiveRebase(actions []RebaseAction) error {
 		"GIT_TERMINAL_PROMPT=0", // no credential prompts
 	)
 
-	var outBuf diagnosticBuffer
+	var outBuf outputBuffer
 	cmd.Stdout = &outBuf
 	cmd.Stderr = &outBuf
 	if err := cmd.Run(); err != nil {
@@ -170,7 +170,7 @@ func (r *Repository) ContinueRebase() error {
 	cmd.Dir = r.Path
 	cmd.Env = append(os.Environ(), "GIT_EDITOR=true")
 
-	var outBuf diagnosticBuffer
+	var outBuf outputBuffer
 	cmd.Stdout = &outBuf
 	cmd.Stderr = &outBuf
 	if err := cmd.Run(); err != nil {

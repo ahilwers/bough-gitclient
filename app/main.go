@@ -31,7 +31,7 @@ func main() {
 		Name:        "GitMorrow",
 		Description: "A beautiful Git GUI client",
 		Services: []application.Service{
-			application.NewServiceWithOptions(svc, application.ServiceOptions{MarshalError: svc.marshalDiagnosticError}),
+			application.NewService(svc),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

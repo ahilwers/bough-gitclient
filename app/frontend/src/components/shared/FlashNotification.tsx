@@ -10,27 +10,25 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { Button } from './Button'
-import { useEffect, useState } from 'react'
-import { ReportDiagnostic } from '@bindings/gitmorrow/app'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ErrorDetails } from './ErrorDetails'
+import { ErrorDetails, isLongMessage } from './ErrorDetails'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react'
 import { useGitStore } from '@/stores/gitStore'
 
 export default function FlashNotification() {
   const { t } = useTranslation()
-  const [detailsID, setDetailsID] = useState<string | null>(null)
+  // The full text of the message currently shown in a details dialog.
+  const [details, setDetails] = useState<string | null>(null)
   const flash = useGitStore((s) => s.flash)
   const clearFlash = useGitStore((s) => s.clearFlash)
 
-  const marker = flash?.message.match(/\s*\[git-error:([A-Za-z0-9_-]{20,64})\]/)
-  const message = flash?.message.replace(/\s*\[git-error:[A-Za-z0-9_-]{20,64}\]/, '')
-  const diagnosticID = marker?.[1]
-  useEffect(() => {
-    if (diagnosticID) void ReportDiagnostic(diagnosticID).catch(() => {})
-  }, [diagnosticID])
+  const message = flash?.message ?? ''
   const isError = flash?.type === 'danger'
+  // Errors may carry Git's complete output; the toast only shows its first
+  // lines, so anything longer gets a link to the details dialog.
+  const showDetails = isError && isLongMessage(message)
 
   const bg =
     flash?.type === 'success' ? 'var(--success)' :
@@ -44,7 +42,7 @@ export default function FlashNotification() {
 
   return (
     <>
-    {detailsID && <ErrorDetails key={detailsID} id={detailsID} onClose={() => setDetailsID(null)} />}
+    {details && <ErrorDetails text={details} onClose={() => setDetails(null)} />}
     <AnimatePresence>
       {flash && (
         <motion.div
@@ -78,13 +76,38 @@ export default function FlashNotification() {
           }}
         >
           <Icon size={15} style={{ flexShrink: 0, marginTop: isError ? 1 : 0 }} />
-          <span style={{ flex: 1 }}>{message}</span>
-          {marker && <Button onClick={() => setDetailsID(marker[1])}>{t('diagnostics.details')}</Button>}
+          <span data-testid="flash-message" style={{
+            flex: 1, minWidth: 0,
+            // Long Git output is clamped here; the details dialog shows it all.
+            display: isError ? '-webkit-box' : undefined,
+            WebkitLineClamp: isError ? 3 : undefined,
+            WebkitBoxOrient: isError ? 'vertical' : undefined,
+            overflow: isError ? 'hidden' : undefined,
+          }}>{message}</span>
+          {showDetails && (
+            <Button
+              onClick={() => setDetails(message)}
+              style={{
+                flexShrink: 0, alignSelf: 'flex-start',
+                background: 'rgba(255,255,255,0.16)',
+                color: '#fff',
+                border: '1px solid rgba(255,255,255,0.45)',
+                borderRadius: 'var(--r-sm)',
+                padding: '1px 8px',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+                marginTop: 1,
+              }}
+            >
+              {t('errors.details')}
+            </Button>
+          )}
           {/* Errors show an explicit dismiss button since they live for 6 s */}
           {isError && (
             <Button variant="ghost"
               onClick={clearFlash}
-              aria-label={t('diagnostics.dismiss')}
+              aria-label={t('errors.close')}
               style={{
                 background: 'none',
                 border: 'none',

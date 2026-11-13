@@ -53,7 +53,7 @@ func cliWithEnv(dir string, env []string, args ...string) (string, error) {
 		cmd.Env = append(os.Environ(), env...)
 	}
 	var stdout bytes.Buffer
-	var stderr diagnosticBuffer
+	var stderr outputBuffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {

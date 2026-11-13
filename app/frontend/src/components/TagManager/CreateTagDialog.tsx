@@ -11,7 +11,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
-import { DiagnosticMessage } from '../shared/ErrorDetails'
+import { ErrorMessage } from '../shared/ErrorDetails'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -110,7 +110,7 @@ export function CreateTagDialog({ onClose }: Props) {
                 : !headError && context.valid ? <span style={{ color: 'var(--text-sec)' }}>{tr('loading', 'Resolving HEAD…', 'HEAD wird ermittelt…')}</span> : null}
             </div>
             {(contextError || headError || error) && <p role="alert" style={errorStyle}>
-              <DiagnosticMessage message={contextError || (headError ? `${tr('headError', 'Could not resolve HEAD', 'HEAD konnte nicht ermittelt werden')}: ${headError}` : error)} />
+              <ErrorMessage message={contextError || (headError ? `${tr('headError', 'Could not resolve HEAD', 'HEAD konnte nicht ermittelt werden')}: ${headError}` : error)} />
             </p>}
             <div style={actionsStyle}>
               <Dialog.Close asChild><button type="button" style={cancelStyle} disabled={busy}>{tr('cancel', 'Cancel', 'Abbrechen')}</button></Dialog.Close>

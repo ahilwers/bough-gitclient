@@ -9,21 +9,62 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { afterEach, expect, it, vi } from 'vitest'
-import { render, screen, fireEvent, cleanup, act } from '@testing-library/react'
-import { ReportDiagnostic } from '@bindings/gitmorrow/app'
+import { afterEach, describe, expect, it } from 'vitest'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import FlashNotification from './FlashNotification'
 import { useGitStore } from '@/stores/gitStore'
 import '@/i18n'
-vi.mock('./ErrorDetails', () => ({ ErrorDetails: ({ id }: { id: string }) => <div role="dialog">{id}</div> }))
-afterEach(cleanup)
-it('opens details from safe flash metadata and keeps the modal after flash expiry', () => {
-  act(() => useGitStore.getState().showFlash('Git failed [git-error:abcdefgh23456789abcdefgh23]', 'danger'))
-  render(<FlashNotification />)
-  expect(ReportDiagnostic).toHaveBeenCalledWith('abcdefgh23456789abcdefgh23')
-  expect(screen.getByText('Git failed')).toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: 'Details' }))
-  expect(screen.getByRole('dialog')).toHaveTextContent('abcdefgh23456789abcdefgh23')
+
+const shortMessage = "git worktree failed (exit 128)\nfatal: 'test01' is already used by worktree at '/tmp/boughtest'"
+const longMessage = [
+  'git push failed (exit 1)',
+  'To https://example.com/repo.git',
+  ' ! [rejected]        main -> main (non-fast-forward)',
+  'error: failed to push some refs to https://example.com/repo.git',
+  'hint: Updates were rejected because the tip of your current branch is behind',
+].join('\n')
+
+afterEach(() => {
+  cleanup()
   act(() => useGitStore.getState().clearFlash())
-  expect(screen.getByRole('dialog')).toBeInTheDocument()
+})
+
+describe('flash notification', () => {
+  it('shows Git’s message unchanged and no details link when it fits', () => {
+    act(() => useGitStore.getState().showFlash(shortMessage, 'danger'))
+    render(<FlashNotification />)
+
+    expect(screen.getByTestId('flash-message')).toHaveTextContent("fatal: 'test01' is already used by worktree at '/tmp/boughtest'")
+    expect(screen.queryByRole('button', { name: 'Details' })).not.toBeInTheDocument()
+  })
+
+  it('offers details for a long message and shows the complete text', () => {
+    act(() => useGitStore.getState().showFlash(longMessage, 'danger'))
+    render(<FlashNotification />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }))
+
+    const dialog = screen.getByRole('dialog')
+    const detailText = within(dialog).getByTestId('error-details-text')
+    expect(detailText.textContent).toBe(longMessage)
+    expect(detailText).toHaveTextContent('rejected] main -> main (non-fast-forward)')
+  })
+
+  it('keeps the details dialog open after the toast expires', () => {
+    act(() => useGitStore.getState().showFlash(longMessage, 'danger'))
+    render(<FlashNotification />)
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }))
+
+    act(() => useGitStore.getState().clearFlash())
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('shows success messages without a details link', () => {
+    act(() => useGitStore.getState().showFlash('Pulled successfully', 'success'))
+    render(<FlashNotification />)
+
+    expect(screen.getByTestId('flash-message')).toHaveTextContent('Pulled successfully')
+    expect(screen.queryByRole('button', { name: 'Details' })).not.toBeInTheDocument()
+  })
 })

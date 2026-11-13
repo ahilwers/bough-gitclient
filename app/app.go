@@ -21,21 +21,17 @@ import (
 	"fmt"
 	"github.com/wailsapp/wails/v3/pkg/application"
 	gitpkg "gitmorrow/git"
-	"gitmorrow/internal/diagnostics"
 	"gitmorrow/internal/sysproc"
 )
 
 // App holds application state and exposes methods to the frontend via Wails IPC.
 type App struct {
-	diagnosticOnce sync.Once
-	diagnostics    *diagnostics.Service
-	diagnosticDir  string
-	aiMu           sync.Mutex // Serializes AI settings writes and generation.
-	pullMu         sync.Mutex // Serializes pull validation/integration with repository and branch switches.
-	ctx            context.Context
-	app            *application.App // Set in main.go; used for events, dialogs and window queries.
-	repo           *gitpkg.Repository
-	watcher        *gitpkg.Watcher
+	aiMu    sync.Mutex // Serializes AI settings writes and generation.
+	pullMu  sync.Mutex // Serializes pull validation/integration with repository and branch switches.
+	ctx     context.Context
+	app     *application.App // Set in main.go; used for events, dialogs and window queries.
+	repo    *gitpkg.Repository
+	watcher *gitpkg.Watcher
 }
 
 func NewApp() *App { return &App{} }
@@ -44,7 +40,6 @@ func NewApp() *App { return &App{} }
 // application.ServiceStartup interface, so it stays out of the frontend bindings.
 func (a *App) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
 	a.ctx = ctx
-	a.diagnosticService()
 	if a.app == nil {
 		// Allow standalone construction (e.g. in tests) to lazily resolve the
 		// application handle.
