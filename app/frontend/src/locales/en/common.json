@@ -57,6 +57,9 @@
   "changesView": {
     "resizeFileList": "Resize file list"
   },
+  "historyView": {
+    "resizeCommitList": "Resize commit list"
+  },
   "sidebar": {
     "branches": "Branches",
     "remotes": "Remote",

@@ -9,53 +9,68 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Search } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useGitStore } from '@/stores/gitStore'
+import { useResizableWidth } from '@/hooks/useResizableWidth'
 import { CommitList } from '@/components/CommitGraph/CommitList'
 import { CommitDetailPanel } from './CommitDetailPanel'
 
-const STORAGE_KEY = 'history-split-left'
-const DEFAULT_LEFT = 500
-const MIN_LEFT = 220
-const MIN_RIGHT = 280
-
-function readSavedWidth(): number {
-  const v = localStorage.getItem(STORAGE_KEY)
-  return v ? parseInt(v, 10) : DEFAULT_LEFT
-}
+/**
+ * Persisted width of the commit list panel. The key predates the shared resize
+ * hook; it is kept so an existing width survives the change.
+ */
+const COMMIT_LIST_WIDTH_KEY = 'history-split-left'
+const MIN_COMMIT_LIST_WIDTH = 220
+const MAX_COMMIT_LIST_WIDTH = 700
+const DEFAULT_COMMIT_LIST_WIDTH = 500
+/** Width step used when the splitter is operated with the keyboard. */
+const KEYBOARD_RESIZE_STEP = 16
 
 export default function HistoryView() {
+  const { t } = useTranslation()
   const { selectedCommit } = useGitStore()
   const [showAllBranches, setShowAllBranches] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [leftWidth, setLeftWidth] = useState(readSavedWidth)
-  const leftWidthRef = useRef(leftWidth)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
 
-  const onSplitterMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
+  // The commit list panel width is user-adjustable and persists across sessions,
+  // same as the file list panel in the changes view.
+  const {
+    width: commitListWidth,
+    startResize: startCommitListResize,
+    nudge: nudgeCommitListWidth,
+    reset: resetCommitListWidth,
+  } = useResizableWidth({
+    storageKey: COMMIT_LIST_WIDTH_KEY,
+    min: MIN_COMMIT_LIST_WIDTH,
+    max: MAX_COMMIT_LIST_WIDTH,
+    initial: DEFAULT_COMMIT_LIST_WIDTH,
+  })
+  const [isDraggingSplitter, setIsDraggingSplitter] = useState(false)
 
-    const onMouseMove = (ev: MouseEvent) => {
-      if (!containerRef.current) return
-      const rect = containerRef.current.getBoundingClientRect()
-      const next = Math.max(MIN_LEFT, Math.min(ev.clientX - rect.left, rect.width - MIN_RIGHT))
-      leftWidthRef.current = next
-      setLeftWidth(next)
+  const onSplitterMouseDown = useCallback((event: React.MouseEvent) => {
+    setIsDraggingSplitter(true)
+    startCommitListResize(event)
+    const onUp = () => {
+      setIsDraggingSplitter(false)
+      document.removeEventListener('mouseup', onUp)
     }
+    document.addEventListener('mouseup', onUp)
+  }, [startCommitListResize])
 
-    const onMouseUp = () => {
-      setIsDragging(false)
-      localStorage.setItem(STORAGE_KEY, String(leftWidthRef.current))
-      document.removeEventListener('mousemove', onMouseMove)
-      document.removeEventListener('mouseup', onMouseUp)
+  const onSplitterKeyDown = useCallback((event: React.KeyboardEvent) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      nudgeCommitListWidth(-KEYBOARD_RESIZE_STEP)
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      nudgeCommitListWidth(KEYBOARD_RESIZE_STEP)
+    } else if (event.key === 'Home') {
+      event.preventDefault()
+      resetCommitListWidth()
     }
-
-    document.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseup', onMouseUp)
-  }, [])
+  }, [nudgeCommitListWidth, resetCommitListWidth])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', background: 'var(--bg-content)' }}>
@@ -91,37 +106,52 @@ export default function HistoryView() {
       </div>
 
       {/* Commit list + splitter + detail panel */}
-      <div
-        ref={containerRef}
-        style={{
-          display: 'flex', flex: 1, overflow: 'hidden',
-          cursor: isDragging ? 'col-resize' : 'default',
-          userSelect: isDragging ? 'none' : 'auto',
-        }}
-      >
-        <div style={{ width: selectedCommit ? leftWidth : undefined, flex: selectedCommit ? undefined : 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Commit list (left, user-adjustable width) */}
+        <div
+          data-panel="history-commitlist"
+          style={{
+            width: commitListWidth, flexShrink: 0,
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          }}
+        >
           <CommitList all={showAllBranches} searchQuery={searchQuery} />
         </div>
 
-        {selectedCommit && (
-          <>
-            {/* Splitter handle */}
-            <div
-              onMouseDown={onSplitterMouseDown}
-              style={{
-                width: 4, flexShrink: 0, cursor: 'col-resize',
-                background: isDragging ? 'var(--acc)' : 'var(--border-sub)',
-                transition: isDragging ? 'none' : 'background 0.15s',
-              }}
-              onMouseEnter={e => { if (!isDragging) (e.currentTarget as HTMLDivElement).style.background = 'var(--acc)' }}
-              onMouseLeave={e => { if (!isDragging) (e.currentTarget as HTMLDivElement).style.background = 'var(--border-sub)' }}
-            />
+        {/* Splitter handle for the commit list panel */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={t('historyView.resizeCommitList', { defaultValue: 'Resize commit list' })}
+          aria-valuenow={commitListWidth}
+          aria-valuemin={MIN_COMMIT_LIST_WIDTH}
+          aria-valuemax={MAX_COMMIT_LIST_WIDTH}
+          tabIndex={0}
+          onMouseDown={onSplitterMouseDown}
+          onKeyDown={onSplitterKeyDown}
+          onDoubleClick={resetCommitListWidth}
+          style={{
+            width: 4, flexShrink: 0, cursor: 'col-resize',
+            background: isDraggingSplitter ? 'var(--acc)' : 'var(--border-sub)',
+            transition: isDraggingSplitter ? 'none' : 'background 0.15s',
+            outline: 'none',
+          }}
+          onMouseEnter={e => { if (!isDraggingSplitter) (e.currentTarget as HTMLDivElement).style.background = 'var(--acc)' }}
+          onMouseLeave={e => { if (!isDraggingSplitter) (e.currentTarget as HTMLDivElement).style.background = 'var(--border-sub)' }}
+        />
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <CommitDetailPanel commitHash={selectedCommit} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {selectedCommit ? (
+            <CommitDetailPanel commitHash={selectedCommit} />
+          ) : (
+            <div style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, color: 'var(--text-ter)',
+            }}>
+              {t('commits.selectPrompt')}
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )
