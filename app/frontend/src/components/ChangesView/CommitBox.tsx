@@ -10,14 +10,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { Button } from '../shared/Button'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
 import { CreateCommit, AmendCommit } from '@bindings/gitmorrow/app'
 import { useStatus } from '@/hooks/useStatus'
+import { useCommits } from '@/hooks/useCommits'
 import { useGitStore } from '@/stores/gitStore'
+import { buildCommitMessageHistory } from '@/lib/commitMessageHistory'
 import { parseGitError } from '@/lib/format'
 import { AICommitAssistant } from './AICommitAssistant'
+
+const HISTORY_COMMIT_LIMIT = 50
 
 export function CommitBox() {
   const queryClient = useQueryClient()
@@ -25,8 +29,20 @@ export function CommitBox() {
   const [message, setMessage] = useState('')
   const [amend, setAmend] = useState(false)
   const { data: status } = useStatus()
+  const { data: commits } = useCommits(HISTORY_COMMIT_LIMIT, false)
   const mergeMessage = status?.mergeState?.mergeMessage
   const cherryPickMessage = status?.cherryPickState?.pickedMessage
+
+  const messageHistory = useMemo(() => buildCommitMessageHistory(commits), [commits])
+  // Index into messageHistory while the user browses previous messages;
+  // -1 means the textarea shows the user's own draft.
+  const historyIndex = useRef(-1)
+  const draft = useRef('')
+
+  const resetHistory = () => {
+    historyIndex.current = -1
+    draft.current = ''
+  }
 
   // Pre-fill message from MERGE_MSG when entering merge state.
   // Only sets once (on transition); never overwrites what the user typed.
@@ -34,6 +50,7 @@ export function CommitBox() {
   useEffect(() => {
     if (mergeMessage && mergeMessage !== prevMergeMessage.current) {
       setMessage(mergeMessage)
+      resetHistory()
     }
     prevMergeMessage.current = mergeMessage
   }, [mergeMessage])
@@ -43,6 +60,7 @@ export function CommitBox() {
   useEffect(() => {
     if (cherryPickMessage && cherryPickMessage !== prevCherryPickMessage.current) {
       setMessage(cherryPickMessage)
+      resetHistory()
     }
     prevCherryPickMessage.current = cherryPickMessage
   }, [cherryPickMessage])
@@ -52,6 +70,7 @@ export function CommitBox() {
   useEffect(() => {
     if (pendingCherryPickMessage && pendingCherryPickMessage !== prevPendingMessage.current) {
       setMessage(pendingCherryPickMessage)
+      resetHistory()
     }
     prevPendingMessage.current = pendingCherryPickMessage
   }, [pendingCherryPickMessage])
@@ -70,6 +89,7 @@ export function CommitBox() {
     onSuccess: () => {
       setMessage('')
       setAmend(false)
+      resetHistory()
       setPendingCherryPickMessage(null)
       setCherryPickConflictActive(false)
       invalidate()
@@ -85,6 +105,39 @@ export function CommitBox() {
       e.preventDefault()
       if (!disabled) commitMutation.mutate(message)
     }
+
+    // Browse previous commit messages: ArrowUp at the very start of the text
+    // walks backwards, ArrowDown at the very end walks forwards again. Any
+    // other cursor position keeps the textarea's normal caret movement.
+    const plainArrow = !e.altKey && !e.shiftKey && !e.ctrlKey && !e.metaKey
+    if (plainArrow && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      const el = e.currentTarget
+      const atStart = el.selectionStart === 0 && el.selectionEnd === 0
+      const atEnd = el.selectionStart === message.length && el.selectionEnd === message.length
+
+      if (e.key === 'ArrowUp' && atStart && historyIndex.current < messageHistory.length - 1) {
+        e.preventDefault()
+        if (historyIndex.current === -1) draft.current = message
+        historyIndex.current += 1
+        setMessage(messageHistory[historyIndex.current])
+        // Keep the caret at the start so repeated ArrowUp continues browsing.
+        requestAnimationFrame(() => el.setSelectionRange(0, 0))
+        return
+      }
+
+      if (e.key === 'ArrowDown' && atEnd && historyIndex.current >= 0) {
+        e.preventDefault()
+        historyIndex.current -= 1
+        setMessage(historyIndex.current === -1 ? draft.current : messageHistory[historyIndex.current])
+        // Keep the caret at the end so repeated ArrowDown continues browsing.
+        requestAnimationFrame(() => {
+          const end = el.value.length
+          el.setSelectionRange(end, end)
+        })
+        return
+      }
+    }
+
     if (e.key === 'Escape') {
       e.preventDefault()
       const el = document.querySelector<HTMLElement>('[data-panel="changes-filelist"]')
@@ -108,11 +161,11 @@ export function CommitBox() {
         display: 'flex', flexDirection: 'column', gap: 8,
       }}
     >
-      <AICommitAssistant key={`${activeRepo}:${activeWorktree}`} hasStaged={!!status?.files?.some(file => !!file.staged && file.staged !== ' ')} onApply={setMessage} />
+      <AICommitAssistant key={`${activeRepo}:${activeWorktree}`} hasStaged={!!status?.files?.some(file => !!file.staged && file.staged !== ' ')} onApply={msg => { setMessage(msg); resetHistory() }} />
       <textarea
         data-commit-input
         value={message}
-        onChange={e => setMessage(e.target.value)}
+        onChange={e => { setMessage(e.target.value); resetHistory() }}
         onKeyDown={handleKeyDown}
         placeholder="Describe your changes…"
         rows={4}
