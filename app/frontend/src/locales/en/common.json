@@ -55,13 +55,17 @@
     "history": "History",
     "changes": "Changes"
   },
+  "changesView": {
+    "resizeFileList": "Resize file list"
+  },
   "sidebar": {
     "branches": "Branches",
     "remotes": "Remote",
     "tags": "Tags",
     "stashes": "Stashes",
     "worktrees": "Worktrees",
-    "newWorktree": "New Worktree"
+    "newWorktree": "New Worktree",
+    "resizeWidth": "Resize sidebar"
   },
   "staging": {
     "unstaged": "Unstaged",
