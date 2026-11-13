@@ -125,9 +125,11 @@ export function CreateTag(name: string, target: string): $CancellablePromise<voi
 
 /**
  * DeleteBranch deletes only the branch described by the confirmed snapshot.
+ * Force allows deleting a local branch that is not fully merged; the user must
+ * have confirmed the loss of its unmerged commits.
  */
-export function DeleteBranch(info: git$0.BranchDeletionInfo): $CancellablePromise<void> {
-    return $Call.ByID(308689290, info);
+export function DeleteBranch(info: git$0.BranchDeletionInfo, force: boolean): $CancellablePromise<void> {
+    return $Call.ByID(308689290, info, force);
 }
 
 export function DeleteTag(tag: string): $CancellablePromise<void> {

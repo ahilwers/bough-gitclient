@@ -26,7 +26,10 @@ export interface Branch {
  * or the push destination's branch tip, not the remote-tracking tip. Destination
  * contains a redacted label and a short hash identifying a complete network URL.
  * ConfigFingerprint hashes the remote, fetch refspec, effective push/fetch URLs,
- * tracking ref and its OID; it is empty for local branch deletion.
+ * tracking ref and its OID; it is empty for local branch deletion. Merged reports
+ * whether a local branch is fully merged into its upstream branch (or into HEAD
+ * when it has none); it is always true for remote branches, where Git does not
+ * apply a merged check.
  */
 export interface BranchDeletionInfo {
     "repoPath": string;
@@ -36,6 +39,7 @@ export interface BranchDeletionInfo {
     "oid": string;
     "destination": string;
     "configFingerprint": string;
+    "merged": boolean;
 }
 
 /**

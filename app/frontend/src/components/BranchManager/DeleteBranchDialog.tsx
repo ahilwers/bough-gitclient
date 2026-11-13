@@ -29,8 +29,7 @@ interface Target {
 }
 
 export function DeleteBranchDialog({ target, onClose }: { target: Target; onClose: () => void }) {
-  const { t, i18n } = useTranslation()
-  const tr = (key: string, en: string, de: string) => t(`deleteBranch.${key}`, { defaultValue: i18n.language.startsWith('de') ? de : en })
+  const { t } = useTranslation()
   const client = useQueryClient()
   const [info, setInfo] = useState<BranchDeletionInfo | null>(null)
   const [error, setError] = useState('')
@@ -56,14 +55,14 @@ export function DeleteBranchDialog({ target, onClose }: { target: Target; onClos
       valid.current = false
       onClose()
     } else if (target.isRemote && !target.remote) {
-      setError(tr('missingRemote', 'Cannot delete a remote branch without a known remote.', 'Ein Remote-Branch ohne bekanntes Remote kann nicht gelöscht werden.'))
+      setError(t('deleteBranch.missingRemote'))
     } else if (!target.isRemote && target.remote) {
-      setError(tr('unexpectedRemote', 'Local branch has an unexpected remote.', 'Der lokale Branch hat ein unerwartetes Remote.'))
+      setError(t('deleteBranch.unexpectedRemote'))
     } else {
       PrepareBranchDeletion(target.name, target.remote).then(snapshot => {
         if (!alive || !valid.current || !sameContext()) return
         if (!snapshot || snapshot.name !== target.name || snapshot.remote !== target.remote || !snapshot.ref || !snapshot.oid || (target.isRemote && (!snapshot.remote || !snapshot.destination)) || (!target.isRemote && snapshot.remote)) {
-          setError(tr('invalidSnapshot', 'Could not prepare a complete branch deletion snapshot.', 'Das Löschziel konnte nicht vollständig und eindeutig ermittelt werden.'))
+          setError(t('deleteBranch.invalidSnapshot'))
           return
         }
         setInfo(snapshot)
@@ -76,17 +75,21 @@ export function DeleteBranchDialog({ target, onClose }: { target: Target; onClos
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const submit = async () => {
+  // A local branch that is not fully merged can only be deleted with force;
+  // the dialog makes the loss of its unmerged commits explicit.
+  const forceNeeded = !target.isRemote && info != null && !info.merged
+
+  const submit = async (force = false) => {
     if (!info || busy.current || !valid.current || !sameContext()) return
     busy.current = true
     setPending(true)
     setError('')
     try {
-      await DeleteBranch(info)
+      await DeleteBranch(info, force)
       if (valid.current && sameContext()) {
         const message = target.isRemote
-          ? tr('remoteSuccess', 'Remote branch deleted', 'Remote-Branch gelöscht')
-          : tr('localSuccess', 'Local branch deleted', 'Lokaler Branch gelöscht')
+          ? t('deleteBranch.remoteSuccess')
+          : t('deleteBranch.localSuccess')
         useGitStore.getState().showFlash(`${message}: ${target.name}`, 'success')
         onClose()
       }
@@ -117,24 +120,32 @@ export function DeleteBranchDialog({ target, onClose }: { target: Target; onClos
           style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 440, maxWidth: '90vw', background: 'var(--bg-panel)', borderRadius: 10, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', zIndex: 50, padding: 24 }}
         >
           <Dialog.Title style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
-            {target.isRemote ? tr('remoteTitle', 'Delete remote branch?', 'Remote-Branch löschen?') : tr('localTitle', 'Delete local branch?', 'Lokalen Branch löschen?')}
+            {target.isRemote ? t('deleteBranch.remoteTitle') : t('deleteBranch.localTitle')}
           </Dialog.Title>
           <Dialog.Description style={{ fontSize: 12, color: 'var(--text-sec)' }}>
             {target.isRemote
-              ? tr('remoteWarning', 'This deletes the branch at the push destination shown below and affects other users. If fetch and push destinations differ, the local remote-tracking entry may remain.', 'Der Branch wird am unten angezeigten Push-Ziel auf dem Server gelöscht. Dies betrifft auch andere Benutzer. Bei unterschiedlichen Fetch- und Push-Zielen kann der lokale Remote-Tracking-Eintrag bestehen bleiben.')
-              : tr('localWarning', 'This deletes only the local branch, not the branch on the server. Git checks whether the branch is merged; force deletion is not offered.', 'Nur der lokale Branch wird gelöscht, nicht der Branch auf dem Server. Git prüft, ob der Branch gemergt ist; erzwungenes Löschen wird nicht angeboten.')}
+              ? t('deleteBranch.remoteWarning')
+              : info && !info.merged
+                ? t('deleteBranch.localUnmergedWarning')
+                : t('deleteBranch.localWarning')}
           </Dialog.Description>
           <p>Branch: <strong>{target.name}</strong></p>
-          {!info && !error && <p role="status">{tr('loading', 'Preparing deletion…', 'Löschung wird vorbereitet…')}</p>}
+          {!info && !error && <p role="status">{t('deleteBranch.loading')}</p>}
           {info && <div style={{ fontSize: 12, overflowWrap: 'anywhere' }}>
-            <p>{target.isRemote ? tr('serverRef', 'Server ref', 'Server-Ref') : tr('localRef', 'Local ref', 'Lokaler Ref')}: {info.ref}</p>
-            {target.isRemote && <><p>Remote: {info.remote}</p><p>{tr('destination', 'Destination', 'Ziel')}: {info.destination}</p><p>{tr('destinationId', 'For network URLs, the SHA-256 identifier distinguishes the push destination without displaying credentials or paths.', 'Bei Netzwerk-URLs unterscheidet die SHA-256-Kennung das Push-Ziel, ohne Zugangsdaten oder Pfade anzuzeigen.')}</p></>}
+            <p>{target.isRemote ? t('deleteBranch.serverRef') : t('deleteBranch.localRef')}: {info.ref}</p>
+            {target.isRemote && <><p>Remote: {info.remote}</p><p>{t('deleteBranch.destination')}: {info.destination}</p><p>{t('deleteBranch.destinationId')}</p></>}
             <p>OID: {info.oid}</p>
           </div>}
           {error && <p role="alert" style={{ color: 'var(--danger)', overflowWrap: 'anywhere' }}><DiagnosticMessage message={error} /></p>}
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 24 }}>
-            <Dialog.Close asChild><Button ref={cancel} variant="secondary" disabled={pending}>{tr('cancel', 'Cancel', 'Abbrechen')}</Button></Dialog.Close>
-            <Button variant="danger" disabled={!info || pending} onClick={submit}>{pending ? tr('pending', 'Deleting…', 'Wird gelöscht…') : tr('confirm', 'Delete Branch', 'Branch löschen')}</Button>
+            <Dialog.Close asChild><Button ref={cancel} variant="secondary" disabled={pending}>{t('deleteBranch.cancel')}</Button></Dialog.Close>
+            <Button variant="danger" disabled={!info || pending} onClick={() => submit(forceNeeded)}>
+              {pending
+                ? t('deleteBranch.pending')
+                : forceNeeded
+                  ? t('deleteBranch.forceConfirm')
+                  : t('deleteBranch.confirm')}
+            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
