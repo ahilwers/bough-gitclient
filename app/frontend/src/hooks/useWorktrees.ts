@@ -27,7 +27,7 @@ export function useWorktrees() {
   const activeRepo = useGitStore(s => s.activeRepo)
 
   const query = useQuery({
-    queryKey: ['worktrees'],
+    queryKey: ['worktrees', activeRepo],
     queryFn: async () => (await ListWorktrees()) as WorktreeInfo[],
     enabled: !!activeRepo,
     staleTime: 30_000,
@@ -58,12 +58,18 @@ export function useWorktrees() {
   })
 
   const switchMutation = useMutation({
+    mutationKey: ['switchWorktree'],
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['status'] })
+      queryClient.getQueryCache().findAll({ queryKey: ['status'] }).forEach(query => query.reset())
+    },
     mutationFn: (path: string) => SwitchWorktree(path),
+    // Discard anything fetched while the backend context was changing.
+    onSettled: () => { void queryClient.resetQueries({ queryKey: ['status'] }) },
     onSuccess: (_, path) => {
       setActiveWorktree(path)
       // Invalidate all data-dependent queries so the UI reflects the new context.
       queryClient.invalidateQueries({ queryKey: ['commits'] })
-      queryClient.invalidateQueries({ queryKey: ['status'] })
       queryClient.invalidateQueries({ queryKey: ['branches'] })
     },
   })

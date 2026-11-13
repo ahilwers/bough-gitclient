@@ -81,7 +81,7 @@ export default function Sidebar({ width = 200 }: SidebarProps) {
   const { data: worktrees, removeMutation, switchMutation } = useWorktrees()
   const { data: tags, checkoutMutation: tagCheckoutMutation, deleteMutation: tagDeleteMutation } = useTags()
   const { data: stashes, dropMutation } = useStashes()
-  const { activeWorktree, showFlash, setActiveView, isDraggingCommits, cherryPickConflictActive } = useGitStore()
+  const { activeRepo, activeWorktree, showFlash, setActiveView, isDraggingCommits, cherryPickConflictActive } = useGitStore()
   const { data: status } = useStatus()
   const { cherryPickMutation } = useCherryPick()
 
@@ -529,7 +529,7 @@ export default function Sidebar({ width = 200 }: SidebarProps) {
             <WorktreeItem
               key={wt.path}
               worktree={wt}
-              isActive={activeWorktree === wt.path}
+              isActive={(activeWorktree ?? activeRepo) === wt.path}
               onSwitch={() => handleSwitchWorktree(wt)}
               onRemove={() => setPending({ kind: 'removeWorktree', worktree: wt })}
               onOpenInFinder={() => OpenInFinder(wt.path).catch((err: Error) => showFlash(parseGitError(err), 'danger'))}

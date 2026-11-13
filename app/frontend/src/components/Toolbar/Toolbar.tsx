@@ -27,6 +27,7 @@ import { KeyboardShortcutsDialog } from '@/components/Help/KeyboardShortcutsDial
 import { NewBranchDialog } from '@/components/BranchManager/NewBranchDialog'
 import { CreateStashDialog } from '@/components/StashView/CreateStashDialog'
 import { CreateTagDialog } from '@/components/TagManager/CreateTagDialog'
+import { WorktreeSelector } from './WorktreeSelector'
 
 import { PullStrategyDialog } from './PullStrategyDialog'
 import type { PullSnapshot, PushInfo } from '@bindings/gitmorrow/git'
@@ -349,6 +350,7 @@ export default function Toolbar() {
 
       {/* Current branch stays visible in every view, including during Git operations. */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+        <WorktreeSelector />
         {branch && (
           <div
             role="status"

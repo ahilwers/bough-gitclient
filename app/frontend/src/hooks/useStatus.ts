@@ -10,7 +10,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useIsMutating, useQuery, useQueryClient } from '@tanstack/react-query'
 import { GetStatus } from '@bindings/gitmorrow/app'
 import { Events } from '@wailsio/runtime'
 import { useGitStore } from '@/stores/gitStore'
@@ -19,6 +19,7 @@ import type { RepoStatus } from '@/lib/types'
 export function useStatus() {
   const queryClient = useQueryClient()
   const { activeRepo } = useGitStore()
+  const switching = useIsMutating({ mutationKey: ['switchWorktree'] }) > 0
 
   const query = useQuery({
     queryKey: ['status'],
@@ -36,5 +37,5 @@ export function useStatus() {
     return unsubscribe
   }, [queryClient])
 
-  return query
+  return switching ? { ...query, data: undefined } : query
 }
